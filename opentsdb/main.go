@@ -30,16 +30,16 @@ func init() {
 }
 
 // OpenTSDB request parameters.
-type OpenTSDBRequestParams struct {
+type RequestParams struct {
 	Host    string                         // Host to query.
 	Start   string                         // Time point when to start query.
 	End     string                         // Time point to end query (optional).
-	Metrics []*OpenTSDBMetricConfiguration // Configuration of the metrics to request.
+	Metrics []*MetricConfiguration // Configuration of the metrics to request.
 }
 
 // OpenTSDB metric query parameters and configuration for result
 // interpration.
-type OpenTSDBMetricConfiguration struct {
+type MetricConfiguration struct {
 	Unit      string                // TODO: required?
 	Filter    func(float64) float64 // Function used to map metric values.
 	Aggregate string                // Aggregation of matching metrics
@@ -50,10 +50,10 @@ type OpenTSDBMetricConfiguration struct {
 
 // Mapping from the metric identifier to the according configuration
 // used to parse and handle the results.
-type OpenTSDBMetricConfigurations map[string]*OpenTSDBMetricConfiguration
+type MetricConfigurations map[string]*MetricConfiguration
 
 // Parse a single line of the result returned by OpenTSDB in ASCII mode.
-func parseLogEventLine(line string, mCfg OpenTSDBMetricConfigurations) (*MetricValue, error) {
+func parseLogEventLine(line string, mCfg MetricConfigurations) (*MetricValue, error) {
 	parts := strings.SplitN(line, " ", 4)
 	if len(parts) != 4 {
 		logger.Debug("failed to parse line:", line)
@@ -87,7 +87,7 @@ func parseLogEventLine(line string, mCfg OpenTSDBMetricConfigurations) (*MetricV
 }
 
 // Parse the content of the ASCII based OpenTSDB response.
-func parseResponseFromOpenTSDB(content io.ReadCloser, mCfg OpenTSDBMetricConfigurations) (MetricsTree, error) {
+func parseResponse(content io.ReadCloser, mCfg MetricConfigurations) (MetricsTree, error) {
 	scanner := bufio.NewScanner(content)
 	mt := NewMetricsTree()
 	for scanner.Scan() {
@@ -102,7 +102,7 @@ func parseResponseFromOpenTSDB(content io.ReadCloser, mCfg OpenTSDBMetricConfigu
 	return mt, nil
 }
 
-func createQueryURL(attrs *OpenTSDBRequestParams) string {
+func createQueryURL(attrs *RequestParams) string {
 	values := url.Values{}
 	values.Add("start", attrs.Start)
 	if attrs.End != "" {
@@ -122,8 +122,8 @@ func createQueryURL(attrs *OpenTSDBRequestParams) string {
 	return "http://" + attrs.Host + ":4242/q?ascii&" + values.Encode()
 }
 
-func createMetricConfigurations(attrs *OpenTSDBRequestParams) (OpenTSDBMetricConfigurations, error) {
-	mCfg := make(OpenTSDBMetricConfigurations)
+func createMetricConfigurations(attrs *RequestParams) (MetricConfigurations, error) {
+	mCfg := make(MetricConfigurations)
 
 	for _, m := range attrs.Metrics {
 		if _, ok := mCfg[m.Metric]; ok {
@@ -135,7 +135,7 @@ func createMetricConfigurations(attrs *OpenTSDBRequestParams) (OpenTSDBMetricCon
 }
 
 // Request data from OpenTSDB in ASCII format.
-func GetOpenTSDBData(attrs *OpenTSDBRequestParams) (MetricsTree, error) {
+func GetData(attrs *RequestParams) (MetricsTree, error) {
 	url := createQueryURL(attrs)
 	logger.Debug("Request URL is ", url)
 
@@ -156,7 +156,7 @@ func GetOpenTSDBData(attrs *OpenTSDBRequestParams) (MetricsTree, error) {
 	logger.Debug("Finished request to OpenTSDB")
 
 	logger.Debug("Starting to parse the response from OpenTSDB")
-	mt, e := parseResponseFromOpenTSDB(resp.Body, mCfg)
+	mt, e := parseResponse(resp.Body, mCfg)
 	logger.Debug("Finsihed parsing the response from OpenTSDB")
 
 	return mt, e
