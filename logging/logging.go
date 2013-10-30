@@ -1,12 +1,10 @@
 package logging
 
 import (
-	"bufio"
 	"compress/gzip"
 	"io"
 	"log"
 	"os/exec"
-	"strings"
 	"time"
 )
 
