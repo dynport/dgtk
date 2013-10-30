@@ -2,16 +2,20 @@ package logging
 
 import (
 	"bufio"
+	"compress/gzip"
+	"io"
+	"log"
 	"os/exec"
 	"strings"
 	"time"
 )
 
 type RemoteLog struct {
-	Host    string
-	Pattern string
-	Tail    bool
-	Time    time.Time
+	Host     string
+	Pattern  string
+	Tail     bool
+	Time     time.Time
+	Compress bool
 }
 
 const (
@@ -28,55 +32,58 @@ func NewRemoteLogFromTime(host string, t time.Time, pattern string) *RemoteLog {
 	}
 }
 
-func (log *RemoteLog) Path() string {
-	if !log.Time.IsZero() {
-		return log.Time.Format("cat " + LOG_ROOT + "/" + HOURLY_PATTERN)
+func (rl *RemoteLog) Path() string {
+	if !rl.Time.IsZero() {
+		return rl.Time.Format(LOG_ROOT + "/" + HOURLY_PATTERN)
 	}
 	return CURRENT_ROOT
 }
 
-func (log *RemoteLog) GzipPath() string {
-	return log.Path() + ".gz"
+func (rl *RemoteLog) GzipPath() string {
+	return rl.Path() + ".gz"
 }
 
-func (log *RemoteLog) Command() string {
-	cmd := log.CatCmd()
-	if log.Pattern != "" {
-		cmd += " | " + log.GrepCmd()
+func (rl *RemoteLog) Command() string {
+	cmd := rl.CatCmd()
+	if rl.Pattern != "" {
+		cmd += " | " + rl.GrepCmd()
+	}
+	if rl.Compress {
+		cmd += " | gzip"
 	}
 	return cmd
 }
 
-func (log *RemoteLog) GrepCmd() string {
-	return "grep " + log.Pattern
+func (rl *RemoteLog) GrepCmd() string {
+	return "grep " + rl.Pattern
 }
 
-func (log *RemoteLog) CatCmd() string {
-	if log.Tail {
+func (rl *RemoteLog) CatCmd() string {
+	if rl.Tail {
 		return "tail -n 0 -F " + CURRENT_ROOT
 	}
-	return "{ test -e " + log.Path() + " && cat " + log.Path() + "; test -e " + log.GzipPath() + " && cat " + log.GzipPath() + " | gunzip; }"
+	return "{ test -e " + rl.Path() + " && cat " + rl.Path() + "; test -e " + rl.GzipPath() + " && cat " + rl.GzipPath() + " | gunzip; }"
 }
 
-func (log *RemoteLog) Each(pattern string, f func(line string)) error {
-	cmd := exec.Command("ssh", "-l", "root", log.Host, log.Command())
-	reader, e := cmd.StdoutPipe()
+func (rl *RemoteLog) Reader() (reader io.ReadCloser, e error) {
+	c := rl.Command()
+	log.Println("CMD: " + c)
+	cmd := exec.Command("ssh", "-t", "-l", "root", rl.Host, c)
+	reader, e = cmd.StdoutPipe()
 	if e != nil {
-		return e
+		return nil, e
 	}
-	defer reader.Close()
-	cmd.Start()
-	scanner := bufio.NewScanner(reader)
-	i := 0
-	for scanner.Scan() {
-		i++
-		l := scanner.Text()
-		if pattern != "" {
-			if !strings.Contains(l, pattern) {
-				continue
-			}
+	e = cmd.Start()
+	if e != nil {
+		return nil, e
+	}
+	if rl.Compress {
+		log.Println("making logger compressed")
+		reader, e = gzip.NewReader(reader)
+		if e != nil {
+			return nil, e
 		}
-		f(l)
+		log.Println("made logger compressed")
 	}
-	return nil
+	return reader, nil
 }
