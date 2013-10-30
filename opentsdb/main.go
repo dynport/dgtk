@@ -31,9 +31,9 @@ func init() {
 
 // OpenTSDB request parameters.
 type RequestParams struct {
-	Host    string                         // Host to query.
-	Start   string                         // Time point when to start query.
-	End     string                         // Time point to end query (optional).
+	Host    string                 // Host to query.
+	Start   string                 // Time point when to start query.
+	End     string                 // Time point to end query (optional).
 	Metrics []*MetricConfiguration // Configuration of the metrics to request.
 }
 
