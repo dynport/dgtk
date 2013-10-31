@@ -24,6 +24,10 @@ func (logger *DefaultLogger) Debug(i ...interface{}) {
 	return
 }
 
+func SetLogger(newLogger Logger) {
+	logger = newLogger
+}
+
 var logger Logger
 
 func init() {
