@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -144,15 +145,16 @@ func GetData(attrs *RequestParams) (MetricsTree, error) {
 		return nil, err
 	}
 
-	logger.Debug("Starting request to OpenTSDB")
+	logger.Debug("Starting request to OpenTSDB: " + url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
-		return nil, errors.New(fmt.Sprintf("Request to OpenTSDB failed with %s", resp.Status))
-	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		b, _ := ioutil.ReadAll(resp.Body)
+		return nil, errors.New(fmt.Sprintf("Request to OpenTSDB failed with %s (%s)", resp.Status, string(b)))
+	}
 	logger.Debug("Finished request to OpenTSDB")
 
 	logger.Debug("Starting to parse the response from OpenTSDB")
