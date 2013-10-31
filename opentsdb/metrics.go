@@ -46,6 +46,10 @@ type MetricsList struct {
 	isSorted  bool              // Flag whether data is sorted or not.
 }
 
+func (list *MetricsList) Data() []*MetricValue {
+	return list.data
+}
+
 // Create a new metrics list for the given tags.
 func NewMetricsList(tags string) (*MetricsList, error) {
 	tagMap := make(map[string]string)
