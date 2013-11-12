@@ -162,7 +162,7 @@ func (index *Index) Status() (status *IndexStatus, e error) {
 }
 
 func (index *Index) Mapping() (i interface{}, e error) {
-	rsp, e := index.request("GET", index.TypeUrl()+"/_mapping", i)
+	rsp, e := index.request("GET", index.IndexUrl()+"/_mapping", i)
 	if e != nil {
 		if rsp.StatusCode == 404 {
 			return nil, nil
