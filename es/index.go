@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -162,7 +163,9 @@ func (index *Index) Status() (status *IndexStatus, e error) {
 }
 
 func (index *Index) Mapping() (i interface{}, e error) {
-	rsp, e := index.request("GET", index.IndexUrl()+"/_mapping", i)
+	u := index.IndexUrl() + "/_mapping"
+	log.Printf("chgecking for url %s", u)
+	rsp, e := index.request("GET", u, i)
 	if e != nil {
 		if rsp.StatusCode == 404 {
 			return nil, nil
