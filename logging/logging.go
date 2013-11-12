@@ -9,17 +9,17 @@ import (
 )
 
 type RemoteLog struct {
-	Host     string
-	Pattern  string
-	Tail     bool
-	Time     time.Time
-	Compress bool
+	Host          string
+	Pattern       string
+	Tail          bool
+	Time          time.Time
+	Compress      bool
+	CustomLogRoot string
 }
 
 const (
-	LOG_ROOT       = "/var/log/hourly"
-	CURRENT_ROOT   = LOG_ROOT + "/current"
-	HOURLY_PATTERN = "2006/01/02/2006-01-02T15.log"
+	DEFAULT_LOG_ROOT = "/var/log/hourly"
+	HOURLY_PATTERN   = "2006/01/02/2006-01-02T15.log"
 )
 
 func NewRemoteLogFromTime(host string, t time.Time, pattern string) *RemoteLog {
@@ -30,11 +30,22 @@ func NewRemoteLogFromTime(host string, t time.Time, pattern string) *RemoteLog {
 	}
 }
 
+func (rl *RemoteLog) LogRoot() string {
+	if rl.CustomLogRoot != "" {
+		return rl.CustomLogRoot
+	}
+	return DEFAULT_LOG_ROOT
+}
+
+func (rl *RemoteLog) Current() string {
+	return rl.LogRoot() + "/current"
+}
+
 func (rl *RemoteLog) Path() string {
 	if !rl.Time.IsZero() {
-		return rl.Time.Format(LOG_ROOT + "/" + HOURLY_PATTERN)
+		return rl.Time.UTC().Format(rl.LogRoot() + "/" + HOURLY_PATTERN)
 	}
-	return CURRENT_ROOT
+	return rl.Current()
 }
 
 func (rl *RemoteLog) GzipPath() string {
@@ -58,15 +69,19 @@ func (rl *RemoteLog) GrepCmd() string {
 
 func (rl *RemoteLog) CatCmd() string {
 	if rl.Tail {
-		return "tail -n 0 -F " + CURRENT_ROOT
+		return "tail -n 0 -F " + rl.Current()
 	}
 	return "{ test -e " + rl.Path() + " && cat " + rl.Path() + "; test -e " + rl.GzipPath() + " && cat " + rl.GzipPath() + " | gunzip; }"
 }
 
 func (rl *RemoteLog) Reader() (reader io.ReadCloser, e error) {
 	c := rl.Command()
-	log.Println("CMD: " + c)
-	cmd := exec.Command("ssh", "-t", "-l", "root", rl.Host, c)
+	var cmd *exec.Cmd
+	if rl.Host != "" {
+		cmd = exec.Command("ssh", "-t", "-l", "root", rl.Host, c)
+	} else {
+		cmd = exec.Command("bash", "-c", c)
+	}
 	reader, e = cmd.StdoutPipe()
 	if e != nil {
 		return nil, e
