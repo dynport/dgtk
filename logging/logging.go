@@ -3,7 +3,6 @@ package logging
 import (
 	"compress/gzip"
 	"io"
-	"log"
 	"os/exec"
 	"time"
 )
@@ -91,12 +90,10 @@ func (rl *RemoteLog) Reader() (reader io.ReadCloser, e error) {
 		return nil, e
 	}
 	if rl.Compress {
-		log.Println("making logger compressed")
 		reader, e = gzip.NewReader(reader)
 		if e != nil {
 			return nil, e
 		}
-		log.Println("made logger compressed")
 	}
 	return reader, nil
 }
