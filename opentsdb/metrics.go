@@ -8,18 +8,6 @@ import (
 	"time"
 )
 
-// Data type for a metric value.
-type MetricValue struct {
-	Key   string    // Metric's key.
-	Value float64   // Metric's value.
-	Time  time.Time // Timestamp of metric recording.
-	Tags  string    // Tags the metric has set.
-}
-
-func (mv *MetricValue) String() string {
-	return fmt.Sprintf("%s %s %.01f %s", mv.Time.Format("2006-01-02T15:04:05"), mv.Key, mv.Value, mv.Tags)
-}
-
 // Aggregation of metric values.
 type MetricsAggregate struct {
 	firstMetric time.Time // Timestamp of metric recorded first.
@@ -54,6 +42,9 @@ func (list *MetricsList) Data() []*MetricValue {
 func NewMetricsList(tags string) (*MetricsList, error) {
 	tagMap := make(map[string]string)
 	for _, element := range strings.Split(tags, " ") {
+		if element == "" {
+			continue
+		}
 		parts := strings.SplitN(element, "=", 2)
 		if len(parts) == 2 {
 			key, value := parts[0], parts[1]

@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -59,51 +57,42 @@ type MetricConfigurations map[string]*MetricConfiguration
 
 // Parse a single line of the result returned by OpenTSDB in ASCII mode.
 func parseLogEventLine(line string, mCfg MetricConfigurations) (*MetricValue, error) {
-	parts := strings.SplitN(line, " ", 4)
-	if len(parts) != 4 {
-		logger.Debug("failed to parse line:", line)
-		return nil, errors.New("failed to parse line")
+	mv := &MetricValue{}
+	if e := mv.Parse(line); e != nil {
+		return nil, e
 	}
-
-	key, tags := parts[0], parts[3]
-
-	timestamp, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		logger.Debug("failed to parse timestamp:", parts[1])
-		return nil, err
+	if mCfg[mv.Key].Filter != nil {
+		mv.Value = mCfg[mv.Key].Filter(mv.Value)
 	}
-
-	value, err := strconv.ParseFloat(parts[2], 64)
-	if err != nil {
-		logger.Debug("failed to parse value:", parts[2])
-		return nil, err
-	}
-
-	if mCfg[key].Filter != nil {
-		value = mCfg[key].Filter(value)
-	}
-
-	return &MetricValue{
-		Key:   key,
-		Value: value,
-		Time:  time.Unix(timestamp, 0),
-		Tags:  tags,
-	}, nil
+	return mv, nil
 }
 
 // Parse the content of the ASCII based OpenTSDB response.
 func parseResponse(content io.ReadCloser, mCfg MetricConfigurations) (MetricsTree, error) {
 	scanner := bufio.NewScanner(content)
 	mt := NewMetricsTree()
-	for scanner.Scan() {
-		if mv, e := parseLogEventLine(scanner.Text(), mCfg); e == nil {
+	cnt := 0
+	dur := map[string]time.Duration{}
+	started := time.Now()
+	for {
+		cnt++
+		started := time.Now()
+		if !scanner.Scan() {
+			break
+		}
+		l := scanner.Text()
+		dur["read"] += time.Now().Sub(started)
+		started = time.Now()
+		if mv, e := parseLogEventLine(l, mCfg); e == nil {
 			if e = mt.AddMetricValue(mv); e != nil {
 				return nil, e
 			}
 		} else {
 			return nil, e
 		}
+		dur["parse"] += time.Now().Sub(started)
 	}
+	logger.Debug(fmt.Sprintf("parsed %d in %s (%v)", cnt, time.Now().Sub(started), dur))
 	return mt, nil
 }
 
@@ -162,8 +151,9 @@ func GetData(attrs *RequestParams) (MetricsTree, error) {
 	logger.Debug("Finished request to OpenTSDB")
 
 	logger.Debug("Starting to parse the response from OpenTSDB")
+	started := time.Now()
 	mt, e := parseResponse(resp.Body, mCfg)
-	logger.Debug("Finsihed parsing the response from OpenTSDB")
+	logger.Debug(fmt.Sprintf("Finished parsing the response from OpenTSDB in %s", time.Now().Sub(started)))
 
 	return mt, e
 }
