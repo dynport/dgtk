@@ -167,10 +167,10 @@ func (index *Index) Mapping() (i interface{}, e error) {
 	log.Printf("chgecking for url %s", u)
 	rsp, e := index.request("GET", u, i)
 	if e != nil {
-		if rsp.StatusCode == 404 {
-			return nil, nil
-		}
 		return nil, e
+	}
+	if rsp.StatusCode == 404 {
+		return nil, nil
 	}
 	e = json.Unmarshal(rsp.Body, &i)
 	if e != nil {
