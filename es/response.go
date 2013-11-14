@@ -14,7 +14,8 @@ type ResponseFacet struct {
 	Missing int          `json:"missing"`
 	Total   int          `json:"total"`
 	Other   int          `json:"other"`
-	Terms   []*FacetTerm `json:"terms"`
+	Terms   []*FacetTerm `json:"terms,omitempty"`
+	Entries []*Entry     `json:"entries,omitempty"`
 }
 
 type FacetTerm struct {
