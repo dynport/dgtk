@@ -15,8 +15,9 @@ func (request *Request) AddFacet(key string, facet *Facet) {
 }
 
 type DateHistogram struct {
-	Field    string `json:"field,omitempty"`
-	Interval string `json:"interval,omitempty"`
+	Field      string `json:"field,omitempty"`
+	Interval   string `json:"interval,omitempty"`
+	ValueField string `json:"value_field,omitempty"`
 }
 
 type RequestFacet struct {
