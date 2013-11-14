@@ -2,7 +2,7 @@ package es
 
 type Request struct {
 	Query  *Query `json:"query,omitempty"`
-	Size   int    `json:"size,omitempty"`
+	Size   int    `json:"size"`
 	Facets `json:"facets,omitempty"`
 	*Sort  `json:"sort,omitempty"`
 }
