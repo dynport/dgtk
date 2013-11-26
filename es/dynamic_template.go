@@ -1,8 +1,9 @@
 package es
 
 type DynamicTemplateMapping struct {
-	Type  string `json:"type,omitempty"`
-	Index string `json:"index,omitempty"`
+	Type   string `json:"type,omitempty"`
+	Index  string `json:"index,omitempty"`
+	Format string `json:"format,omitempty"`
 }
 
 type DynamicTemplate struct {
