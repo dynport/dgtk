@@ -23,6 +23,7 @@ func Names() (names []string) {
 var (
 	devAssetsPath string
 	Development bool
+	Debug bool
 )
 
 func init() {
@@ -32,9 +33,17 @@ func init() {
 	}
 }
 
+func logDebug(format string, args ...interface{}) {
+	if Debug {
+		fmt.Printf(format + "\n", args...)
+	}
+}
+
 func Get(key string) ([]byte, error) {
 	if devAssetsPath != "" {
-		return ioutil.ReadFile(devAssetsPath + "/" + key)
+		path := devAssetsPath + "/" + key
+		logDebug("reading file from dev path %s", path)
+		return ioutil.ReadFile(path)
 	}
 	b, ok := assets[key]
 	if !ok {
