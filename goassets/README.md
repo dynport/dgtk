@@ -20,7 +20,7 @@ but go files (having the .go suffix).
 ## Generation Of Assets
 
 Run the `goassets` tool on your assets folder:
- `goassets ./assets`
+	`goassets ./assets`
 
 This will generate a assets/assets.go file that contains all (zipped) assets and some helper structures to use them.
 
@@ -35,10 +35,11 @@ Import the assets subpackage and use the provided helper methods. Available meth
 ## Makefile Integration
 
 The following snippet might help a lot in a Makefile:
- `ASSETS_DIR := ./assets
-  ASSETS     := $(shell find $(ASSET_DIR) -type f | grep -v ".go$$")
-  $(ASSETS_DIR)/assets.go: $(ASSETS)
-          @goassets $(ASSETS_DIR) > /dev/null 2>&1`
+
+	ASSETS_DIR := ./assets
+	ASSETS     := $(shell find $(ASSET_DIR) -type f | grep -v ".go$$")
+	$(ASSETS_DIR)/assets.go: $(ASSETS)
+		@goassets $(ASSETS_DIR) > /dev/null 2>&1
 
 This will collect all available assets and add them as dependency to the assets.go file. The assets will only be built
 when necessary (i.e. let `make` do its magic).
