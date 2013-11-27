@@ -164,7 +164,7 @@ func (index *Index) Status() (status *IndexStatus, e error) {
 
 func (index *Index) Mapping() (i interface{}, e error) {
 	u := index.IndexUrl() + "/_mapping"
-	log.Printf("chgecking for url %s", u)
+	log.Printf("checking for url %s", u)
 	rsp, e := index.request("GET", u, i)
 	if e != nil {
 		return nil, e
