@@ -166,11 +166,10 @@ func (index *Index) Mapping() (i interface{}, e error) {
 	u := index.IndexUrl() + "/_mapping"
 	log.Printf("checking for url %s", u)
 	rsp, e := index.request("GET", u, i)
-	if e != nil {
-		return nil, e
-	}
-	if rsp.StatusCode == 404 {
+	if rsp != nil && rsp.StatusCode == 404 {
 		return nil, nil
+	} else if e != nil {
+		return nil, e
 	}
 	e = json.Unmarshal(rsp.Body, &i)
 	if e != nil {
