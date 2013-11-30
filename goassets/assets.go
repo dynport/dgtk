@@ -26,7 +26,7 @@ func (assets *Assets) Bytes() (b []byte, e error) {
 }
 
 func (assets *Assets) Build() error {
-	paths, e := filepath.Glob(assets.Path + "/*.*")
+	paths, e := filepath.Glob(assets.Path + "/*")
 	if e != nil {
 		return nil
 	}
