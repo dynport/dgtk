@@ -15,6 +15,7 @@ type SyslogLine struct {
 	Tag    string
 	Pid    int
 	fields []string
+	parsed bool
 }
 
 const timeLayout = "2006-01-02T15:04:05.000000-07:00"
@@ -23,6 +24,9 @@ const timeLayoutWithoutMicro = "2006-01-02T15:04:05-07:00"
 var TagRegexp = regexp.MustCompile("(.*?)\\[(\\d*)\\]")
 
 func (line *SyslogLine) Parse(raw string) (e error) {
+	if line.parsed {
+		return nil
+	}
 	line.Raw = raw
 	line.fields = strings.Fields(raw)
 	if len(line.fields) >= 3 {
@@ -46,6 +50,7 @@ func (line *SyslogLine) Parse(raw string) (e error) {
 			line.Tag = tag
 		}
 	}
+	line.parsed = true
 	return nil
 }
 
@@ -74,7 +79,7 @@ func (line *UnicornLine) Parse(raw string) error {
 }
 
 type NginxLine struct {
-	SyslogLine
+	*SyslogLine
 	Method        string
 	Status        string
 	Length        int
@@ -89,6 +94,9 @@ type NginxLine struct {
 var quotesRegexp = regexp.MustCompile(`(ua|uri|ref)="(.*?)"`)
 
 func (line *NginxLine) Parse(raw string) error {
+	if line.SyslogLine == nil {
+		line.SyslogLine = &SyslogLine{}
+	}
 	e := line.SyslogLine.Parse(raw)
 	if e != nil {
 		return e
