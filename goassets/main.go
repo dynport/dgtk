@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 )
 
@@ -13,13 +12,13 @@ func makeLineBuffer() []string {
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("no asset path provided")
+		logFatal("no asset path provided")
 	}
 	assets := &Assets{
 		Package: "assets",
 		Path:    os.Args[1],
 	}
 	if e := assets.Build(); e != nil {
-		log.Fatal(e.Error())
+		logFatal(e.Error())
 	}
 }

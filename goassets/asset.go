@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -26,7 +25,7 @@ func (asset *Asset) Load() error {
 	}
 	defer f.Close()
 	i, e := io.Copy(gz, f)
-	log.Printf("wrote %d bytes", i)
+	log("wrote %s (%d bytes)", asset.Path, i)
 	gz.Flush()
 	gz.Close()
 	if e != nil {

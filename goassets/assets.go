@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +30,6 @@ func (assets *Assets) Build() error {
 		return nil
 	}
 	for _, path := range paths {
-		log.Print("adding " + path)
 		if strings.HasSuffix(path, ".go") {
 			continue
 		}
@@ -39,7 +37,7 @@ func (assets *Assets) Build() error {
 			Path: path,
 		}
 		if e := asset.Load(); e != nil {
-			log.Fatal(e.Error())
+			logFatal(e.Error())
 		}
 		assets.Assets = append(assets.Assets, asset)
 	}
