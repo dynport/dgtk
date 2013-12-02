@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/dynport/dgtk/dockerclient/docker"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
