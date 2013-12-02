@@ -74,8 +74,13 @@ func (dh *DockerHost) AttachContainer(containerId string, w io.Writer) (e error)
 		scanner := bufio.NewScanner(rsp.Body)
 		for scanner.Scan() {
 			bytes := scanner.Bytes()
-			if e = sendLineToWriter(w, bytes); e != nil {
-				return e
+			i := 0
+			for i < len(bytes) {
+				n, e := w.Write(bytes[i:])
+				if e != nil {
+					return e
+				}
+				i += n
 			}
 		}
 	}

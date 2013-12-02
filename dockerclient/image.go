@@ -40,7 +40,7 @@ func (dh *DockerHost) ImageHistory(id string) (imageHistory *docker.ImageHistory
 
 // Create a new image from the given dockerfile. If name is non empty the new image is named accordingly. If a writer is
 // given it is used to send the docker output to.
-func (dh *DockerHost) BuildImage(dockerfile, tag string, w io.Writer) (imageId string, e error) {
+func (dh *DockerHost) BuildImage(dockerfile, tag string) (imageId string, e error) {
 	buf, e := dh.createDockerfileArchive(dockerfile)
 	if e != nil {
 		return
@@ -64,10 +64,7 @@ func (dh *DockerHost) BuildImage(dockerfile, tag string, w io.Writer) (imageId s
 	scanner := bufio.NewScanner(rsp.Body)
 	var last []byte
 	for scanner.Scan() {
-		last = scanner.Bytes()
-		if e = sendLineToWriter(w, last); e != nil {
-			return "", e
-		}
+		logger.Debug(scanner.Text())
 	}
 
 	s := imageIdRegexp.FindStringSubmatch(string(last))
@@ -136,7 +133,7 @@ func (dh *DockerHost) PullImage(name string) error {
 }
 
 // Push the given image to the registry. The name should be <registry>/<repository>.
-func (dh *DockerHost) PushImage(name string, w io.Writer) error {
+func (dh *DockerHost) PushImage(name string) error {
 	if name == "" {
 		return fmt.Errorf("no image name given")
 	}
@@ -159,14 +156,9 @@ func (dh *DockerHost) PushImage(name string, w io.Writer) error {
 		return fmt.Errorf("failed to push image:", rsp.Status)
 	}
 
-	if w != nil {
-		scanner := bufio.NewScanner(rsp.Body)
-		for scanner.Scan() {
-			bytes := scanner.Bytes()
-			if e = sendLineToWriter(w, bytes); e != nil {
-				return e
-			}
-		}
+	scanner := bufio.NewScanner(rsp.Body)
+	for scanner.Scan() {
+		logger.Debug(scanner.Text())
 	}
 	return nil
 }
