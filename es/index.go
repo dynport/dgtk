@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -228,7 +229,19 @@ func (index *Index) TypeUrl() string {
 		return base + "/" + index.Type
 	}
 	return ""
-	return ""
+}
+
+func (index *Index) DeleteByQuery(query string) error {
+	q := &url.Values{}
+	q.Add("q", query)
+	rsp, e := index.request("DELETE", index.TypeUrl()+"/_query?"+q.Encode(), nil)
+	if e != nil {
+		return e
+	}
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("error deleting with query: %s", rsp.Status)
+	}
+	return nil
 }
 
 func (index *Index) Search(req *Request) (rsp *Response, e error) {
