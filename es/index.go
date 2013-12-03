@@ -105,6 +105,33 @@ func (index *Index) EnqueueBulkIndex(key string, record interface{}) (bool, erro
 	return false, nil
 }
 
+func (index *Index) DeleteIndex() error {
+	req, e := http.NewRequest("DELETE", index.TypeUrl(), nil)
+	if e != nil {
+		return e
+	}
+	rsp, e := http.DefaultClient.Do(req)
+	if e != nil {
+		return e
+	}
+	defer rsp.Body.Close()
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("Error delting index at %s: %s", index.TypeUrl(), rsp.Status)
+	}
+	return nil
+}
+
+func (index *Index) Refresh() error {
+	rsp, e := index.request("POST", index.IndexUrl()+"/_refresh", nil)
+	if e != nil {
+		return e
+	}
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("Error refreshing index: %s", rsp.Status)
+	}
+	return nil
+}
+
 func (index *Index) RunBatchIndex() error {
 	started := time.Now()
 	buf := &bytes.Buffer{}
