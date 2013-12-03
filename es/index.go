@@ -134,6 +134,9 @@ func (index *Index) Refresh() error {
 }
 
 func (index *Index) RunBatchIndex() error {
+	if len(index.bulkIndexJobs) == 0 {
+		return nil
+	}
 	started := time.Now()
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
