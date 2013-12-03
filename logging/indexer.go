@@ -39,6 +39,7 @@ type Indexer struct {
 	QueueName          string
 	BatchSize          int
 	Ttl                int32
+	Debug              bool
 }
 
 type ElasticSearchIndexMapping map[string]map[string]map[string]es.DynamicTemplates
@@ -58,6 +59,16 @@ func (indexer *Indexer) Run() {
 		} else {
 			return
 		}
+	}
+}
+
+func (indexer *Indexer) NewEsIndex() *es.Index {
+	return &es.Index{
+		Host:      indexer.ElasticSearchHost,
+		Index:     indexer.ElasticSearchIndex,
+		Type:      indexer.ElasticSearchType,
+		BatchSize: indexer.BatchSize,
+		Debug:     indexer.Debug,
 	}
 }
 
@@ -94,27 +105,10 @@ func (indexer *Indexer) RunWithoutReconnect() error {
 	if e != nil {
 		return e
 	}
-	index := &es.Index{
-		Host:      indexer.ElasticSearchHost,
-		Index:     indexer.ElasticSearchIndex,
-		Type:      indexer.ElasticSearchType,
-		BatchSize: indexer.BatchSize,
-		Debug:     true,
-	}
-	mapping, e := index.Mapping()
+	index := indexer.NewEsIndex()
+	e = indexer.CreateMappingWhenNotExists(index)
 	if e != nil {
 		return e
-	}
-	if mapping == nil {
-		indexMapping := indexer.IndexMapping()
-		log("creating mapping %#v", indexMapping)
-		rsp, e := index.PutMapping(indexMapping)
-		if e != nil {
-			return e
-		}
-		log("created mapping %#v", string(rsp.Body))
-	} else {
-		log("%#v", mapping)
 	}
 	for del := range c {
 		raw := string(del.Body)
@@ -129,6 +123,25 @@ func (indexer *Indexer) RunWithoutReconnect() error {
 	}
 	index.RunBatchIndex()
 	log("finished")
+	return nil
+}
+
+func (indexer *Indexer) CreateMappingWhenNotExists(esIndex *es.Index) error {
+	mapping, e := esIndex.Mapping()
+	if e != nil {
+		return e
+	}
+	if mapping == nil {
+		indexMapping := indexer.IndexMapping()
+		log("creating mapping %#v", indexMapping)
+		rsp, e := esIndex.PutMapping(indexMapping)
+		if e != nil {
+			return e
+		}
+		log("created mapping %#v", string(rsp.Body))
+	} else {
+		log("mapping already exists!")
+	}
 	return nil
 }
 
