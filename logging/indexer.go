@@ -44,9 +44,9 @@ type Indexer struct {
 
 type ElasticSearchIndexMapping map[string]map[string]map[string]es.DynamicTemplates
 
-func (indexer *Indexer) IndexMapping() ElasticSearchIndexMapping {
+func (indexer *Indexer) IndexMapping(indexName string) ElasticSearchIndexMapping {
 	return ElasticSearchIndexMapping{
-		"mappings": {indexer.ElasticSearchType: {"dynamic_templates": allText}},
+		"mappings": {indexName: {"dynamic_templates": allText}},
 	}
 }
 
@@ -132,7 +132,10 @@ func (indexer *Indexer) CreateMappingWhenNotExists(esIndex *es.Index) error {
 		return e
 	}
 	if mapping == nil {
-		indexMapping := indexer.IndexMapping()
+		if esIndex.Type == "" {
+			return fmt.Errorf("type must be set for elastic search index")
+		}
+		indexMapping := indexer.IndexMapping(esIndex.Type)
 		log("creating mapping %#v", indexMapping)
 		rsp, e := esIndex.PutMapping(indexMapping)
 		if e != nil {
