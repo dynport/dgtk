@@ -228,10 +228,13 @@ func (index *Index) IndexUrl() string {
 }
 
 func (index *Index) TypeUrl() string {
-	if base := index.IndexUrl(); base != "" && index.Type != "" {
-		return base + "/" + index.Type
+	if index.Type == "" {
+		return index.IndexUrl()
+	} else if idx := index.IndexUrl(); idx != "" {
+		return idx + "/" + index.Type
+	} else {
+		return ""
 	}
-	return ""
 }
 
 func (index *Index) DeleteByQuery(query string) error {
