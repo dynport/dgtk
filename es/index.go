@@ -107,7 +107,7 @@ func (index *Index) EnqueueBulkIndex(key string, record interface{}) (bool, erro
 }
 
 func (index *Index) DeleteIndex() error {
-	req, e := http.NewRequest("DELETE", index.TypeUrl(), nil)
+	req, e := http.NewRequest("DELETE", index.IndexUrl(), nil)
 	if e != nil {
 		return e
 	}
