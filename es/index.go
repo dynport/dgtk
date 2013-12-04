@@ -193,6 +193,23 @@ func (index *Index) Status() (status *IndexStatus, e error) {
 	return status, e
 }
 
+func (index *Index) GlobalMapping() (m *Mapping, e error) {
+	m = &Mapping{}
+	u := index.BaseUrl() + "/_mapping"
+	log.Printf("checking for url %s", u)
+	rsp, e := index.request("GET", u, m)
+	if rsp != nil && rsp.StatusCode == 404 {
+		return nil, nil
+	} else if e != nil {
+		return nil, e
+	}
+	e = json.Unmarshal(rsp.Body, m)
+	if e != nil {
+		return nil, e
+	}
+	return m, nil
+}
+
 func (index *Index) Mapping() (i interface{}, e error) {
 	u := index.IndexUrl() + "/_mapping"
 	log.Printf("checking for url %s", u)
