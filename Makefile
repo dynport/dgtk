@@ -3,3 +3,8 @@ default:
 	go get github.com/dynport/dgtk/logging
 	go get github.com/dynport/dgtk/opentsdb
 	go get github.com/dynport/dgtk/es
+
+
+test:
+	go test -i ./...
+	go test -v ./...
