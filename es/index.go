@@ -301,6 +301,10 @@ func (index *Index) Post(u string, i interface{}) (*HttpResponse, error) {
 	return index.request("POST", u, i)
 }
 
+func (index *Index) PostObject(i interface{}) (*HttpResponse, error) {
+	return index.request("POST", index.TypeUrl(), i)
+}
+
 func (index *Index) PutObject(id string, i interface{}) (*HttpResponse, error) {
 	return index.request("PUT", index.TypeUrl()+"/"+id, i)
 }
