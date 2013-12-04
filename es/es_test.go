@@ -1,7 +1,6 @@
 package es
 
 import (
-	"github.com/dynport/dgtk/es"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
@@ -10,12 +9,14 @@ import (
 type TestLog struct {
 	Id      int
 	Tag     string
+	Host    string
 	Created string
+	Raw     string
 }
 
 var sleepFor = 2 * time.Second
 
-var index = es.Index{
+var index = &Index{
 	Host:  "127.0.0.1",
 	Port:  9200,
 	Index: "test",
@@ -47,7 +48,7 @@ func TestDeleteFromImage(t *testing.T) {
 	Convey("Delete from Index", t, func() {
 		So(setupIndex(), ShouldBeNil)
 		So(index.Refresh(), ShouldBeNil)
-		req := &es.Request{
+		req := &Request{
 			Size: 10,
 		}
 		rsp, e := index.Search(req)
