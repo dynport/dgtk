@@ -18,6 +18,44 @@ const (
 	OR  = "OR"
 )
 
+type Analysis struct {
+	Analyzer Analyzer `json:"analyzer"`
+}
+
+type Analyzer struct {
+	Default AnalyzerType `json:"default"`
+}
+
+type AnalyzerType struct {
+	Type string `json:"type"`
+}
+
+type IndexConfig struct {
+	Index IndexIndexConfig `json:"index"`
+}
+
+type IndexIndexConfig struct {
+	Analysis Analysis `json:"analysis"`
+}
+
+func KeywordIndex() IndexConfig {
+	return IndexConfig{
+		Index: IndexIndexConfig{
+			Analysis: Analysis{
+				Analyzer: Analyzer{
+					Default: AnalyzerType{
+						Type: "keyword",
+					},
+				},
+			},
+		},
+	}
+}
+
+func (index *Index) CreateIndex(config IndexConfig) (rsp *HttpResponse, e error) {
+	return index.request("PUT", index.IndexUrl(), config)
+}
+
 type Term map[string]interface{}
 
 type Terms map[string][]interface{}
