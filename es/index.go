@@ -128,6 +128,17 @@ type Index struct {
 	Debug         bool
 }
 
+func (index *Index) IndexExists() (exists bool, e error) {
+	if index.Index == "" {
+		return false, fmt.Errorf("no index set")
+	}
+	rsp, e := http.Get(index.IndexUrl() + "/_status")
+	if e != nil {
+		return false, e
+	}
+	return rsp.Status[0] == '2', nil
+}
+
 func (index *Index) EnqueueBulkIndex(key string, record interface{}) (bool, error) {
 	if index.BatchSize == 0 {
 		index.BatchSize = 100
