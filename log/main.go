@@ -13,5 +13,5 @@ func Info(format string, i ...interface{}) {
 }
 
 func Log(tag, format string, i ...interface{}) {
-	fmt.Printf(tag+": "+format+"\n", i...)
+	fmt.Printf(tag+" "+format+"\n", i...)
 }
