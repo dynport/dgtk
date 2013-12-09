@@ -19,9 +19,9 @@ func TestCreateIndex(t *testing.T) {
 		So(e, ShouldBeNil)
 		So(rsp, ShouldNotBeNil)
 
+		index.PostObject(&TestLog{Tag: "unicorn", Host: "he-host1", Raw: "that is a test"})
 		index.PostObject(&TestLog{Tag: "unicorn", Host: "he-host1"})
-		index.PostObject(&TestLog{Tag: "unicorn", Host: "he-host1"})
-		index.PostObject(&TestLog{Tag: "unicorn", Host: "he-host2"})
+		index.PostObject(&TestLog{Tag: "unicorn", Host: "he-host2", Raw: "this is a line"})
 		So(index.Refresh(), ShouldBeNil)
 
 		req := &Request{
@@ -45,5 +45,23 @@ func TestCreateIndex(t *testing.T) {
 		}
 		So(stats["he-host2"], ShouldEqual, 1)
 		So(stats["he-host1"], ShouldEqual, 2)
+
+		queryHost := map[string]string{
+			"that": "he-host1",
+			"this": "he-host2",
+		}
+
+		for query, host := range queryHost {
+			req = &Request{Size: 10}
+			req.Query = &Query{}
+			req.Query.QueryString = &QueryString{Query: query}
+
+			res, e = index.Search(req)
+			So(e, ShouldBeNil)
+			So(res.Hits.Total, ShouldEqual, 1)
+			So(len(res.Hits.Hits), ShouldEqual, 1)
+			So(res.Hits.Hits[0].Source["Host"], ShouldEqual, host)
+		}
+
 	})
 }

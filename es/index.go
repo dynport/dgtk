@@ -32,7 +32,8 @@ type Analyzer struct {
 }
 
 type AnalyzerType struct {
-	Type string `json:"type"`
+	Type      string `json:"type,omitempty"`
+	Tokenizer string `json:"tokenizer,omitempty"`
 }
 
 type IndexConfig struct {
@@ -49,7 +50,7 @@ func KeywordIndex() IndexConfig {
 			Analysis: Analysis{
 				Analyzer: Analyzer{
 					Default: AnalyzerType{
-						Type: "keyword",
+						Tokenizer: "whitespace",
 					},
 				},
 			},
