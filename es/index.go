@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,6 +16,12 @@ const (
 	AND = "AND"
 	OR  = "OR"
 )
+
+type Logger interface {
+	Debug(format string, i ...interface{})
+	Info(format string, i ...interface{})
+	Error(format string, i ...interface{})
+}
 
 type Analysis struct {
 	Analyzer Analyzer `json:"analyzer"`
@@ -126,6 +131,7 @@ type Index struct {
 	bulkIndexJobs []*BulkIndexJob
 	BatchSize     int
 	Debug         bool
+	Logger        Logger
 }
 
 func (index *Index) IndexExists() (exists bool, e error) {
@@ -209,9 +215,7 @@ func (index *Index) RunBatchIndex() error {
 		return fmt.Errorf("Error sending bulk request: %s %s", rsp.Status, string(b))
 	}
 	perSecond := float64(len(index.bulkIndexJobs)) / time.Now().Sub(started).Seconds()
-	if index.Debug {
-		fmt.Printf("indexed %d, %.1f/second\n", len(index.bulkIndexJobs), perSecond)
-	}
+	index.LogDebug("indexed %d, %.1f/second\n", len(index.bulkIndexJobs), perSecond)
 	index.ResetQueue()
 	return nil
 }
@@ -242,10 +246,22 @@ func (index *Index) Status() (status *IndexStatus, e error) {
 	return status, e
 }
 
+func (index *Index) LogDebug(format string, i ...interface{}) {
+	if index.Logger != nil {
+		index.Logger.Debug(format, i...)
+	}
+}
+
+func (index *Index) LogInfo(format string, i ...interface{}) {
+	if index.Logger != nil {
+		index.Logger.Info(format, i...)
+	}
+}
+
 func (index *Index) GlobalMapping() (m *Mapping, e error) {
 	m = &Mapping{}
 	u := index.BaseUrl() + "/_mapping"
-	log.Printf("checking for url %s", u)
+	index.LogInfo("checking for url %s", u)
 	rsp, e := index.request("GET", u, m)
 	if rsp != nil && rsp.StatusCode == 404 {
 		return nil, nil
@@ -261,7 +277,7 @@ func (index *Index) GlobalMapping() (m *Mapping, e error) {
 
 func (index *Index) Mapping() (i interface{}, e error) {
 	u := index.IndexUrl() + "/_mapping"
-	log.Printf("checking for url %s", u)
+	index.LogInfo("checking for url %s", u)
 	rsp, e := index.request("GET", u, i)
 	if rsp != nil && rsp.StatusCode == 404 {
 		return nil, nil
