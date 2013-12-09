@@ -9,17 +9,20 @@ import (
 )
 
 type SyslogLine struct {
-	Raw    string
-	Time   time.Time
-	Host   string
-	Tag    string
-	Pid    int
-	fields []string
-	parsed bool
+	Raw      string
+	Time     time.Time
+	Host     string
+	Tag      string
+	Severity string
+	Pid      int
+	fields   []string
+	parsed   bool
 }
 
-const timeLayout = "2006-01-02T15:04:05.000000-07:00"
-const timeLayoutWithoutMicro = "2006-01-02T15:04:05-07:00"
+const (
+	timeLayout             = "2006-01-02T15:04:05.000000-07:00"
+	timeLayoutWithoutMicro = "2006-01-02T15:04:05-07:00"
+)
 
 var TagRegexp = regexp.MustCompile("(.*?)\\[(\\d*)\\]")
 
@@ -38,20 +41,41 @@ func (line *SyslogLine) Parse(raw string) (e error) {
 			}
 		}
 		line.Host = line.fields[1]
-		chunks := TagRegexp.FindStringSubmatch(line.fields[2])
-		if len(chunks) > 2 {
-			line.Tag = chunks[1]
-			line.Pid, _ = strconv.Atoi(chunks[2])
-		} else {
-			tag := line.fields[2]
-			if tag[len(tag)-1] == ':' {
-				tag = tag[0 : len(tag)-1]
-			}
-			line.Tag = tag
-		}
+		line.Tag, line.Severity, line.Pid = parseTag(line.fields[2])
 	}
 	line.parsed = true
 	return nil
+}
+
+func parseTag(raw string) (tag, severity string, pid int) {
+	tagAndSeverity, pid := splitTagAndPid(raw)
+	tag, severity = splitTagAndSeverity(tagAndSeverity)
+	return tag, severity, pid
+}
+
+func splitTagAndSeverity(raw string) (tag, severity string) {
+	tag = raw
+	parts := strings.Split(raw, ".")
+	if len(parts) == 2 {
+		tag, severity = parts[0], parts[1]
+	} else {
+		tag = raw
+	}
+	return tag, severity
+}
+
+func splitTagAndPid(raw string) (tag string, pid int) {
+	tag = raw
+	chunks := TagRegexp.FindStringSubmatch(raw)
+	if len(chunks) > 2 {
+		tag = chunks[1]
+		pid, _ = strconv.Atoi(chunks[2])
+	} else {
+		if tag[len(tag)-1] == ':' {
+			tag = tag[0 : len(tag)-1]
+		}
+	}
+	return tag, pid
 }
 
 var UUIDRegexp = regexp.MustCompile("([a-z0-9\\-]{36})")
