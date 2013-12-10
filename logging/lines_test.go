@@ -12,17 +12,49 @@ const (
 
 	HAPROXY_LINE = `2013-11-09T12:00:00+00:00 192.168.0.6 haproxy[23201]: 192.168.0.37:54273 [09/Nov/2013:11:59:59.676] in-ff ff/cnc-a6ce4d77:ecb880d6f772:c4093e8b1754 1/2/3/392/395 200 74674 - - ---- 2/4/6/7/8 9/7 "GET /api/v1/categories/3989/photos?param=true&page=1&limit=24 HTTP/1.0"`
 
-	LINE_WITH_SEVERITY = `2013-12-09T09:59:49.290815+00:00 lisa-he-179584 metrix.notice[2835]: net.ip.IncomingPacketsDelivered 1386583189 797103131 host=lisa-he-179584`
+	LINE_WITH_SEVERITY        = `2013-12-09T09:59:49.290815+00:00 lisa-he-179584 metrix.notice[2835]: net.ip.IncomingPacketsDelivered 1386583189 797103131 host=lisa-he-179584`
+	LINE_WITH_KEY_VALUE_PAIRS = `2013-12-09T14:19:14.575268+01:00 some.host nginx.notice[]: some.ip - host=phraseapp.com method=GET status=200 length=11928 pid=24969 rev=db7b58fa06cc uuid=56be52ae-7cd7-4a9e-b7ce-4a55074976ad action=translations#index etag=179d6a6dccacc3116cf3beb49187ff3d rack=2.120354 redis=0.000666/1 db=1.001724/240 solr=0.147277/23 db_cache=0.131241/473 total=2.235 upstream_time=2.235 ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36" uri="/projects/phraseapp-demo-some-id/locales/de/translations" ref="https://phraseapp.com/en/account/login"`
 )
+
+func TestLineTags(t *testing.T) {
+	line := &SyslogLine{}
+	Convey("Line Tags", t, func() {
+		So(line.Parse(LINE_WITH_KEY_VALUE_PAIRS), ShouldBeNil)
+		tags := line.Tags()
+		So(len(tags), ShouldBeGreaterThan, 1)
+		So(tags["length"], ShouldEqual, 11928)
+		So(tags["solr_time"], ShouldEqual, 0.147277)
+		So(tags["solr_calls"], ShouldEqual, 23)
+
+		So(tags["redis_time"], ShouldEqual, 0.000666)
+		So(tags["redis_calls"], ShouldEqual, 1)
+		So(tags["ua"], ShouldEqual, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36")
+		So(tags["uri"], ShouldEqual, `/projects/phraseapp-demo-some-id/locales/de/translations`)
+
+		tags = parseTags(HAPROXY_LINE)
+		So(len(tags), ShouldEqual, 0)
+	})
+
+	Convey("parseTagValue", t, func() {
+		m := map[string]interface{}{
+			"200":   200,
+			"2.235": 2.235,
+			"test":  "test",
+		}
+		for from, to := range m {
+			So(parseTagValue(from), ShouldEqual, to)
+		}
+	})
+}
 
 func TestParseTag(t *testing.T) {
 	Convey("parseTags", t, func() {
 		So(1, ShouldEqual, 1)
 		tags := map[string]SyslogLine{
-			"metrix":      {Tag: "metrix"},
-			"metrix.info": {Tag: "metrix", Severity: "info"},
+			"metrix":            {Tag: "metrix"},
+			"metrix.info":       {Tag: "metrix", Severity: "info"},
 			"metrix.info[1234]": {Tag: "metrix", Severity: "info", Pid: 1234},
-			"metrix.info[]:": {Tag: "metrix", Severity: "info", Pid: 0},
+			"metrix.info[]:":    {Tag: "metrix", Severity: "info", Pid: 0},
 		}
 		for raw, line := range tags {
 			tag, severity, pid := parseTag(raw)

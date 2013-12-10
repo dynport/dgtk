@@ -9,14 +9,86 @@ import (
 )
 
 type SyslogLine struct {
-	Raw      string
-	Time     time.Time
-	Host     string
-	Tag      string
-	Severity string
-	Pid      int
-	fields   []string
-	parsed   bool
+	Raw        string
+	Time       time.Time
+	Host       string
+	Tag        string
+	Severity   string
+	Pid        int
+	fields     []string
+	parsed     bool
+	tags       map[string]interface{}
+	tagsParsed bool
+}
+
+var validKeyRegexp = regexp.MustCompile("(?i)^[a-z]+$")
+var callsRegexp = regexp.MustCompile("^([0-9.]+)\\/([0-9]+)$")
+
+func removeQuotes(raw string) string {
+	if strings.HasPrefix(raw, `"`) && strings.HasSuffix(raw, `"`) {
+		return raw[1 : len(raw)-1]
+	}
+	return raw
+}
+
+func parseTags(raw string) map[string]interface{} {
+	fields := strings.Fields(raw)
+	inQuotes := false
+	currentKey := ""
+	valueParts := []string{}
+	t := map[string]interface{}{}
+	for _, field := range fields {
+		if inQuotes {
+			valueParts = append(valueParts, field)
+			if strings.Contains(field, `"`) {
+				inQuotes = false
+				v := strings.Join(valueParts, " ")
+				t[currentKey] = removeQuotes(v)
+			}
+		} else {
+			kv := strings.SplitN(field, "=", 2)
+			if len(kv) == 2 && validKeyRegexp.MatchString(kv[0]) {
+				currentKey = kv[0]
+				value := kv[1]
+				if strings.Contains(value, `"`) && !strings.HasSuffix(value, `"`) {
+					valueParts = []string{value}
+					inQuotes = true
+				} else if value != "-" {
+					m := callsRegexp.FindStringSubmatch(value)
+					if len(m) == 3 {
+						totalTime, e := strconv.ParseFloat(m[1], 64)
+						if e == nil {
+							calls, e := strconv.ParseInt(m[2], 10, 64)
+							if e == nil {
+								t[currentKey+"_time"] = totalTime
+								t[currentKey+"_calls"] = calls
+							}
+						}
+					} else {
+						t[currentKey] = parseTagValue(value)
+						currentKey = ""
+					}
+				}
+			}
+		}
+	}
+	return t
+}
+
+func (line *SyslogLine) Tags() (t map[string]interface{}) {
+	if !line.tagsParsed {
+		line.tags = parseTags(line.Raw)
+	}
+	return line.tags
+}
+
+func parseTagValue(raw string) interface{} {
+	if i, e := strconv.ParseInt(raw, 10, 64); e == nil {
+		return i
+	} else if f, e := strconv.ParseFloat(raw, 64); e == nil {
+		return f
+	}
+	return removeQuotes(raw)
 }
 
 const (
