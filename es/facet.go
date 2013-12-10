@@ -12,7 +12,7 @@ type Facet struct {
 	Terms          *FacetTerms `json:"terms,omitempty"`
 	*Entries       `json:"entries,omitempty"`
 	*DateHistogram `json:"date_histogram,omitempty"`
-	Statistical    *StatisticalFacet
+	Statistical    *StatisticalFacet `json:"statistical,omitempty"`
 }
 
 type FacetTerms struct {
