@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/dynport/dgtk/log"
 	"io"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 
 type Asset struct {
 	Path  string
+	Key   string
 	Name  string
 	Bytes string
 }
@@ -25,7 +27,7 @@ func (asset *Asset) Load() error {
 	}
 	defer f.Close()
 	i, e := io.Copy(gz, f)
-	log("wrote %s (%d bytes)", asset.Path, i)
+	log.Debug("loading %s (%d bytes)", asset.Path, i)
 	gz.Flush()
 	gz.Close()
 	if e != nil {
@@ -35,6 +37,7 @@ func (asset *Asset) Load() error {
 	for _, b := range buf.Bytes() {
 		list = append(list, fmt.Sprintf("0x%x", b))
 	}
+	log.Debug("length of list is %d", len(list))
 	buffer := makeLineBuffer()
 	asset.Name = path.Base(asset.Path)
 	for _, b := range list {
@@ -47,5 +50,6 @@ func (asset *Asset) Load() error {
 	if len(buffer) > 0 {
 		asset.Bytes += strings.Join(buffer, ",") + ",\n"
 	}
+	log.Debug("asset has %d bytes", len(asset.Bytes))
 	return nil
 }

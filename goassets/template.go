@@ -61,7 +61,7 @@ func Get(key string) ([]byte, error) {
 }
 
 func init() {
-	{{ range .Assets }}assets["{{ .Name }}"] = []byte{
+	{{ range .Assets }}assets["{{ .Key }}"] = []byte{
 {{ .Bytes }}
 	}
 	{{ end }}
