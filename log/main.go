@@ -5,6 +5,14 @@ import (
 	"os"
 )
 
+var debug = os.Getenv("DEBUG") == "true"
+
+func Debug(format string, i ...interface{}) {
+	if debug {
+		Log("DEBUG", format, i...)
+	}
+}
+
 func Error(format string, i ...interface{}) {
 	Log("ERROR", format, i...)
 }
