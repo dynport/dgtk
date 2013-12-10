@@ -1,6 +1,7 @@
 package es
 
 type Request struct {
+	Index  string `json:"-"`
 	Query  *Query `json:"query,omitempty"`
 	Size   int    `json:"size"`
 	Facets `json:"facets,omitempty"`

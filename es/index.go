@@ -121,18 +121,20 @@ var query = Query{
 
 type BulkIndexJob struct {
 	Key    string
+	Type   string
+	Index  string
 	Record interface{}
 }
 
 type Index struct {
-	Host          string
-	Port          int
-	Index         string
-	Type          string
-	bulkIndexJobs []*BulkIndexJob
-	BatchSize     int
-	Debug         bool
-	Logger        Logger
+	Host      string
+	Port      int
+	Index     string
+	Type      string
+	batchDocs []*Doc
+	BatchSize int
+	Debug     bool
+	Logger    Logger
 }
 
 func (index *Index) IndexExists() (exists bool, e error) {
@@ -146,20 +148,28 @@ func (index *Index) IndexExists() (exists bool, e error) {
 	return rsp.Status[0] == '2', nil
 }
 
-func (index *Index) EnqueueBulkIndex(key string, record interface{}) (bool, error) {
+func (index *Index) EnqueueDoc(doc *Doc) (indexed bool, e error) {
 	if index.BatchSize == 0 {
 		index.BatchSize = 100
 	}
-	if cap(index.bulkIndexJobs) == 0 {
-		index.ResetQueue()
+	if cap(index.batchDocs) == 0 {
+		index.ResetBatch()
 	}
-	index.bulkIndexJobs = append(index.bulkIndexJobs, &BulkIndexJob{
-		Key: key, Record: record,
-	})
-	if len(index.bulkIndexJobs) >= index.BatchSize {
+	index.batchDocs = append(index.batchDocs, doc)
+	if len(index.batchDocs) >= index.BatchSize {
 		return true, index.RunBatchIndex()
 	}
 	return false, nil
+}
+
+func (index *Index) ResetBatch() {
+	index.batchDocs = make([]*Doc, 0, index.BatchSize)
+}
+
+func (index *Index) EnqueueBulkIndex(key string, record interface{}) (bool, error) {
+	return index.EnqueueDoc(&Doc{
+		Id: key, Source: record,
+	})
 }
 
 func (index *Index) DeleteIndex() error {
@@ -190,21 +200,23 @@ func (index *Index) Refresh() error {
 }
 
 func (index *Index) RunBatchIndex() error {
-	if len(index.bulkIndexJobs) == 0 {
+	if len(index.batchDocs) == 0 {
 		return nil
 	}
 	started := time.Now()
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
-	for _, r := range index.bulkIndexJobs {
+	for _, doc := range index.batchDocs {
+		if doc.Index == "" {
+			doc.Index = index.Index
+		}
+		if doc.Type == "" {
+			doc.Type = index.Type
+		}
 		enc.Encode(map[string]map[string]string{
-			"index": map[string]string{
-				"_index": index.Index,
-				"_type":  index.Type,
-				"_id":    r.Key,
-			},
+			"index": doc.IndexAttributes(),
 		})
-		enc.Encode(r.Record)
+		enc.Encode(doc.Source)
 	}
 	rsp, e := http.Post(index.BaseUrl()+"/_bulk", "application/json", buf)
 	if e != nil {
@@ -215,14 +227,10 @@ func (index *Index) RunBatchIndex() error {
 	if rsp.Status[0] != OK {
 		return fmt.Errorf("Error sending bulk request: %s %s", rsp.Status, string(b))
 	}
-	perSecond := float64(len(index.bulkIndexJobs)) / time.Now().Sub(started).Seconds()
-	index.LogDebug("indexed %d, %.1f/second\n", len(index.bulkIndexJobs), perSecond)
-	index.ResetQueue()
+	perSecond := float64(len(index.batchDocs)) / time.Now().Sub(started).Seconds()
+	index.LogDebug("indexed %d, %.1f/second\n", len(index.batchDocs), perSecond)
+	index.ResetBatch()
 	return nil
-}
-
-func (index *Index) ResetQueue() {
-	index.bulkIndexJobs = make([]*BulkIndexJob, 0, index.BatchSize)
 }
 
 type IndexStatus struct {
@@ -304,10 +312,11 @@ func (index *Index) BaseUrl() string {
 }
 
 func (index *Index) IndexUrl() string {
-	if index.Index != "" {
+	if index.Index == "" {
+		return index.BaseUrl()
+	} else {
 		return index.BaseUrl() + "/" + index.Index
 	}
-	return ""
 }
 
 func (index *Index) TypeUrl() string {
