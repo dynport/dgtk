@@ -343,20 +343,23 @@ func (index *Index) DeleteByQuery(query string) error {
 }
 
 func (index *Index) Search(req *Request) (rsp *Response, e error) {
-	writer := &bytes.Buffer{}
-	js := json.NewEncoder(writer)
-	e = js.Encode(req)
-	if e != nil {
-		return nil, e
-	}
 	u := index.TypeUrl()
 	if !strings.HasSuffix(u, "/") {
 		u += "/"
 	}
 	u += "/_search"
-	httpRequest, e := http.NewRequest("POST", u, writer)
+	httpRequest, e := http.NewRequest("POST", u, nil)
 	if e != nil {
 		return nil, e
+	}
+	if req != nil {
+		writer := &bytes.Buffer{}
+		js := json.NewEncoder(writer)
+		e = js.Encode(req)
+		if e != nil {
+			return nil, e
+		}
+		httpRequest.Body = ioutil.NopCloser(writer)
 	}
 	httpResponse, e := http.DefaultClient.Do(httpRequest)
 	if e != nil {
