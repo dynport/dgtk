@@ -199,14 +199,10 @@ func (index *Index) Refresh() error {
 	return nil
 }
 
-func (index *Index) RunBatchIndex() error {
-	if len(index.batchDocs) == 0 {
-		return nil
-	}
-	started := time.Now()
+func (index *Index) IndexDocs(docs []*Doc) error {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
-	for _, doc := range index.batchDocs {
+	for _, doc := range docs {
 		if doc.Index == "" {
 			doc.Index = index.Index
 		}
@@ -226,6 +222,18 @@ func (index *Index) RunBatchIndex() error {
 	b, _ := ioutil.ReadAll(rsp.Body)
 	if rsp.Status[0] != OK {
 		return fmt.Errorf("Error sending bulk request: %s %s", rsp.Status, string(b))
+	}
+	return nil
+}
+
+func (index *Index) RunBatchIndex() error {
+	if len(index.batchDocs) == 0 {
+		return nil
+	}
+	started := time.Now()
+	e := index.IndexDocs(index.batchDocs)
+	if e != nil {
+		return e
 	}
 	perSecond := float64(len(index.batchDocs)) / time.Now().Sub(started).Seconds()
 	index.LogDebug("indexed %d, %.1f/second\n", len(index.batchDocs), perSecond)
