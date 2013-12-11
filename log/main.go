@@ -6,6 +6,7 @@ import (
 )
 
 var debug = os.Getenv("DEBUG") == "true"
+var PrintLogLevel bool
 
 func Debug(format string, i ...interface{}) {
 	if debug {
@@ -27,5 +28,8 @@ func Info(format string, i ...interface{}) {
 }
 
 func Log(tag, format string, i ...interface{}) {
-	fmt.Printf(tag+" "+format+"\n", i...)
+	if PrintLogLevel {
+		format = tag + " " + format
+	}
+	fmt.Printf(format+"\n", i...)
 }
