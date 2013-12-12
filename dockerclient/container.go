@@ -42,7 +42,7 @@ func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.Host
 	if hostConfig == nil {
 		hostConfig = &docker.HostConfig{}
 	}
-	logger.Infof("starting container with binds %+v", hostConfig)
+	dh.Logger.Infof("starting container with binds %+v", hostConfig)
 	body, rsp, e := dh.postJSON(dh.url()+"/containers/"+containerId+"/start", hostConfig, nil)
 	if e != nil {
 		return
@@ -50,7 +50,7 @@ func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.Host
 	if rsp.StatusCode < 200 || rsp.StatusCode >= 300 {
 		e = errors.New(fmt.Sprintf("error starting container %s: status=%s, response=%s", containerId, rsp.StatusCode, string(body)))
 	} else {
-		logger.Infof("started container %s", containerId)
+		dh.Logger.Infof("started container %s", containerId)
 	}
 	return
 }

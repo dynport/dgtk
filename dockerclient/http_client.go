@@ -66,7 +66,7 @@ func (dh *DockerHost) get(url string) (content []byte, rsp *http.Response, e err
 	defer rsp.Body.Close()
 
 	content, e = ioutil.ReadAll(rsp.Body)
-	logger.Debugf("fetched %s in %.06f", url, time.Now().Sub(started).Seconds())
+	dh.Logger.Debugf("fetched %s in %.06f", url, time.Now().Sub(started).Seconds())
 	return content, rsp, e
 }
 

@@ -8,18 +8,18 @@ import (
 	"net/http"
 )
 
-var logger = gologger.NewFromEnv()
-
 type DockerHost struct {
 	host       string
 	port       int
 	Registry   string       // Registry to use with this docker host.
 	httpClient *http.Client // http client used to send requests to the host.
+
+	Logger *gologger.Logger
 }
 
 // Create a new connection to a docker host reachable at the given host and port.
 func New(host string, port int) *DockerHost {
-	return &DockerHost{host: host, port: port, httpClient: &http.Client{}}
+	return &DockerHost{host: host, port: port, httpClient: &http.Client{}, Logger: gologger.NewFromEnv()}
 }
 
 // Create a new connection to a docker host using a SSH tunnel at the given user and host. This is useful as making the
@@ -31,7 +31,7 @@ func NewViaTunnel(host, user string) (*DockerHost, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &DockerHost{httpClient: hc}, nil
+	return &DockerHost{httpClient: hc, Logger: gologger.NewFromEnv()}, nil
 }
 
 func (dh *DockerHost) url() string {

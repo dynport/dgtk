@@ -57,18 +57,19 @@ func (dh *DockerHost) BuildImage(dockerfile, tag string) (imageId string, e erro
 	defer rsp.Body.Close()
 
 	if !success(rsp) {
-		return "", fmt.Errorf("failed to send command to '%s': %s", url, rsp.Status)
+		return "", fmt.Errorf("failed to send command to %q: %s", url, rsp.Status)
 	}
 
 	scanner := bufio.NewScanner(rsp.Body)
-	var last []byte
+	var last string
 	for scanner.Scan() {
-		logger.Debug(scanner.Text())
+		last = scanner.Text()
+		dh.Logger.Debug(last)
 	}
 
 	s := imageIdRegexp.FindStringSubmatch(string(last))
 	if len(s) != 2 {
-		return "", fmt.Errorf("unable to extract image id from response")
+		return "", fmt.Errorf("unable to extract image id from response: %q", last)
 	}
 	imageId = s[1]
 	return imageId, nil
@@ -141,7 +142,7 @@ func (dh *DockerHost) PushImage(name string) error {
 		return fmt.Errorf("no registry given")
 	}
 
-	logger.Infof("pushing image %s to registry %s", name, registry)
+	dh.Logger.Infof("pushing image %s to registry %s", name, registry)
 	buf := &bytes.Buffer{}
 	buf.WriteString(FAKE_AUTH)
 	url := dh.url() + "/images/" + name + "/push?registry=" + registry
@@ -152,12 +153,11 @@ func (dh *DockerHost) PushImage(name string) error {
 	}
 	defer rsp.Body.Close()
 	if !success(rsp) {
+		scanner := bufio.NewScanner(rsp.Body)
+		for scanner.Scan() {
+			dh.Logger.Debug(scanner.Text())
+		}
 		return fmt.Errorf("failed to push image:", rsp.Status)
-	}
-
-	scanner := bufio.NewScanner(rsp.Body)
-	for scanner.Scan() {
-		logger.Debug(scanner.Text())
 	}
 	return nil
 }
@@ -186,7 +186,7 @@ func (dh *DockerHost) DeleteImage(name string) error {
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
-		logger.Debug(line)
+		dh.Logger.Debug(line)
 	}
 
 	return nil
@@ -211,17 +211,17 @@ func (self *DockerHost) createDockerfileArchive(dockerfile string) (buf *bytes.B
 
 func (dh *DockerHost) waitForTag(repository, tag string, timeout int) error {
 	for {
-		logger.Debug("waiting for tag", tag)
+		dh.Logger.Debug("waiting for tag", tag)
 		imageDetails, e := dh.ImageDetails(repository + ":" + tag)
 		if e != nil {
 			if e.Error() == "resource not found" {
-				logger.Debug("got not found, waiting")
+				dh.Logger.Debug("got not found, waiting")
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			return e
 		}
-		logger.Debug("got image details:", imageDetails)
+		dh.Logger.Debug("got image details:", imageDetails)
 		return nil
 	}
 }
