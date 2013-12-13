@@ -50,7 +50,6 @@ func (pubsub *PubSub) SubscribersCount() int {
 // implement me
 // }
 
-func (pubsub *PubSub) Subscribe(patten string, c chan *Message) chan *Message {
+func (pubsub *PubSub) Subscribe(patten string, c chan *Message) {
 	pubsub.subscribers = append(pubsub.subscribers, c)
-	return c
 }
