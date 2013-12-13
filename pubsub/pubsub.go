@@ -2,7 +2,6 @@ package pubsub
 
 import (
 	"fmt"
-	"time"
 )
 
 type PubSub struct {
@@ -10,24 +9,8 @@ type PubSub struct {
 	Stats
 }
 
-func cloneMessage(from *Message) *Message {
-	m := &Message{}
-	if from != nil {
-		m.CreatedAt = from.CreatedAt
-		m.Duration = from.Duration
-		m.Level = from.Level
-		m.Payload = from.Payload
-	}
-	if m.CreatedAt.IsZero() {
-		m.CreatedAt = time.Now()
-	}
-	return m
-}
-
-func (pubsub *PubSub) Publish(key, messageText string, message *Message) error {
-	m := cloneMessage(message)
-	m.Key = key
-	m.Message = messageText
+func (pubsub *PubSub) Publish(key string, payload interface{}) error {
+	m := NewMessage(key, payload)
 	pubsub.Stats.MessageReceived()
 	var e error
 	for _, s := range pubsub.subscribers {
