@@ -50,6 +50,7 @@ func (pubsub *PubSub) SubscribersCount() int {
 // implement me
 // }
 
+// pattern will be eventually used in the future
 func (pubsub *PubSub) Subscribe(patten string, c chan *Message) {
 	pubsub.subscribers = append(pubsub.subscribers, c)
 }
