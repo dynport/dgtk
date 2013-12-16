@@ -24,6 +24,14 @@ func (dh *DockerHost) Container(containerId string) (containerInfo *docker.Conta
 // For the given image name and the given container configuration, create a container. If the image name deosn't contain
 // a tag "latest" is used by default.
 func (dh *DockerHost) CreateContainer(imageName string, options *docker.ContainerConfig) (containerId string, e error) {
+	// Verify image available on host.
+	_, e = dh.ImageHistory(imageName)
+	if e != nil && e.Error() == "resource not found" {
+		if e = dh.PullImage(imageName); e != nil {
+			return "", e
+		}
+	}
+
 	if options == nil {
 		options = &docker.ContainerConfig{}
 	}
