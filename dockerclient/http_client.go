@@ -9,20 +9,28 @@ import (
 	"time"
 )
 
-func (dh *DockerHost) post(url string) (rsp *http.Response, e error) {
-	rsp, e = dh.httpClient.Post(url, "", nil)
-	if e == nil && !success(rsp) {
-		e = fmt.Errorf("POST request to '%s' failed", url)
+func handlePostResult(rsp *http.Response, err error) (*http.Response, error) {
+	var e error
+	if err == nil && !success(rsp) {
+		content := ""
+		if rsp.Body != nil {
+			defer rsp.Body.Close()
+			byteContent, e := ioutil.ReadAll(rsp.Body)
+			if e == nil {
+				content = string(byteContent)
+			}
+		}
+		e = fmt.Errorf("POST request to %q failed (%d): %s", rsp.Request.URL.String(), rsp.StatusCode, content)
 	}
 	return rsp, e
 }
 
+func (dh *DockerHost) post(url string) (rsp *http.Response, e error) {
+	return handlePostResult(dh.httpClient.Post(url, "", nil))
+}
+
 func (dh *DockerHost) postWithBuffer(url string, buf *bytes.Buffer) (rsp *http.Response, e error) {
-	rsp, e = dh.httpClient.Post(url, "", buf)
-	if e == nil && !success(rsp) {
-		e = fmt.Errorf("POST request to '%s' failed", url)
-	}
-	return rsp, e
+	return handlePostResult(dh.httpClient.Post(url, "", buf))
 }
 
 func (dh *DockerHost) postJSON(url string, input interface{}, output interface{}) (content []byte, rsp *http.Response, e error) {
@@ -35,16 +43,12 @@ func (dh *DockerHost) postJSON(url string, input interface{}, output interface{}
 		buf.Write(json)
 	}
 
-	rsp, e = dh.httpClient.Post(url, "application/json", buf)
+	rsp, e = handlePostResult(dh.httpClient.Post(url, "application/json", buf))
 	if e != nil {
 		return nil, rsp, e
 	}
 	defer rsp.Body.Close()
 	content, e = ioutil.ReadAll(rsp.Body)
-
-	if !success(rsp) {
-		return content, rsp, fmt.Errorf("request failed: %d", rsp.StatusCode)
-	}
 
 	if output != nil {
 		e = json.Unmarshal(content, output)
