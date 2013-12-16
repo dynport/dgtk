@@ -2,38 +2,56 @@ package pubsub
 
 import (
 	"fmt"
+	"reflect"
 )
 
+func New() *PubSub {
+	return &PubSub{}
+}
+
 type PubSub struct {
-	subscribers []chan *Message
+	subscriptions []*Subscription
 	Stats
 }
 
-func (pubsub *PubSub) Publish(key string, payload interface{}) error {
-	m := NewMessage(key, payload)
+func (pubsub *PubSub) Publish(i interface{}) error {
 	pubsub.Stats.MessageReceived()
 	var e error
-	for _, s := range pubsub.subscribers {
-		select {
-		case s <- m:
-			pubsub.Stats.MessageDispatched()
-		default:
-			e = fmt.Errorf("unable to publish to %v", s)
+	value := reflect.ValueOf(i)
+	for _, s := range pubsub.subscriptions {
+		if s.Matches(value) {
+			select {
+			case s.buffer <- value:
+				pubsub.Stats.MessageDispatched()
+			default:
+				e = fmt.Errorf("unable to publish to %v", s)
+			}
 		}
 	}
 	return e
 }
 
+func (pubsub *PubSub) Subscribe(i interface{}) *Subscription {
+	value := reflect.ValueOf(i)
+	type_ := reflect.TypeOf(i)
+	if type_.Kind() != reflect.Func || type_.NumIn() != 1 {
+		panic("you must provide a callback with exactly one argument like func(m *Message) {}")
+	}
+
+	s := &Subscription{
+		callback: value,
+		type_:    type_.In(0),
+	}
+	pubsub.subscriptions = append(pubsub.subscriptions, s)
+	s.start()
+	return s
+}
+
 func (pubsub *PubSub) SubscribersCount() int {
-	return len(pubsub.subscribers)
+	return len(pubsub.subscriptions)
 }
 
 //  could not be bother to fight with locking just now
-// func (pubsub *PubSub) Unsubscribe(c chan *Message) {
+// func (pubsub *PubSub) Unsubscribe(s *Subscription) {
 // implement me
 // }
-
-// pattern will be eventually used in the future
-func (pubsub *PubSub) Subscribe(patten string, c chan *Message) {
-	pubsub.subscribers = append(pubsub.subscribers, c)
-}

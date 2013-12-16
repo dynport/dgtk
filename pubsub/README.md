@@ -1,7 +1,7 @@
 # PubSub
 
 ## Usage
-      
+
     package main
 
     import (
@@ -9,19 +9,29 @@
       "log"
     )
 
+    func init() {
+      log.SetFlags(0)
+    }
+
+    type User struct {
+      name string
+    }
+
     func main() {
-      s := &pubsub.PubSub{}
+      ps := pubsub.New()
+      stringSubscription := ps.Subscribe(func(m string) {
+        log.Printf("got string %q", m)
+      })
+      defer stringSubscription.Close()
 
-      // consumers are responsible for providing channels
-      // in that case the consumer would buffer 10 messages
-      // the pubsub publisher drops messages when consumers are busy
-      c := make(chan *pubsub.Message, 10)
+      userSubscription := ps.Subscribe(func(u *User) {
+        log.Printf("got user %+v", u)
+      })
+      defer userSubscription.Close()
 
-      s.Subscribe("*", c) // the pattern is not used at the moment
-      s.Publish("hello", nil) // without payload
-      s.Publish("hello", "world")
-      close(c)
-      for m := range c {
-        log.Printf("got message %+v", m)
-      }
+      ps.Publish("hello")
+      ps.Publish("world")
+
+      ps.Publish(&User{name: "Hans"})
+      ps.Publish(&User{name: "Meyer"})
     }
