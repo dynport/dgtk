@@ -52,7 +52,7 @@ func (dh *DockerHost) BuildImage(dockerfile, tag string) (imageId string, e erro
 
 	rsp, e := dh.httpClient.Post(url, "application/tar", buf)
 	if e != nil {
-		return
+		return "", e
 	}
 	defer rsp.Body.Close()
 
