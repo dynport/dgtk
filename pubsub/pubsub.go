@@ -19,7 +19,7 @@ func (pubsub *PubSub) Publish(i interface{}) error {
 	var e error
 	value := reflect.ValueOf(i)
 	for _, s := range pubsub.subscriptions {
-		if s.Matches(value) {
+		if !s.closed && s.Matches(value) {
 			select {
 			case s.buffer <- value:
 				pubsub.Stats.MessageDispatched()

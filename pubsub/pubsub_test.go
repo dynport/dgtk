@@ -25,6 +25,16 @@ func TestPubSub(t *testing.T) {
 			time.Sleep(100 * time.Millisecond)
 			So(s.Stats.Received(), ShouldEqual, 1)
 			So(s.Stats.Dispatched(), ShouldEqual, 0)
+
+			Convey("on closed channel", func() {
+				ps := &PubSub{}
+				s := ps.Subscribe(func(i interface{}) {
+					//
+				})
+				ps.Publish("something")
+				s.Close()
+				So(func() { ps.Publish("hello") }, ShouldNotPanic)
+			})
 		})
 
 		Convey("Subscribe with consumer", func() {

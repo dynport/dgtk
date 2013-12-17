@@ -12,11 +12,13 @@ type Subscription struct {
 	finished chan interface{}
 	callback reflect.Value
 	type_    reflect.Type
+	closed   bool
 }
 
 const defaultBufferSize = 1000
 
 func (subscription *Subscription) Close() error {
+	subscription.closed = true
 	close(subscription.buffer)
 	timer := time.NewTimer(5 * time.Second)
 	select {
