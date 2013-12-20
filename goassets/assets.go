@@ -28,6 +28,22 @@ func (assets *Assets) Bytes() (b []byte, e error) {
 	return buf.Bytes(), nil
 }
 
+func (assets *Assets) GetterMethodName() string {
+	if assets.Package == "assets" {
+		return "Get"
+	} else {
+		return "ReadAsset"
+	}
+}
+
+func (assets *Assets) NamesMethodName() string {
+	if assets.Package == "assets" {
+		return "Names"
+	} else {
+		return "AssetNames"
+	}
+}
+
 func (assets *Assets) AssetPaths() (out []*Asset, e error) {
 	out = []*Asset{}
 	packagePath, e := assets.PackagePath()

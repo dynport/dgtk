@@ -77,8 +77,8 @@ import (
 
 func main() {
 	fmt.Println("running")
-	for _, name := range Names() {
-		b, e := Get(name)
+	for _, name := range AssetNames() {
+		b, e := ReadAsset(name)
 		if e != nil {
 			fmt.Println("ERROR: " + e.Error())
 			os.Exit(1)
