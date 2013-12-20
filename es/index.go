@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -241,14 +242,18 @@ func (index *Index) RunBatchIndex() error {
 	return nil
 }
 
-type IndexStatus struct {
-	Index  string `json:"_index"`
-	Type   string `json:"_type"`
-	Id     string `json:"_id"`
-	Exists bool   `json:"exists"`
+type Status struct {
+	Ok     bool    `json:"ok"`
+	Shards *Shards `json:"_shards"`
 }
 
-func (index *Index) Status() (status *IndexStatus, e error) {
+type Shards struct {
+	Total      int `json:"total"`
+	Successful int `json:"successful"`
+	Failed     int `json:"failed"`
+}
+
+func (index *Index) Status() (status *Status, e error) {
 	rsp, e := http.Get(index.BaseUrl() + "/_status")
 	if e != nil {
 		return nil, e
@@ -258,9 +263,16 @@ func (index *Index) Status() (status *IndexStatus, e error) {
 	if e != nil {
 		return nil, e
 	}
-	status = &IndexStatus{}
+	if rsp.Status[0] != '2' {
+		return nil, fmt.Errorf("Status: %d, Response: %s", rsp.StatusCode, string(b))
+	}
+	status = &Status{}
 	e = json.Unmarshal(b, status)
 	return status, e
+}
+
+func init() {
+	log.SetFlags(0)
 }
 
 func (index *Index) LogDebug(format string, i ...interface{}) {
