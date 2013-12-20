@@ -337,17 +337,17 @@ func (index *Index) TypeUrl() string {
 	}
 }
 
-func (index *Index) DeleteByQuery(query string) error {
+func (index *Index) DeleteByQuery(query string) (b []byte, e error) {
 	q := &url.Values{}
 	q.Add("q", query)
 	rsp, e := index.request("DELETE", index.TypeUrl()+"/_query?"+q.Encode(), nil)
 	if e != nil {
-		return e
+		return b, e
 	}
 	if rsp.Status[0] != '2' {
-		return fmt.Errorf("error deleting with query: %s", rsp.Status)
+		return b, fmt.Errorf("error deleting with query: %s", rsp.Status)
 	}
-	return nil
+	return rsp.Body, nil
 }
 
 func (index *Index) Search(req *Request) (rsp *Response, e error) {

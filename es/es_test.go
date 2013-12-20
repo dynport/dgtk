@@ -55,7 +55,7 @@ func TestDeleteFromImage(t *testing.T) {
 		So(e, ShouldBeNil)
 		So(rsp.Hits.Total, ShouldEqual, 6)
 
-		r := index.DeleteByQuery("Tag:nginx")
+		_, r := index.DeleteByQuery("Tag:nginx")
 		So(r, ShouldBeNil)
 		So(index.Refresh(), ShouldBeNil)
 
@@ -73,7 +73,7 @@ func TestDeleteFromImage(t *testing.T) {
 		}
 		So(tags["unicorn"], ShouldEqual, 3)
 
-		r = index.DeleteByQuery("Tag:unicorn AND Created:[2013-12-01 TO 2013-12-02]")
+		_, r = index.DeleteByQuery("Tag:unicorn AND Created:[2013-12-01 TO 2013-12-02]")
 		So(r, ShouldBeNil)
 		So(index.Refresh(), ShouldBeNil)
 
