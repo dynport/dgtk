@@ -1,0 +1,55 @@
+# All times in this file are in UTC (GMT), not your local timezone.   This is
+# not a bug, so please don't ask about it.   There is no portable way to
+# store leases in the local timezone, so please don't request this as a
+# feature.   If this is inconvenient or confusing to you, we sincerely
+# apologize.   Seriously, though - don't ask.
+# The format of this file is documented in the dhcpd.leases(5) manual page.
+
+lease 172.16.223.133 {
+	starts 6 2013/12/28 17:02:16;
+	ends 6 2013/12/28 17:32:16;
+	hardware ethernet 00:0c:29:80:9a:df;
+	client-hostname "ubuntu";
+}
+lease 172.16.223.130 {
+	starts 6 2013/12/28 01:13:24;
+	ends 6 2013/12/28 01:18:34;
+	hardware ethernet 00:0c:29:80:9a:df;
+	client-hostname "ubuntu";
+}
+lease 172.16.223.131 {
+	starts 6 2013/12/28 01:11:56;
+	ends 6 2013/12/28 01:15:51;
+	hardware ethernet 00:0c:29:d3:71:dc;
+	client-hostname "ubuntu";
+}
+lease 172.16.223.128 {
+	starts 6 2013/12/28 00:51:21;
+	ends 6 2013/12/28 01:00:23;
+	hardware ethernet 00:0c:29:fb:81:a2;
+	client-hostname "ubuntu";
+}
+lease 172.16.223.132 {
+	starts 6 2013/12/28 00:45:44;
+	ends 6 2013/12/28 00:47:25;
+	hardware ethernet 00:0c:29:d3:71:dc;
+	client-hostname "ubuntu";
+}
+lease 172.16.223.129 {
+	starts 6 2013/12/28 00:06:32;
+	ends 6 2013/12/28 00:07:16;
+	hardware ethernet 00:0c:29:e4:4c:54;
+	client-hostname "ubuntu";
+}
+lease 172.16.223.133 {
+	starts 6 2013/12/28 17:15:24;
+	ends 6 2013/12/28 17:45:24;
+	hardware ethernet 00:0c:29:80:9a:df;
+	client-hostname "ubuntu";
+}
+lease 172.16.223.133 {
+	starts 6 2013/12/28 17:29:36;
+	ends 6 2013/12/28 17:59:36;
+	hardware ethernet 00:0c:29:80:9a:df;
+	client-hostname "ubuntu";
+}

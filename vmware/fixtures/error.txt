@@ -1,0 +1,1 @@
+Error: The VMware Tools are not running in the virtual machine: /Users/tobias/Documents/Virtual Machines.localized/Ubuntu 13.10, 64-bit.vmwarevm/Ubuntu 13.10, 64-bit.vmx
