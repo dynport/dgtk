@@ -43,7 +43,10 @@ func {{ .GetterMethodName }}(key string) ([]byte, error) {
 	if devAssetsPath != "" {
 		path := devAssetsPath + "/" + key
 		logDebug("reading file from dev path %s", path)
-		return ioutil.ReadFile(path)
+		b, e := ioutil.ReadFile(path)
+		if e == nil {
+			return b, nil
+		}
 	}
 	b, ok := assets[key]
 	if !ok {
