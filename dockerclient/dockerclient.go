@@ -14,6 +14,8 @@ type DockerHost struct {
 	Registry   string       // Registry to use with this docker host.
 	httpClient *http.Client // http client used to send requests to the host.
 
+	cachedServerVersion *Version
+
 	Logger *gologger.Logger
 }
 

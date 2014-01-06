@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/dynport/dgtk/dockerclient/docker"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -37,41 +38,75 @@ func (dh *DockerHost) ImageHistory(id string) (imageHistory *docker.ImageHistory
 	return imageHistory, e
 }
 
+type BuildImageOptions struct {
+	Tag     string
+	Quite   bool
+	NoCache bool
+
+	Callback func(s *Stream)
+}
+
+func (opts *BuildImageOptions) encode() string {
+	v := url.Values{}
+	if opts != nil {
+		if opts.Tag != "" {
+			v.Add("t", opts.Tag)
+		}
+		if opts.NoCache {
+			v.Add("nocache", "true")
+		}
+		if opts.Quite {
+			v.Add("quiet", "true")
+		}
+	}
+	return v.Encode()
+}
+
 // Create a new image from the given dockerfile. If name is non empty the new image is named accordingly. If a writer is
 // given it is used to send the docker output to.
-func (dh *DockerHost) BuildImage(dockerfile, tag string) (imageId string, e error) {
-	buf, e := dh.createDockerfileArchive(dockerfile)
+func (dh *DockerHost) BuildDockerfile(dockerfile string, opts *BuildImageOptions) (imageId string, e error) {
+	r, e := dh.createDockerfileArchive(dockerfile)
 	if e != nil {
-		return
+		return "", e
 	}
+	return dh.Build(r, opts)
 
-	url := dh.url() + "/build?"
-	if tag != "" {
-		url += "t=" + tag
+}
+
+// Build a container image from a tar or tar.gz Reader
+func (dh *DockerHost) Build(r io.Reader, opts *BuildImageOptions) (imageId string, e error) {
+	u := dh.url() + "/build"
+	if opts == nil {
+		opts = &BuildImageOptions{}
 	}
-
-	rsp, e := dh.httpClient.Post(url, "application/tar", buf)
+	if enc := opts.encode(); enc != "" {
+		u += "?" + enc
+	}
+	rsp, e := dh.httpClient.Post(u, "application/tar", r)
 	if e != nil {
 		return "", e
 	}
 	defer rsp.Body.Close()
 
 	if !success(rsp) {
-		return "", fmt.Errorf("failed to send command to %q: %s", url, rsp.Status)
+		return "", fmt.Errorf("failed to send command to %q: %s", u, rsp.Status)
 	}
 
-	scanner := bufio.NewScanner(rsp.Body)
-	var last string
-	for scanner.Scan() {
-		last = scanner.Text()
-		dh.Logger.Debug(last)
+	v, e := dh.ServerVersion()
+	if e != nil {
+		return "", e
 	}
 
-	s := imageIdRegexp.FindStringSubmatch(string(last))
-	if len(s) != 2 {
-		return "", fmt.Errorf("unable to extract image id from response: %q", last)
+	var buildResponse BuildResponse
+	if v.jsonBuildStream() {
+		buildResponse, e = dh.handleBuildImageJson(rsp.Body, opts.Callback)
+	} else {
+		buildResponse, e = dh.handleBuildImagePlain(rsp.Body, opts.Callback)
 	}
-	imageId = s[1]
+
+	if imageId = buildResponse.ImageId(); imageId == "" {
+		return "", fmt.Errorf("unable to extract image id from response: %v", buildResponse)
+	}
 	return imageId, nil
 }
 
