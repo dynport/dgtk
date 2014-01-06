@@ -12,7 +12,7 @@ func TestParseBuildResponse(t *testing.T) {
 			r := bytes.NewBufferString(outputPre0_7)
 			dh := &DockerHost{}
 			streams := BuildResponse{}
-			res, e := dh.handleBuildImageOld(r, func(s *Stream) {
+			res, e := dh.handleBuildImagePlain(r, func(s *Stream) {
 				streams = append(streams, s)
 			})
 			So(e, ShouldBeNil)
