@@ -1,13 +1,19 @@
 package vmware
 
 import (
+	"bufio"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type Vm struct {
 	Path string
+
+	// cached values
+	started time.Time
 }
 
 func (vm *Vm) Ip() (string, error) {
@@ -61,6 +67,31 @@ func (vm *Vm) Stop() error {
 
 func (vm *Vm) Start() error {
 	return Start(vm.Path, false)
+}
+
+func (vm *Vm) StartedAt() (started time.Time, e error) {
+	if !vm.started.IsZero() {
+		return vm.started, nil
+	}
+	f, e := os.Open(path.Dir(vm.Path) + "/vmware.log")
+	if e != nil {
+		return started, e
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), "VMIOP: Init started") {
+			parts := strings.Split(scanner.Text(), "|")
+			if len(parts) > 1 {
+				t, e := time.Parse("2006-01-02T15:04:05.999-07:00", parts[0])
+				if e == nil {
+					started = t
+				}
+			}
+		}
+	}
+	vm.started = started
+	return started, nil
 }
 
 func (vm *Vm) StartWithGui() error {
