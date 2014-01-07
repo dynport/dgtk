@@ -5,8 +5,8 @@ import (
 )
 
 type StartAction struct {
-	Name string `cli:"type=arg required=false"`
-	Gui  bool   `cli:"type=flag long=gui"`
+	Name string `cli:"type=arg required=true"`
+	Gui  bool   `cli:"type=opt long=gui"`
 }
 
 func (action *StartAction) Run() error {

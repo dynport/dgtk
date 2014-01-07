@@ -95,6 +95,9 @@ func init() {
 }
 
 func Create(vm *Vm, snapshot string) (*Vm, error) {
+	if vm == nil {
+		return nil, fmt.Errorf("provided VM is nil")
+	}
 	id := randId()
 	dst := CloudVMLocation + "/" + id + "/" + id + ".vmx"
 	e := os.MkdirAll(path.Dir(dst), 0755)
@@ -135,10 +138,7 @@ func vmrun(vmrunCmd string, params ...string) (string, error) {
 	cmd := exec.Command("vmrun", args...)
 	out, e := cmd.CombinedOutput()
 	if e != nil {
-		if debug {
-			log.Printf("DEBUG: %s", string(out))
-		}
-		return "", e
+		return "", fmt.Errorf(e.Error() + " " + string(out))
 	}
 	return strings.TrimSpace(string(out)), nil
 }
@@ -149,22 +149,34 @@ func GetGuestIPAddress(vmx string) (string, error) {
 
 var (
 	DefaultVMLocation = os.Getenv("HOME") + "/Documents/Virtual Machines.localized"
-	CloudVMLocation   = os.Getenv("HOME") + "/.vmware/vms"
+	Root              = os.Getenv("HOME") + "/.vmware"
+	CloudVMLocation   = Root + "/vms"
+	TemplatesPath     = Root + "/templates"
 )
 
+func AllTemplates() (vms Vms, e error) {
+	return glob(TemplatesPath)
+}
+
+func AllWithTemplates() (vms Vms, e error) {
+	return FindVms([]string{DefaultVMLocation, CloudVMLocation, TemplatesPath})
+}
+
 func All() (vms Vms, e error) {
+	return FindVms([]string{DefaultVMLocation, CloudVMLocation})
+}
+
+func FindVms(locations []string) (vms Vms, e error) {
 	raw, e := List()
 	if e != nil {
 		return nil, e
 	}
-	if tmp, e := glob(DefaultVMLocation); e == nil {
-		raw = append(raw, tmp...)
-	}
 
-	if tmp, e := glob(CloudVMLocation); e == nil {
-		raw = append(raw, tmp...)
+	for _, l := range locations {
+		if tmp, e := glob(l); e == nil {
+			raw = append(raw, tmp...)
+		}
 	}
-
 	m := map[string]bool{}
 	for _, a := range raw {
 		if _, ok := m[a.Path]; !ok {

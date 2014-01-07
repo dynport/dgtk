@@ -8,12 +8,6 @@ import (
 
 var router = cli2.NewRouter()
 
-func must(e error) {
-	if e != nil {
-		panic(e.Error())
-	}
-}
-
 func main() {
 	e := router.RunWithArgs()
 	if e != nil {

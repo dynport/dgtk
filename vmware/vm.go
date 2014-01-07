@@ -108,6 +108,28 @@ func (vm *Vm) Delete() error {
 
 type Vms []*Vm
 
+func (list Vms) Len() int {
+	return len(list)
+}
+
+func (list Vms) Swap(a, b int) {
+	list[a], list[b] = list[b], list[a]
+}
+
+func (list Vms) Less(a, b int) bool {
+	as, _ := list[a].StartedAt()
+	bs, _ := list[b].StartedAt()
+	return as.Before(bs)
+}
+
+func (list Vms) FindFirst(name string) *Vm {
+	filtered := list.Search(name)
+	if len(filtered) > 0 {
+		return filtered[0]
+	}
+	return nil
+}
+
 func (list Vms) Search(name string) (vms Vms) {
 	for _, vm := range list {
 		if vm.Name() == name {

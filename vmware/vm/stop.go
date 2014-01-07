@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	must(router.Register("stop", &StopAction{}))
+	router.Register("stop", &StopAction{})
 }
 
 type StopAction struct {

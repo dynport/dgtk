@@ -13,11 +13,11 @@ type Clone struct {
 
 func (action *Clone) Run() error {
 	log.Printf("running with name=%q and snapshot=%q", action.VmName, action.SnapshotName)
-	vm, e := findFirst(action.VmName)
+	vms, e := vmware.AllWithTemplates()
 	if e != nil {
 		return e
 	}
-
+	vm := vms.FindFirst(action.VmName)
 	clone, e := vmware.Create(vm, action.SnapshotName)
 	if e != nil {
 		return e

@@ -4,10 +4,11 @@ import (
 	"github.com/dynport/dgtk/vmware"
 	"github.com/dynport/gocli"
 	"log"
+	"sort"
 )
 
 func init() {
-	router.Register("list", &ListAction{})
+	router.Register("list/vms", &ListAction{})
 }
 
 type ListAction struct {
@@ -18,20 +19,14 @@ func (list *ListAction) Run() error {
 	if e != nil {
 		return e
 	}
+	sort.Sort(vms)
 	table := gocli.NewTable()
 	leases, e := vmware.AllLeases()
 	if e != nil {
 		return e
 	}
-	table.Add("Name", "Status", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
+	table.Add("Name", "Status", "Started", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
 	for _, vm := range vms {
-		//client := gossh.New(ip, "root")
-		//defer client.Close()
-		//release, e := client.Execute("lsb_release -d")
-		//if e != nil {
-		//	return e
-		//}
-		//table.Add(vm.Name(), ip, strings.TrimSpace(release.Stdout()))
 		vmx, e := vm.Vmx()
 		if e != nil {
 			return e
@@ -46,7 +41,13 @@ func (list *ListAction) Run() error {
 		if vm.Running() {
 			status = "RUNNING"
 		}
-		table.Add(vm.Name(), status, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
+		started := ""
+		if s, e := vm.StartedAt(); e == nil {
+			started = s.Format("2006-01-02T15:04:05")
+		} else {
+			log.Print(e.Error())
+		}
+		table.Add(vm.Name(), status, started, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
 	}
 	log.Println(table)
 	return nil
