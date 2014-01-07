@@ -43,7 +43,7 @@ type BuildImageOptions struct {
 	Quite   bool
 	NoCache bool
 
-	Callback func(s *Stream)
+	Callback func(s *JSONMessage)
 }
 
 func (opts *BuildImageOptions) encode() string {

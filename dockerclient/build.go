@@ -5,17 +5,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 )
 
-type Stream struct {
-	Stream      string `json:"stream"`
-	Error       string `json:"error"`
-	ErrorDetail string `json:"errorDetail"`
+type ProgressDetail struct {
+	Current int64
+	Total   int64
+	Start   int64
 }
 
-type BuildResponse []*Stream
+type ErrorDetail struct {
+	Code    int
+	Message string
+}
 
-func (rsp BuildResponse) Last() *Stream {
+type BuildResponse []*JSONMessage
+
+func (rsp BuildResponse) Last() *JSONMessage {
 	if len(rsp) == 0 {
 		return nil
 	}
@@ -34,7 +40,7 @@ func (rsp BuildResponse) ImageId() string {
 	return ""
 }
 
-func (dh *DockerHost) handleBuildImageJson(r io.Reader, f func(s *Stream)) (rsp BuildResponse, e error) {
+func (dh *DockerHost) handleBuildImageJson(r io.Reader, f func(s *JSONMessage)) (rsp BuildResponse, e error) {
 	scanner := bufio.NewReader(r)
 	buf := &bytes.Buffer{}
 	for {
@@ -45,12 +51,13 @@ func (dh *DockerHost) handleBuildImageJson(r io.Reader, f func(s *Stream)) (rsp 
 			return nil, e
 		}
 		buf.Write(b)
-		stream := &Stream{}
+		stream := &JSONMessage{}
 		e = json.Unmarshal(buf.Bytes(), stream)
 		if e != nil {
 			if e.Error() == "unexpected end of JSON input" {
 				continue
 			}
+			log.Printf("ERROR: %s => %s", e.Error(), buf.String())
 			return nil, e
 		}
 		if f != nil {
@@ -62,7 +69,7 @@ func (dh *DockerHost) handleBuildImageJson(r io.Reader, f func(s *Stream)) (rsp 
 	return rsp, nil
 }
 
-func (dh *DockerHost) handleBuildImagePlain(r io.Reader, f func(s *Stream)) (rsp BuildResponse, e error) {
+func (dh *DockerHost) handleBuildImagePlain(r io.Reader, f func(s *JSONMessage)) (rsp BuildResponse, e error) {
 	reader := bufio.NewReader(r)
 	for {
 		b, e := reader.ReadString('\n')
@@ -71,7 +78,7 @@ func (dh *DockerHost) handleBuildImagePlain(r io.Reader, f func(s *Stream)) (rsp
 		} else if e != nil {
 			return nil, e
 		}
-		s := &Stream{Stream: string(b)}
+		s := &JSONMessage{Stream: string(b)}
 		rsp = append(rsp, s)
 		f(s)
 	}
