@@ -1,4 +1,4 @@
-package cli2
+package cli
 
 import (
 	. "github.com/smartystreets/goconvey/convey"

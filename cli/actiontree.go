@@ -1,4 +1,4 @@
-package cli2
+package cli
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// The basic datastructure used in cli2. A router is added actions for different paths using the "Register" and
+// The basic datastructure used in cli. A router is added actions for different paths using the "Register" and
 // "RegisterFunc" methods. These actions can be executed using the "Run" and "RunWithArgs" methods.
 type Router struct {
 	root *routingTreeNode

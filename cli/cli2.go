@@ -15,4 +15,4 @@
 //	* Arguments (type "arg") may be variadic (type in the struct must be a slice), i.e. arbitrary can be given. If the
 //	  argument is required, at least one value must be present. Only the last arguments can be variadic.
 //	* Non variadic arguments must always be given.
-package cli2
+package cli

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/dynport/dgtk/cli2"
+	"github.com/dynport/dgtk/cli"
 	"log"
 	"strings"
 )
@@ -36,7 +36,7 @@ func (se *ShowEntity) Run() error {
 }
 
 func main() {
-	router := cli2.NewRouter()
+	router := cli.NewRouter()
 
 	router.Register("entities/show", &ShowEntity{w: "foog"}, "an example action")
 	router.Register("entities/list", &ShowEntity{w: "foog"}, "an example action")
