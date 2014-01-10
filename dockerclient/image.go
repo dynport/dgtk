@@ -105,7 +105,7 @@ func (dh *DockerHost) Build(r io.Reader, opts *BuildImageOptions) (imageId strin
 	}
 
 	if imageId = buildResponse.ImageId(); imageId == "" {
-		return "", fmt.Errorf("unable to extract image id from response: %v", buildResponse)
+		return "", fmt.Errorf("unable to extract image id from response: %v", buildResponse.Last())
 	}
 	return imageId, nil
 }
