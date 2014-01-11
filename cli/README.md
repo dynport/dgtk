@@ -1,4 +1,4 @@
-# cli2
+# cli
 
 A library to easily create command line interfaces.
 
@@ -14,7 +14,7 @@ The following example creates a simple CLI action for running commands at a remo
 		Hosts   string `cli:"type=arg required=true"`                      // Argument with at least one required.
 	}
 	
-	// Run the action. Called when the cli2.Run function is called with a route matching the one of this action.
+	// Run the action. Called when the cli.Run function is called with a route matching the one of this action.
 	func (er *ExampleRunner) Run() error {
 		// Called when action matches route.
 		if er.Verbose {
