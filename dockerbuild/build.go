@@ -64,7 +64,7 @@ func (b *Build) buildArchive(w io.Writer) error {
 	return nil
 }
 
-func (b *Build) addFilesToArchive(root string, t *tar.Writer) error {
+func (build *Build) addFilesToArchive(root string, t *tar.Writer) error {
 	return filepath.Walk(root, func(p string, info os.FileInfo, e error) error {
 		if e == nil && p != root {
 			var e error
@@ -76,21 +76,21 @@ func (b *Build) addFilesToArchive(root string, t *tar.Writer) error {
 				e = t.WriteHeader(header)
 			} else {
 				header.Mode = 0644
-				header.Size = info.Size()
+				b, e := ioutil.ReadFile(p)
+				if e != nil {
+					return e
+				}
+				if name == "Dockerfile" {
+					build.dockerfileAdded = true
+				}
+				header.Size = int64(len(b))
 				e = t.WriteHeader(header)
 				if e != nil {
 					return e
 				}
-				f, e := os.Open(p)
+				_, e = t.Write(b)
 				if e != nil {
 					return e
-				}
-				defer f.Close()
-				if _, e = io.Copy(t, f); e != nil {
-					return e
-				}
-				if name == "Dockerfile" {
-					b.dockerfileAdded = true
 				}
 			}
 			if e != nil {
