@@ -16,7 +16,3 @@ func (action *StartAction) Run() error {
 	}
 	return vmware.Start(vm.Path, action.Gui)
 }
-
-func init() {
-	router.Register("start", &StartAction{})
-}

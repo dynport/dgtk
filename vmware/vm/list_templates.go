@@ -6,10 +6,6 @@ import (
 	"log"
 )
 
-func init() {
-	router.Register("list/templates", &ListTemplates{})
-}
-
 type ListTemplates struct {
 }
 

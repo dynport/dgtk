@@ -7,10 +7,6 @@ import (
 	"sort"
 )
 
-func init() {
-	router.Register("list/vms", &ListAction{})
-}
-
 type ListAction struct {
 }
 

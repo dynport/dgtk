@@ -135,7 +135,7 @@ func vmrun(vmrunCmd string, params ...string) (string, error) {
 	if debug {
 		log.Printf("DEBUG: %v", args)
 	}
-	cmd := exec.Command("vmrun", args...)
+	cmd := exec.Command("/Applications/VMware Fusion.app/Contents/Library/vmrun", args...)
 	out, e := cmd.CombinedOutput()
 	if e != nil {
 		return "", fmt.Errorf(e.Error() + " " + string(out))

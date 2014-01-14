@@ -23,7 +23,3 @@ func (action *ListSnapshotsAction) Run() error {
 	}
 	return nil
 }
-
-func init() {
-	router.Register("snapshots/list", &ListSnapshotsAction{})
-}

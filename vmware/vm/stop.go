@@ -4,10 +4,6 @@ import (
 	"github.com/dynport/dgtk/vmware"
 )
 
-func init() {
-	router.Register("stop", &StopAction{})
-}
-
 type StopAction struct {
 	Name string `cli:"type=arg required=true"`
 }

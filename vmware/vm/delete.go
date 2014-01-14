@@ -16,7 +16,3 @@ func (action *Delete) Run() error {
 	}
 	return vm.Delete()
 }
-
-func init() {
-	router.Register("delete", &Delete{})
-}

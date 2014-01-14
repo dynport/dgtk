@@ -28,7 +28,3 @@ func (action *Clone) Run() error {
 	log.Printf("started in %.3f", time.Since(started).Seconds())
 	return e
 }
-
-func init() {
-	router.Register("clone", &Clone{})
-}

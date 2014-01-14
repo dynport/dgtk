@@ -16,7 +16,3 @@ func (action *TakeSnapshotsAction) Run() error {
 	}
 	return vmware.TakeSnapshot(vm.Path, action.SnapshotName)
 }
-
-func init() {
-	router.Register("snapshots/take", &ListSnapshotsAction{})
-}
