@@ -23,21 +23,10 @@ func main() {
 	if e != nil {
 		log.Fatal(e.Error())
 	}
-	build := &Build{Root: root}
-	build.LoadConfig()
-	if *tag != "" {
-		build.Tag = *tag
-	}
-	if *proxy != "" {
-		build.Proxy = *proxy
-	}
-	if *repository != "" {
-		build.GitRepository = *repository
-	}
-	if *buildHost == "" {
+	build := &Build{Root: root, Tag: *tag, Proxy: *proxy, GitRepository: *repository, DockerHost: *buildHost}
+	if build.DockerHost == "" {
 		log.Fatal("-H must be provided")
 	}
-	build.DockerHost = *buildHost
 	imageId, e := build.Build()
 	if e != nil {
 		log.Fatal(e.Error())

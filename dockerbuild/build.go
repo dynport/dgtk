@@ -8,7 +8,6 @@ import (
 	"github.com/dynport/dgtk/git"
 	"io"
 	"io/ioutil"
-	"launchpad.net/goyaml"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,14 +30,6 @@ func (b *Build) Build() (string, error) {
 	}
 	client := dockerclient.New(b.DockerHost, 4243)
 	return client.Build(buf, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
-}
-
-func (build *Build) LoadConfig() error {
-	b, e := ioutil.ReadFile(build.Root + "/dockerbuild.yml")
-	if e != nil {
-		return e
-	}
-	return goyaml.Unmarshal(b, build)
 }
 
 func (b *Build) buildArchive(w io.Writer) error {
