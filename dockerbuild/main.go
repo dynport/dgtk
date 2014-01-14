@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	buildHost  = flag.String("H", "", "Build Host")
-	tag        = flag.String("T", "", "Tag build with")
-	proxy      = flag.String("X", "", "Http Proxy to use")
-	repository = flag.String("R", "", "Git repository to add to docker archive")
+	buildHost  = flag.String("H", "", "Build Host (e.g. 127.0.0.1)")
+	tag        = flag.String("T", "", "Tag build with (e.g. elasticsearch)")
+	proxy      = flag.String("X", "", "Http Proxy to use (e.g. http://127.0.0.1:1234)")
+	repository = flag.String("R", "", "Git repository to add to docker archive (e.g. git@github.com:test/repo.git)")
 )
 
 func main() {
