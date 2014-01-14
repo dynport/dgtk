@@ -82,6 +82,10 @@ func (build *Build) addFilesToArchive(root string, t *tar.Writer) error {
 				}
 				if name == "Dockerfile" {
 					build.dockerfileAdded = true
+					if build.Proxy != "" {
+						df := NewDockerfile(b)
+						b = df.MixinProxy(build.Proxy)
+					}
 				}
 				header.Size = int64(len(b))
 				e = t.WriteHeader(header)
