@@ -1,11 +1,11 @@
 package dockerclient
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"github.com/dynport/dgtk/dockerclient/docker"
 	"io"
+	"net/url"
 )
 
 // Get a list of all ontainers available on the host.
@@ -70,27 +70,44 @@ func (dh *DockerHost) StopContainer(containerId string) (e error) {
 	return e
 }
 
+type AttachOptions struct {
+	Logs   bool
+	Stream bool
+	Stdout bool
+	Stderr bool
+}
+
+func (opts *AttachOptions) Encode() string {
+	v := url.Values{}
+	if opts.Logs {
+		v.Add("logs", "1")
+	}
+	if opts.Stream {
+		v.Add("stream", "1")
+	}
+	if opts.Stdout {
+		v.Add("stdout", "1")
+	}
+	if opts.Stderr {
+		v.Add("stderr", "1")
+	}
+	if len(v) > 0 {
+		return "?" + v.Encode()
+	}
+	return ""
+}
+
 // Attach to the given container with the given writer.
-func (dh *DockerHost) AttachContainer(containerId string, w io.Writer) (e error) {
-	rsp, e := dh.post(dh.url() + "/containers/" + containerId + "/attach?logs=1&stream=1&stdout=1&stderr=1")
+func (dh *DockerHost) AttachContainer(containerId string, w io.Writer, opts *AttachOptions) (e error) {
+	if opts == nil {
+		opts = &AttachOptions{}
+	}
+	rsp, e := dh.post(dh.url() + "/containers/" + containerId + "/attach" + opts.Encode())
 	if e != nil {
 		return e
 	}
 	defer rsp.Body.Close()
 
-	if w != nil {
-		scanner := bufio.NewScanner(rsp.Body)
-		for scanner.Scan() {
-			bytes := scanner.Bytes()
-			i := 0
-			for i < len(bytes) {
-				n, e := w.Write(bytes[i:])
-				if e != nil {
-					return e
-				}
-				i += n
-			}
-		}
-	}
-	return nil
+	_, e = io.Copy(w, rsp.Body)
+	return e
 }
