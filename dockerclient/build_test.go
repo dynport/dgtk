@@ -12,7 +12,7 @@ func TestParseBuildResponse(t *testing.T) {
 			r := bytes.NewBufferString(outputPre0_7)
 			dh := &DockerHost{}
 			streams := BuildResponse{}
-			res, e := dh.handleBuildImagePlain(r, func(s *Stream) {
+			res, e := dh.handleBuildImagePlain(r, func(s *JSONMessage) {
 				streams = append(streams, s)
 			})
 			So(e, ShouldBeNil)
@@ -25,7 +25,7 @@ func TestParseBuildResponse(t *testing.T) {
 			r := bytes.NewBufferString(newResponse)
 			dh := &DockerHost{}
 			streams := BuildResponse{}
-			res, e := dh.handleBuildImageJson(r, func(s *Stream) {
+			res, e := dh.handleBuildImageJson(r, func(s *JSONMessage) {
 				streams = append(streams, s)
 			})
 			So(e, ShouldBeNil)
