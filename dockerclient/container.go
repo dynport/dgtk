@@ -73,8 +73,8 @@ func (dh *DockerHost) StopContainer(containerId string) (e error) {
 type AttachOptions struct {
 	Logs   bool
 	Stream bool
-	Stdout bool
-	Stderr bool
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 func (opts *AttachOptions) Encode() string {
@@ -85,10 +85,10 @@ func (opts *AttachOptions) Encode() string {
 	if opts.Stream {
 		v.Add("stream", "1")
 	}
-	if opts.Stdout {
+	if opts.Stdout != nil {
 		v.Add("stdout", "1")
 	}
-	if opts.Stderr {
+	if opts.Stderr != nil {
 		v.Add("stderr", "1")
 	}
 	if len(v) > 0 {
@@ -97,8 +97,62 @@ func (opts *AttachOptions) Encode() string {
 	return ""
 }
 
+// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.8/#attach-to-a-container for the stream protocol.
+func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
+	headerBuf := make([]byte, 8)
+	msgBuf := make([]byte, 32*1024) // buffer size taken from io.Copy
+	for {
+		n, e := r.Read(headerBuf)
+		if e != nil {
+			return e
+		}
+		if n != 8 {
+			return fmt.Errorf("failed reading; header to short")
+		}
+
+		msgLength := int(headerBuf[7] << 0)
+		msgLength += int(headerBuf[6] << 8)
+		msgLength += int(headerBuf[5] << 16)
+		msgLength += int(headerBuf[4] << 24)
+
+		n = 0
+		for n < msgLength {
+			i, e := r.Read(msgBuf[n:])
+			if e != nil {
+				return e
+			}
+			n += i
+		}
+
+		switch headerBuf[0] {
+		case 0: // stdin
+			if stdout != nil {
+				_, _ = stdout.Write([]byte{'+'})
+			}
+			fallthrough
+		case 1: // stdout
+			if stdout != nil {
+				_, e := stdout.Write(msgBuf[:msgLength])
+				if e != nil {
+					return e
+				}
+			}
+		case 2: // stderr
+			if stderr != nil {
+				_, e := stderr.Write(msgBuf[:msgLength])
+				if e != nil {
+					return e
+				}
+			}
+		default:
+			return fmt.Errorf("unknown stream source received")
+		}
+	}
+	return nil
+}
+
 // Attach to the given container with the given writer.
-func (dh *DockerHost) AttachContainer(containerId string, w io.Writer, opts *AttachOptions) (e error) {
+func (dh *DockerHost) AttachContainer(containerId string, opts *AttachOptions) (e error) {
 	if opts == nil {
 		opts = &AttachOptions{}
 	}
@@ -108,6 +162,5 @@ func (dh *DockerHost) AttachContainer(containerId string, w io.Writer, opts *Att
 	}
 	defer rsp.Body.Close()
 
-	_, e = io.Copy(w, rsp.Body)
-	return e
+	return handleMessages(rsp.Body, opts.Stdout, opts.Stderr)
 }
