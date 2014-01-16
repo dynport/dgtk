@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -100,7 +101,12 @@ func (repo *Repository) MostRecentCommitFor(pattern string) (commit string, e er
 	return commits[0].Checksum, nil
 }
 
+var validTar = regexp.MustCompile("^(\\d{40})$")
+
 func (repo *Repository) Tar(revision string, w *tar.Writer) error {
+	if !validTar.MatchString(revision) {
+		return fmt.Errorf("revision %q not valid (must be 40 digit git sha)")
+	}
 	e := repo.Checkout(revision)
 	if e != nil {
 		return e
