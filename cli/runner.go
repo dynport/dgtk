@@ -20,6 +20,8 @@ func NewRouter() *Router {
 	return r
 }
 
+var NoRouteError = fmt.Errorf("no route matched")
+
 // Run the given arguments against the registered actions, i.e. try to find a matching route and run the according
 // action.
 func (r *Router) Run(args ...string) (e error) {
@@ -35,7 +37,7 @@ func (r *Router) Run(args ...string) (e error) {
 		}
 	} else { // Failed to find node.
 		node.showHelp()
-		return fmt.Errorf("no route matched")
+		return NoRouteError
 	}
 
 	return node.action.runner.Run()
