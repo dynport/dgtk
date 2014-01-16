@@ -32,6 +32,12 @@ func (repo *Repository) Clean() error {
 	return e
 }
 
+func (repo *Repository) Fetch() error {
+	log.Println("fetching origin")
+	_, e := repo.executeGitCommand("git fetch")
+	return e
+}
+
 func (repo *Repository) cachePath() string {
 	chunks := strings.Split(repo.Origin, "/")
 	return repo.cacheDir() + "/" + chunks[len(chunks)-1]
