@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/dynport/dgtk/dockerbuild"
 	"log"
 	"path/filepath"
 )
@@ -23,7 +24,7 @@ func main() {
 	if e != nil {
 		log.Fatal(e.Error())
 	}
-	build := &Build{Root: root, Tag: *tag, Proxy: *proxy, GitRepository: *repository, DockerHost: *buildHost}
+	build := &dockerbuild.Build{Root: root, Tag: *tag, Proxy: *proxy, GitRepository: *repository, DockerHost: *buildHost}
 	if build.DockerHost == "" {
 		log.Fatal("-H must be provided")
 	}

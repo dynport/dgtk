@@ -1,5 +1,5 @@
 default:
-	go get
+	go get -v ./...
 
 test:
 	go test -v

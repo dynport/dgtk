@@ -1,4 +1,4 @@
-package main
+package dockerbuild
 
 import (
 	"archive/tar"

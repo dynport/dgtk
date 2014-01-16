@@ -1,4 +1,4 @@
-package main
+package dockerbuild
 
 import (
 	. "github.com/smartystreets/goconvey/convey"

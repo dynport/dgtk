@@ -1,58 +1,101 @@
-package main
+package dockerbuild
 
 import (
 	"archive/tar"
-	"bytes"
 	"fmt"
 	"github.com/dynport/dgtk/dockerclient"
 	"github.com/dynport/dgtk/git"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type Build struct {
-	GitRepository   string `yaml:"repository"`
-	Tag             string `yaml:"tag"`
-	Proxy           string `yaml:"proxy"`
+	GitRepository   string
+	Tag             string
+	Proxy           string
 	Root            string
 	DockerHost      string
+	Revision        string
 	dockerfileAdded bool
 }
 
+type progress struct {
+	total   int64
+	current int64
+	started time.Time
+}
+
+func newProgress(total int64) *progress {
+	return &progress{started: time.Now(), total: total}
+}
+
+func (p *progress) Write(b []byte) (int, error) {
+	i := len(b)
+	p.current += int64(i)
+	fmt.Printf("\rupload progress %.1f%%", 100.0*float64(p.current)/float64(p.total))
+	if p.current == p.total {
+		fmt.Printf("\nuploaded total_size=%.3fMB in total_time%.3fs\n", float64(p.total)/(1024.0*1024.0), time.Since(p.started).Seconds())
+	}
+	return i, nil
+}
+
 func (b *Build) Build() (string, error) {
-	buf := &bytes.Buffer{}
-	e := b.buildArchive(buf)
+	f, e := b.buildArchive()
 	if e != nil {
 		return "", e
 	}
+	defer func() { os.Remove(f.Name()) }()
+	log.Printf("wrote file %s", f.Name())
 	client := dockerclient.New(b.DockerHost, 4243)
-	return client.Build(buf, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
+	f, e = os.Open(f.Name())
+	if e != nil {
+		return "", e
+	}
+	stat, e := f.Stat()
+	if e != nil {
+		return "", e
+	}
+	progress := newProgress(stat.Size())
+
+	r := io.TeeReader(f, progress)
+	return client.Build(r, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
 }
 
-func (b *Build) buildArchive(w io.Writer) error {
-	t := tar.NewWriter(w)
+func (b *Build) buildArchive() (*os.File, error) {
+	f, e := ioutil.TempFile("/tmp", "docker_build")
+	if e != nil {
+		return nil, e
+	}
+	defer f.Close()
+	t := tar.NewWriter(f)
 	defer t.Flush()
 	defer t.Close()
 	if b.GitRepository != "" {
 		repo := &git.Repository{Origin: b.GitRepository}
 		e := repo.Init()
 		if e != nil {
-			return e
+			return nil, e
 		}
-		if e := repo.Tar(t); e != nil {
-			return e
+		e = repo.Fetch()
+		if e != nil {
+			return nil, e
+		}
+		if e := repo.Tar(b.Revision, t); e != nil {
+			return nil, e
 		}
 	}
 	if e := b.addFilesToArchive(b.Root, t); e != nil {
-		return e
+		return nil, e
 	}
 	if !b.dockerfileAdded {
-		return fmt.Errorf("archive must contain a Dockerfile")
+		return nil, fmt.Errorf("archive must contain a Dockerfile")
 	}
-	return nil
+	return f, nil
 }
 
 func (build *Build) addFilesToArchive(root string, t *tar.Writer) error {
