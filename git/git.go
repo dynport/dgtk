@@ -100,8 +100,33 @@ func (repo *Repository) MostRecentCommitFor(pattern string) (commit string, e er
 	return commits[0].Checksum, nil
 }
 
-func (repo *Repository) Tar(w *tar.Writer) error {
-	return repo.addFileToArchive(repo.cachePath(), w)
+func (repo *Repository) Tar(revision string, w *tar.Writer) error {
+	e := repo.Checkout(revision)
+	if e != nil {
+		return e
+	}
+	e = repo.addFileToArchive(repo.cachePath(), w)
+	if e != nil {
+		return e
+	}
+	commits, e := repo.Commits(nil)
+	if e != nil {
+		return e
+	}
+	lastUpdate := time.Now()
+	if len(commits) > 0 {
+		lastUpdate = commits[0].AuthorDate
+	}
+	return addFileToArchive("REVISION", []byte(revision), lastUpdate, w)
+}
+
+func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Writer) error {
+	e := w.WriteHeader(&tar.Header{Name: name, Size: int64(len(content)), ModTime: modTime, Mode: 0644})
+	if e != nil {
+		return e
+	}
+	_, e = w.Write(content)
+	return e
 }
 
 func (repo *Repository) addFileToArchive(file string, w *tar.Writer) (e error) {
