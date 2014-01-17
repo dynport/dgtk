@@ -101,11 +101,11 @@ func (repo *Repository) MostRecentCommitFor(pattern string) (commit string, e er
 	return commits[0].Checksum, nil
 }
 
-var validTar = regexp.MustCompile("^(\\d{40})$")
+var validTar = regexp.MustCompile("^([0-9a-f]{40})$")
 
 func (repo *Repository) Tar(revision string, w *tar.Writer) error {
 	if !validTar.MatchString(revision) {
-		return fmt.Errorf("revision %q not valid (must be 40 digit git sha)")
+		return fmt.Errorf("revision %q not valid (must be 40 digit git sha)", revision)
 	}
 	e := repo.Checkout(revision)
 	if e != nil {
