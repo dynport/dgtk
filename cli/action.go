@@ -55,7 +55,15 @@ func (a *action) reflect() (e error) {
 
 func (a *action) reflectRecurse(value reflect.Value) (e error) {
 	v := reflect.ValueOf(value.Interface())
+
 	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			v = reflect.New(v.Type().Elem())
+		}
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
 		return nil
 	}
 

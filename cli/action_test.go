@@ -749,3 +749,94 @@ func TestArgumentParsing(t *testing.T) {
 		})
 	})
 }
+
+type ActionWithEmbeddedStruct struct {
+	ActionWithFlag
+}
+
+func (a *ActionWithEmbeddedStruct) Run() error {
+	return nil
+}
+
+func TestActionWithEmbeddedStruct(t *testing.T) {
+	Convey("Given an action with an embeded struct", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			baseAction := &ActionWithEmbeddedStruct{}
+			a := testCreateAction("some/path", baseAction)
+			e := a.reflect()
+
+			Convey("Then there is no error", func() {
+				So(e, ShouldBeNil)
+			})
+
+			Convey("And there is a flag defined for the action", func() {
+				So(len(a.opts), ShouldEqual, 1)
+				So(a.opts[0].short, ShouldEqual, "f")
+				So(a.opts[0].long, ShouldEqual, "flag")
+				So(a.opts[0].isFlag, ShouldBeTrue)
+			})
+		})
+	})
+}
+
+type ActionWithEmbeddedStructPtr struct {
+	*ActionWithFlag
+}
+
+func (a *ActionWithEmbeddedStructPtr) Run() error {
+	return nil
+}
+
+func TestActionWithEmbeddedStructPtr(t *testing.T) {
+	Convey("Given an action with an embeded struct", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			baseAction := &ActionWithEmbeddedStructPtr{}
+			a := testCreateAction("some/path", baseAction)
+			e := a.reflect()
+
+			Convey("Then there is no error", func() {
+				So(e, ShouldBeNil)
+			})
+
+			Convey("And there is a flag defined for the action", func() {
+				So(len(a.opts), ShouldEqual, 1)
+				if len(a.opts) == 1 {
+					So(a.opts[0].short, ShouldEqual, "f")
+					So(a.opts[0].long, ShouldEqual, "flag")
+					So(a.opts[0].isFlag, ShouldBeTrue)
+				}
+			})
+		})
+	})
+}
+
+type ActionWithEmbeddedInterface struct {
+	Runner
+}
+
+func (a *ActionWithEmbeddedInterface) Run() error {
+	return nil
+}
+
+func TestActionWithEmbeddedInterface(t *testing.T) {
+	Convey("Given an action with an embeded struct", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			baseAction := &ActionWithEmbeddedInterface{Runner: &ActionWithFlag{}}
+			a := testCreateAction("some/path", baseAction)
+			e := a.reflect()
+
+			Convey("Then there is no error", func() {
+				So(e, ShouldBeNil)
+			})
+
+			Convey("And there is a flag defined for the action", func() {
+				So(len(a.opts), ShouldEqual, 1)
+				if len(a.opts) == 1 {
+					So(a.opts[0].short, ShouldEqual, "f")
+					So(a.opts[0].long, ShouldEqual, "flag")
+					So(a.opts[0].isFlag, ShouldBeTrue)
+				}
+			})
+		})
+	})
+}
