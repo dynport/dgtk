@@ -115,6 +115,9 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 	for {
 		n, e := r.Read(headerBuf)
 		if e != nil {
+			if e == io.EOF {
+				return nil
+			}
 			return e
 		}
 		if n != 8 {
