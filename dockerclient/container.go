@@ -101,10 +101,17 @@ func (opts *AttachOptions) Encode() string {
 	return ""
 }
 
+func messageLength(header []byte) int {
+	msgLength := int(header[7]) << 0
+	msgLength += int(header[6]) << 8
+	msgLength += int(header[5]) << 16
+	msgLength += int(header[4]) << 24
+	return msgLength
+}
+
 // See http://docs.docker.io/en/latest/api/docker_remote_api_v1.8/#attach-to-a-container for the stream protocol.
 func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 	headerBuf := make([]byte, 8)
-	msgBuf := make([]byte, 32*1024) // buffer size taken from io.Copy
 	for {
 		n, e := r.Read(headerBuf)
 		if e != nil {
@@ -114,11 +121,8 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 			return fmt.Errorf("failed reading; header to short")
 		}
 
-		msgLength := int(headerBuf[7] << 0)
-		msgLength += int(headerBuf[6] << 8)
-		msgLength += int(headerBuf[5] << 16)
-		msgLength += int(headerBuf[4] << 24)
-
+		msgLength := messageLength(headerBuf)
+		msgBuf := make([]byte, msgLength) // buffer size taken from io.Copy
 		n = 0
 		for n < msgLength {
 			i, e := r.Read(msgBuf[n:])
