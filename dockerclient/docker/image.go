@@ -19,7 +19,7 @@ type Image struct {
 type ImageDetails struct {
 	Id              string           `json:"id"`
 	Parent          string           `json:"parent"`
-	created         string           `json:"created"`
+	Created         string           `json:"created"`
 	Container       string           `json:"container"`
 	Size            int              `json:"size"`
 	Architecture    string           `json:"architecture"`
@@ -41,9 +41,9 @@ func (self *Image) CreatedAt() time.Time {
 }
 
 func (image *ImageDetails) CreatedAt() (time.Time, error) {
-	t, e := time.Parse("2006-01-02T15:04:05.999999999Z", image.created)
+	t, e := time.Parse("2006-01-02T15:04:05.999999999Z", image.Created)
 	if e != nil {
-		t, e = time.Parse("2006-01-02T15:04:05.999999999-07:00", image.created)
+		t, e = time.Parse("2006-01-02T15:04:05.999999999-07:00", image.Created)
 	}
 	return t, e
 }
