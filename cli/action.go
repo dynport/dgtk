@@ -79,7 +79,7 @@ func (a *action) handleField(field reflect.StructField, value reflect.Value) (e 
 	}
 
 	if len(tagMap) == 0 {
-		return fmt.Errorf(`field %q has no "cli" tag`, field.Name)
+		return nil
 	}
 
 	switch tagMap["type"] {
