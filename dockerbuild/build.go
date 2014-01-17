@@ -63,7 +63,21 @@ func (b *Build) Build() (string, error) {
 	progress := newProgress(stat.Size())
 
 	r := io.TeeReader(f, progress)
-	return client.Build(r, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
+	imageId, e := client.Build(r, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
+	imageDetails, e := client.ImageDetails(imageId)
+	if e == nil {
+		created, e := imageDetails.CreatedAt()
+		if e != nil {
+			log.Print("ERROR: " + e.Error())
+		} else {
+			tag := created.UTC().Format("2006-01-02T150405")
+			e := client.TagImage(imageId, b.Tag, tag)
+			if e != nil {
+				log.Print("ERROR: " + e.Error())
+			}
+		}
+	}
+	return imageId, e
 }
 
 func (b *Build) buildArchive() (*os.File, error) {
