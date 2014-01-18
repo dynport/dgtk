@@ -51,6 +51,54 @@ func TestActionWithWrongType(t *testing.T) {
 	})
 }
 
+type ActionWithShortOptionAlreadyRegistered struct {
+	Field1 bool `cli:"type=opt short=h"`
+	Field2 bool `cli:"type=opt short=h"`
+}
+
+func (a *ActionWithShortOptionAlreadyRegistered) Run() error {
+	return nil
+}
+
+func TestActionWithShortOptionAlreadyRegistered(t *testing.T) {
+	Convey("Given an action with an short option already there)", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			a := testCreateAction("some/path", &ActionWithShortOptionAlreadyRegistered{})
+			e := a.reflect()
+			Convey("Then there is an error", func() {
+				So(e, ShouldNotBeNil)
+				if e != nil {
+					So(e.Error(), ShouldEqual, `ActionWithShortOptionAlreadyRegistered: short option "h" already used (option "Field1")`)
+				}
+			})
+		})
+	})
+}
+
+type ActionWithLongOptionAlreadyRegistered struct {
+	Field1 bool `cli:"type=opt long=help"`
+	Field2 bool `cli:"type=opt long=help"`
+}
+
+func (a *ActionWithLongOptionAlreadyRegistered) Run() error {
+	return nil
+}
+
+func TestActionWithLongOptionAlreadyRegistered(t *testing.T) {
+	Convey("Given an action with an long option already there)", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			a := testCreateAction("some/path", &ActionWithLongOptionAlreadyRegistered{})
+			e := a.reflect()
+			Convey("Then there is an error", func() {
+				So(e, ShouldNotBeNil)
+				if e != nil {
+					So(e.Error(), ShouldEqual, `ActionWithLongOptionAlreadyRegistered: long option "help" already used (option "Field1")`)
+				}
+			})
+		})
+	})
+}
+
 type ActionWithFlag struct {
 	Flag1 bool `cli:"type=opt short=f long=flag"`
 }

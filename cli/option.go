@@ -108,10 +108,17 @@ func (a *action) createOption(field reflect.StructField, value reflect.Value, ta
 	if opt.short == "" && opt.long == "" {
 		return fmt.Errorf("option %q has neither long nor short accessor set", field.Name)
 	}
+
 	if opt.short != "" {
+		if o, found := a.params[opt.short]; found {
+			return fmt.Errorf("short option %q already used (option %q)", opt.short, o.field)
+		}
 		a.params[opt.short] = opt
 	}
 	if opt.long != "" {
+		if o, found := a.params[opt.long]; found {
+			return fmt.Errorf("long option %q already used (option %q)", opt.long, o.field)
+		}
 		a.params[opt.long] = opt
 	}
 	a.opts = append(a.opts, opt)
