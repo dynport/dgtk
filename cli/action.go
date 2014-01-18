@@ -20,8 +20,19 @@ type action struct {
 
 // Register an action for the given path with the given runner.
 func newAction(path string, r Runner, desc string) (act *action, e error) {
-	act = &action{path: path, runner: r, params: map[string]*option{}, description: desc}
-	act.opts = append(act.opts, &option{short: "h", long: "help", isFlag: true, desc: "show help for action"})
+
+	act = &action{
+		path:        path,
+		runner:      r,
+		params:      map[string]*option{},
+		description: desc}
+
+	// Inject the "help" option (handled specially).
+	helpOption := &option{field: "Help", short: "h", long: "help", isFlag: true, desc: "show help for action"}
+	act.opts = append(act.opts, helpOption)
+	act.params["h"] = helpOption
+	act.params["help"] = helpOption
+
 	if e := act.reflect(); e != nil {
 		return nil, e
 	}
