@@ -665,3 +665,87 @@ func TestActionWithArgument_Error1(t *testing.T) {
 		})
 	})
 }
+
+type BigExampleAction struct {
+	Verbose bool     `cli:"type=opt short=v long=verbose"`
+	Host    string   `cli:"type=opt short=H long=host default=192.168.1.1"`
+	Port    int      `cli:"type=opt short=p long=port default=22"`
+	Action  string   `cli:"type=arg required=true"`
+	Command []string `cli:"type=arg"`
+}
+
+func (action *BigExampleAction) Run() error {
+	return nil
+}
+
+func parseParamsTest(actionBase Runner, params []string) (a *action, e error) {
+	a, e = newAction("foo", actionBase, "foo")
+	if e != nil {
+		return nil, e
+	}
+	return a, a.parseArgs(params)
+}
+
+func TestArgumentParsing(t *testing.T) {
+	Convey("Given the big example action", t, func() {
+		actionBase := &BigExampleAction{}
+		Convey("When an empty param string is parsed", func() {
+			_, e := parseParamsTest(actionBase, []string{})
+			Convey("Then an error is returned", func() {
+				So(e, ShouldNotBeNil)
+				if e != nil {
+					So(e.Error(), ShouldEqual, "required argument not set")
+				}
+			})
+		})
+		Convey("When at least the required argument is given", func() {
+			_, e := parseParamsTest(actionBase, []string{"foo"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the base action contains the set value", func() {
+				So(actionBase.Action, ShouldEqual, "foo")
+			})
+			Convey("Then the base action contains the specified default values", func() {
+				So(actionBase.Verbose, ShouldBeFalse)
+				So(actionBase.Host, ShouldEqual, "192.168.1.1")
+				So(actionBase.Port, ShouldEqual, 22)
+				So(len(actionBase.Command), ShouldEqual, 0)
+			})
+		})
+		Convey("When all options and arguments are given", func() {
+			_, e := parseParamsTest(actionBase, []string{"-H", "127.0.0.1", "-v", "--port", "2222", "foo", "bar", "buz"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the base action contains the set values", func() {
+				So(actionBase.Verbose, ShouldBeTrue)
+				So(actionBase.Host, ShouldEqual, "127.0.0.1")
+				So(actionBase.Port, ShouldEqual, 2222)
+				So(actionBase.Action, ShouldEqual, "foo")
+				So(len(actionBase.Command), ShouldEqual, 2)
+				if len(actionBase.Command) == 2 {
+					So(actionBase.Command[0], ShouldEqual, "bar")
+					So(actionBase.Command[1], ShouldEqual, "buz")
+				}
+			})
+		})
+		Convey("When options and arguments are given in a mixed order", func() {
+			_, e := parseParamsTest(actionBase, []string{"-H", "127.0.0.1", "foo", "-v", "bar", "--port", "2222", "buz"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the base action contains the set values", func() {
+				So(actionBase.Verbose, ShouldBeTrue)
+				So(actionBase.Host, ShouldEqual, "127.0.0.1")
+				So(actionBase.Port, ShouldEqual, 2222)
+				So(actionBase.Action, ShouldEqual, "foo")
+				So(len(actionBase.Command), ShouldEqual, 2)
+				if len(actionBase.Command) == 2 {
+					So(actionBase.Command[0], ShouldEqual, "bar")
+					So(actionBase.Command[1], ShouldEqual, "buz")
+				}
+			})
+		})
+	})
+}

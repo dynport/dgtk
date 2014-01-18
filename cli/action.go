@@ -112,19 +112,9 @@ func (a *action) handleField(field reflect.StructField, value reflect.Value) (e 
 }
 
 func (a *action) parseArgs(params []string) (e error) {
-	argumentProcessing := false
 	argIdx := 0
 	for idx := 0; idx < len(params); idx++ {
 		value := params[idx]
-		if argumentProcessing {
-			if arg := a.argumentForPosition(argIdx); arg != nil {
-				arg.setValue(value)
-			} else {
-				return fmt.Errorf("too many arguments given")
-			}
-			argIdx += 1
-			continue
-		}
 		switch {
 		case strings.HasPrefix(value, "--"):
 			idx, e = a.handleParams(value[2:], params, idx)
@@ -137,12 +127,13 @@ func (a *action) parseArgs(params []string) (e error) {
 				return e
 			}
 		default:
-			if argumentProcessing == false {
-				argumentProcessing = true
-				idx -= 1
-				continue
+			arg := a.argumentForPosition(argIdx)
+			if arg != nil {
+				arg.setValue(value)
+			} else {
+				return fmt.Errorf("too many arguments given")
 			}
-			return fmt.Errorf("foog")
+			argIdx += 1
 		}
 	}
 	return a.reflectIntoRunner()
