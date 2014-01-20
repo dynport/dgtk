@@ -56,7 +56,7 @@ func (a *action) reflect() (e error) {
 func (a *action) reflectRecurse(value reflect.Value) (e error) {
 	v := reflect.ValueOf(value.Interface())
 	if v.Kind() == reflect.Ptr {
-		return fmt.Errorf("embedding only works with non pointer types")
+		return nil
 	}
 
 	for i := 0; i < v.NumField(); i++ {
