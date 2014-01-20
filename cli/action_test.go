@@ -51,6 +51,54 @@ func TestActionWithWrongType(t *testing.T) {
 	})
 }
 
+type ActionWithShortOptionAlreadyRegistered struct {
+	Field1 bool `cli:"type=opt short=h"`
+	Field2 bool `cli:"type=opt short=h"`
+}
+
+func (a *ActionWithShortOptionAlreadyRegistered) Run() error {
+	return nil
+}
+
+func TestActionWithShortOptionAlreadyRegistered(t *testing.T) {
+	Convey("Given an action with an short option already there)", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			a := testCreateAction("some/path", &ActionWithShortOptionAlreadyRegistered{})
+			e := a.reflect()
+			Convey("Then there is an error", func() {
+				So(e, ShouldNotBeNil)
+				if e != nil {
+					So(e.Error(), ShouldEqual, `ActionWithShortOptionAlreadyRegistered: short option "h" already used (option "Field1")`)
+				}
+			})
+		})
+	})
+}
+
+type ActionWithLongOptionAlreadyRegistered struct {
+	Field1 bool `cli:"type=opt long=help"`
+	Field2 bool `cli:"type=opt long=help"`
+}
+
+func (a *ActionWithLongOptionAlreadyRegistered) Run() error {
+	return nil
+}
+
+func TestActionWithLongOptionAlreadyRegistered(t *testing.T) {
+	Convey("Given an action with an long option already there)", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			a := testCreateAction("some/path", &ActionWithLongOptionAlreadyRegistered{})
+			e := a.reflect()
+			Convey("Then there is an error", func() {
+				So(e, ShouldNotBeNil)
+				if e != nil {
+					So(e.Error(), ShouldEqual, `ActionWithLongOptionAlreadyRegistered: long option "help" already used (option "Field1")`)
+				}
+			})
+		})
+	})
+}
+
 type ActionWithFlag struct {
 	Flag1 bool `cli:"type=opt short=f long=flag"`
 }
@@ -613,6 +661,90 @@ func TestActionWithArgument_Error1(t *testing.T) {
 			Convey("Then there is an error", func() {
 				So(e, ShouldNotBeNil)
 				So(e.Error(), ShouldEqual, "ActionWithArgument_Error1: only last argument can be variadic")
+			})
+		})
+	})
+}
+
+type BigExampleAction struct {
+	Verbose bool     `cli:"type=opt short=v long=verbose"`
+	Host    string   `cli:"type=opt short=H long=host default=192.168.1.1"`
+	Port    int      `cli:"type=opt short=p long=port default=22"`
+	Action  string   `cli:"type=arg required=true"`
+	Command []string `cli:"type=arg"`
+}
+
+func (action *BigExampleAction) Run() error {
+	return nil
+}
+
+func parseParamsTest(actionBase Runner, params []string) (a *action, e error) {
+	a, e = newAction("foo", actionBase, "foo")
+	if e != nil {
+		return nil, e
+	}
+	return a, a.parseArgs(params)
+}
+
+func TestArgumentParsing(t *testing.T) {
+	Convey("Given the big example action", t, func() {
+		actionBase := &BigExampleAction{}
+		Convey("When an empty param string is parsed", func() {
+			_, e := parseParamsTest(actionBase, []string{})
+			Convey("Then an error is returned", func() {
+				So(e, ShouldNotBeNil)
+				if e != nil {
+					So(e.Error(), ShouldEqual, "required argument not set")
+				}
+			})
+		})
+		Convey("When at least the required argument is given", func() {
+			_, e := parseParamsTest(actionBase, []string{"foo"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the base action contains the set value", func() {
+				So(actionBase.Action, ShouldEqual, "foo")
+			})
+			Convey("Then the base action contains the specified default values", func() {
+				So(actionBase.Verbose, ShouldBeFalse)
+				So(actionBase.Host, ShouldEqual, "192.168.1.1")
+				So(actionBase.Port, ShouldEqual, 22)
+				So(len(actionBase.Command), ShouldEqual, 0)
+			})
+		})
+		Convey("When all options and arguments are given", func() {
+			_, e := parseParamsTest(actionBase, []string{"-H", "127.0.0.1", "-v", "--port", "2222", "foo", "bar", "buz"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the base action contains the set values", func() {
+				So(actionBase.Verbose, ShouldBeTrue)
+				So(actionBase.Host, ShouldEqual, "127.0.0.1")
+				So(actionBase.Port, ShouldEqual, 2222)
+				So(actionBase.Action, ShouldEqual, "foo")
+				So(len(actionBase.Command), ShouldEqual, 2)
+				if len(actionBase.Command) == 2 {
+					So(actionBase.Command[0], ShouldEqual, "bar")
+					So(actionBase.Command[1], ShouldEqual, "buz")
+				}
+			})
+		})
+		Convey("When options and arguments are given in a mixed order", func() {
+			_, e := parseParamsTest(actionBase, []string{"-H", "127.0.0.1", "foo", "-v", "bar", "--port", "2222", "buz"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the base action contains the set values", func() {
+				So(actionBase.Verbose, ShouldBeTrue)
+				So(actionBase.Host, ShouldEqual, "127.0.0.1")
+				So(actionBase.Port, ShouldEqual, 2222)
+				So(actionBase.Action, ShouldEqual, "foo")
+				So(len(actionBase.Command), ShouldEqual, 2)
+				if len(actionBase.Command) == 2 {
+					So(actionBase.Command[0], ShouldEqual, "bar")
+					So(actionBase.Command[1], ShouldEqual, "buz")
+				}
 			})
 		})
 	})
