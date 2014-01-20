@@ -28,6 +28,9 @@ func (dh *DockerHost) Images() (images []*docker.Image, e error) {
 func (dh *DockerHost) ImageDetails(id string) (imageDetails *docker.ImageDetails, e error) {
 	imageDetails = &docker.ImageDetails{}
 	e = dh.getJSON(dh.url()+"/images/"+id+"/json", imageDetails)
+	if e == ErrorNotFound {
+		return nil, nil
+	}
 	return imageDetails, e
 }
 

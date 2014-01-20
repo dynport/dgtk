@@ -74,10 +74,15 @@ func (dh *DockerHost) get(url string) (content []byte, rsp *http.Response, e err
 	return content, rsp, e
 }
 
+var ErrorNotFound = fmt.Errorf("resource not found")
+
 func (dh *DockerHost) getJSON(url string, i interface{}) (e error) {
 	content, rsp, e := dh.get(url)
 	if e != nil {
 		return
+	}
+	if rsp.StatusCode == http.StatusNotFound {
+		return ErrorNotFound
 	}
 	if !success(rsp) {
 		return fmt.Errorf("resource not found")
