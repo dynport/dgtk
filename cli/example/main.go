@@ -40,7 +40,7 @@ func main() {
 
 	router.Register("entities/show", &ShowEntity{w: "foog"}, "an example action")
 	router.Register("entities/list", &ShowEntity{w: "foog"}, "an example action")
-	router.Register("entit/list", &ShowEntity{w: "foog"}, "an example action")
+	router.Register("entit/list", &ShowEntity{w: "foog", Option: "barz"}, "an example action")
 	router.RegisterFunc("version", func() error { log.Printf("x.y"); return nil }, "show the apps version")
 
 	if e := router.RunWithArgs(); e != nil {

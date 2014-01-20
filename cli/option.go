@@ -98,9 +98,15 @@ func (a *action) createOption(field reflect.StructField, value reflect.Value, ta
 		return fmt.Errorf(`field %q is a flag and required, that doesn't make much sense`, field.Name)
 	}
 
-	opt.value, e = handleDefault(field, tagMap)
-	if e != nil {
-		return fmt.Errorf(`wrong value for "default" tag: %s`, e.Error())
+	opt.value = handlePresetValue(field, value)
+
+	if opt.value == "" {
+		opt.value, e = handleDefault(field, tagMap)
+		if e != nil {
+			return fmt.Errorf(`wrong value for "default" tag: %s`, e.Error())
+		}
+	} else { // With a preset value that value is not required any more.
+		opt.required = false
 	}
 
 	opt.desc = handleDescription(tagMap)

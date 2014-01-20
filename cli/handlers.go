@@ -36,6 +36,25 @@ func handleVariadic(tagMap map[string]string) (required bool, e error) {
 	return false, nil
 }
 
+func handlePresetValue(field reflect.StructField, value reflect.Value) string {
+	switch field.Type.Kind() {
+	case reflect.String:
+		if v := value.String(); v != "" {
+			return v
+		}
+	case reflect.Int:
+		if v := value.Int(); v != 0 {
+			return strconv.Itoa(int(v))
+		}
+	case reflect.Bool:
+		if v := value.Bool(); v {
+			return "true"
+		}
+	}
+
+	return ""
+}
+
 func handleDefault(field reflect.StructField, tagMap map[string]string) (value string, e error) {
 	if value, found := tagMap["default"]; found {
 		switch field.Type.Kind() {
