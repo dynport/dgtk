@@ -60,7 +60,7 @@ type Container struct {
 	Id         string
 	Image      string
 	Command    string
-	created    int64 `json:"Created"`
+	Created    int64 `json:"Created"`
 	Status     string
 	Ports      []*PortConfig
 	SizeRw     int
@@ -69,7 +69,7 @@ type Container struct {
 }
 
 func (self *Container) CreatedAt() time.Time {
-	return time.Unix(self.created, 0)
+	return time.Unix(self.Created, 0)
 }
 
 func (container *Container) String() string {
