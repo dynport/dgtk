@@ -12,6 +12,7 @@ type NetworkSettings struct {
 	Gateway     string
 	Bridge      string
 	PortMapping map[string]map[string]string
+	Ports       map[Port][]PortBinding
 }
 
 func (settings *NetworkSettings) PortMappingString() string {
