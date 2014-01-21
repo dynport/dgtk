@@ -271,7 +271,6 @@ func TestActionWithOptionWithDefaults(t *testing.T) {
 			a := testCreateAction("some/path", baseAction)
 			e := a.reflect()
 			Convey("Then there is no error", func() {
-				t.Log(e)
 				So(e, ShouldBeNil)
 			})
 			Convey("And there is an option defined for the action", func() {
@@ -632,7 +631,6 @@ func TestActionWithVariadicArgument(t *testing.T) {
 
 			Convey("Then the argument is set to 1", func() {
 				So(baseAction.Argument1, ShouldEqual, 42)
-				t.Log(baseAction.Argument2)
 				So(len(baseAction.Argument2), ShouldEqual, 3)
 				So("foobar", ShouldBeIn, baseAction.Argument2)
 				So("foobaz", ShouldBeIn, baseAction.Argument2)
@@ -688,8 +686,8 @@ func parseParamsTest(actionBase Runner, params []string) (a *action, e error) {
 
 func TestArgumentParsing(t *testing.T) {
 	Convey("Given the big example action", t, func() {
-		actionBase := &BigExampleAction{}
 		Convey("When an empty param string is parsed", func() {
+			actionBase := &BigExampleAction{}
 			_, e := parseParamsTest(actionBase, []string{})
 			Convey("Then an error is returned", func() {
 				So(e, ShouldNotBeNil)
@@ -699,6 +697,7 @@ func TestArgumentParsing(t *testing.T) {
 			})
 		})
 		Convey("When at least the required argument is given", func() {
+			actionBase := &BigExampleAction{}
 			_, e := parseParamsTest(actionBase, []string{"foo"})
 			Convey("Then no error is returned", func() {
 				So(e, ShouldBeNil)
@@ -714,6 +713,7 @@ func TestArgumentParsing(t *testing.T) {
 			})
 		})
 		Convey("When all options and arguments are given", func() {
+			actionBase := &BigExampleAction{}
 			_, e := parseParamsTest(actionBase, []string{"-H", "127.0.0.1", "-v", "--port", "2222", "foo", "bar", "buz"})
 			Convey("Then no error is returned", func() {
 				So(e, ShouldBeNil)
@@ -731,6 +731,7 @@ func TestArgumentParsing(t *testing.T) {
 			})
 		})
 		Convey("When options and arguments are given in a mixed order", func() {
+			actionBase := &BigExampleAction{}
 			_, e := parseParamsTest(actionBase, []string{"-H", "127.0.0.1", "foo", "-v", "bar", "--port", "2222", "buz"})
 			Convey("Then no error is returned", func() {
 				So(e, ShouldBeNil)
