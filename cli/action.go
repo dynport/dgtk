@@ -162,12 +162,10 @@ func (a *action) handleParams(paramName string, args []string, idx int) (int, er
 	if option.isFlag {
 		if option.value == "" || option.value == "false" {
 			option.value = "true"
-		} else {
-			option.value = "false"
 		}
 	} else {
 		if idx+1 > len(args) {
-			log.Fatalf("missing option!")
+			return -1, fmt.Errorf("missing value for option %q!", option.field)
 		}
 		option.value = args[idx+1]
 		idx += 1

@@ -751,6 +751,134 @@ func TestArgumentParsing(t *testing.T) {
 	})
 }
 
+type BigExampleAction2 struct {
+	Verbose  bool     `cli:"type=opt short=v long=verbose"`
+	Protocol string   `cli:"type=opt short=t long=protocol"`
+	Host     string   `cli:"type=opt short=H long=host default=192.168.1.1"`
+	Port     int      `cli:"type=opt short=p long=port required=true"`
+	Action   string   `cli:"type=arg required=true"`
+	Command  []string `cli:"type=arg"`
+}
+
+func (action *BigExampleAction2) Run() error {
+	return nil
+}
+
+func TestArgumentParsingWithPresetValues(t *testing.T) {
+	Convey("Given the second big example action", t, func() {
+		Convey("When a flag value is preset to false", func() {
+			actionBase := &BigExampleAction2{Verbose: false}
+			Convey("When the value is not given for parsing", func() {
+				_, e := parseParamsTest(actionBase, []string{"-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the preset value", func() {
+					So(actionBase.Verbose, ShouldBeFalse)
+				})
+			})
+			Convey("When the value is given for parsing", func() {
+				// reusing the actionBase is safe as value hasn't been changed in the previous test.
+				_, e := parseParamsTest(actionBase, []string{"-v", "-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the true value", func() {
+					So(actionBase.Verbose, ShouldBeTrue)
+				})
+			})
+		})
+		Convey("When a flag value is preset to true", func() {
+			actionBase := &BigExampleAction2{Verbose: true}
+			Convey("When the value is not given for parsing", func() {
+				_, e := parseParamsTest(actionBase, []string{"-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the preset value", func() {
+					So(actionBase.Verbose, ShouldBeTrue)
+				})
+			})
+			Convey("When the value is given for parsing", func() {
+				// reusing the actionBase is safe as value hasn't been changed in the previous test.
+				_, e := parseParamsTest(actionBase, []string{"-v", "-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action still contains the true value", func() {
+					So(actionBase.Verbose, ShouldBeTrue)
+				})
+			})
+		})
+		Convey("When a value without default is preset", func() {
+			actionBase := &BigExampleAction2{Protocol: "tcp"}
+			Convey("When the value is not given for parsing", func() {
+				_, e := parseParamsTest(actionBase, []string{"-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the preset value", func() {
+					So(actionBase.Protocol, ShouldEqual, "tcp")
+				})
+			})
+			Convey("When the value is given for parsing", func() {
+				// reusing the actionBase is safe as value hasn't been changed in the previous test.
+				_, e := parseParamsTest(actionBase, []string{"-t", "udp", "-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the parsed value", func() {
+					So(actionBase.Protocol, ShouldEqual, "udp")
+				})
+			})
+		})
+		Convey("When a value with default is preset", func() {
+			actionBase := &BigExampleAction2{Host: "127.0.0.1"}
+			Convey("When the value is not given for parsing", func() {
+				_, e := parseParamsTest(actionBase, []string{"-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the preset value", func() {
+					So(actionBase.Host, ShouldEqual, "127.0.0.1")
+				})
+			})
+			Convey("When the value is given for parsing", func() {
+				// reusing the actionBase is safe as value hasn't been changed in the previous test.
+				_, e := parseParamsTest(actionBase, []string{"-H", "127.0.0.3", "-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the parsed value", func() {
+					So(actionBase.Host, ShouldEqual, "127.0.0.3")
+				})
+			})
+		})
+		Convey("When a required value is preset", func() {
+			actionBase := &BigExampleAction2{Port: 23}
+			Convey("When the value is not given for parsing", func() {
+				_, e := parseParamsTest(actionBase, []string{"foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the preset value", func() {
+					So(actionBase.Port, ShouldEqual, 23)
+				})
+			})
+			Convey("When the value is given for parsing", func() {
+				// reusing the actionBase is safe as value hasn't been changed in the previous test.
+				_, e := parseParamsTest(actionBase, []string{"-p", "234", "foo"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the base action contains the parsed value", func() {
+					So(actionBase.Port, ShouldEqual, 234)
+				})
+			})
+		})
+	})
+}
+
 type ActionWithEmbeddedStruct struct {
 	ActionWithFlag
 }
