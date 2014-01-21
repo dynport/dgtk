@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 )
 
 func handlePostResult(rsp *http.Response, err error) (*http.Response, error) {
@@ -61,8 +60,6 @@ func (dh *DockerHost) postJSON(url string, input interface{}, output interface{}
 }
 
 func (dh *DockerHost) get(url string) (content []byte, rsp *http.Response, e error) {
-	started := time.Now()
-
 	rsp, e = dh.httpClient.Get(url)
 	if e != nil {
 		return nil, rsp, e
@@ -70,7 +67,6 @@ func (dh *DockerHost) get(url string) (content []byte, rsp *http.Response, e err
 	defer rsp.Body.Close()
 
 	content, e = ioutil.ReadAll(rsp.Body)
-	dh.Logger.Debugf("fetched %s in %.06f", url, time.Now().Sub(started).Seconds())
 	return content, rsp, e
 }
 

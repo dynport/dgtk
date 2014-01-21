@@ -1,7 +1,6 @@
 package dockerclient
 
 import (
-	"errors"
 	"fmt"
 	"github.com/dynport/dgtk/dockerclient/docker"
 	"io"
@@ -54,17 +53,14 @@ func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.Host
 	if hostConfig == nil {
 		hostConfig = &docker.HostConfig{}
 	}
-	dh.Logger.Infof("starting container with binds %+v", hostConfig)
 	body, rsp, e := dh.postJSON(dh.url()+"/containers/"+containerId+"/start", hostConfig, nil)
 	if e != nil {
-		return
+		return e
 	}
 	if rsp.StatusCode < 200 || rsp.StatusCode >= 300 {
-		e = errors.New(fmt.Sprintf("error starting container %s: status=%s, response=%s", containerId, rsp.StatusCode, string(body)))
-	} else {
-		dh.Logger.Infof("started container %s", containerId)
+		return fmt.Errorf("error starting container %s: status=%s, response=%s", containerId, rsp.StatusCode, string(body))
 	}
-	return
+	return nil
 }
 
 // Kill the container with the given identifier.

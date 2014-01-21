@@ -2,7 +2,6 @@ package dockerclient
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/dynport/dgtk/dockerclient/docker"
@@ -180,7 +179,6 @@ func (dh *DockerHost) PushImage(name string) error {
 		return fmt.Errorf("no registry given")
 	}
 
-	dh.Logger.Infof("pushing image %s to registry %s", name, registry)
 	buf := &bytes.Buffer{}
 	buf.WriteString(FAKE_AUTH)
 	url := dh.url() + "/images/" + name + "/push?registry=" + registry
@@ -191,10 +189,6 @@ func (dh *DockerHost) PushImage(name string) error {
 	}
 	defer rsp.Body.Close()
 	if !success(rsp) {
-		scanner := bufio.NewScanner(rsp.Body)
-		for scanner.Scan() {
-			dh.Logger.Debug(scanner.Text())
-		}
 		return fmt.Errorf("failed to push image:", rsp.Status)
 	}
 	return nil
@@ -220,13 +214,6 @@ func (dh *DockerHost) DeleteImage(name string) error {
 	if !success(resp) {
 		return fmt.Errorf("failed to delete image %s", name)
 	}
-
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		dh.Logger.Debug(line)
-	}
-
 	return nil
 }
 
@@ -249,17 +236,14 @@ func (self *DockerHost) createDockerfileArchive(dockerfile string) (buf *bytes.B
 
 func (dh *DockerHost) waitForTag(repository, tag string, timeout int) error {
 	for {
-		dh.Logger.Debug("waiting for tag", tag)
-		imageDetails, e := dh.ImageDetails(repository + ":" + tag)
+		_, e := dh.ImageDetails(repository + ":" + tag)
 		if e != nil {
 			if e.Error() == "resource not found" {
-				dh.Logger.Debug("got not found, waiting")
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			return e
 		}
-		dh.Logger.Debug("got image details:", imageDetails)
 		return nil
 	}
 }

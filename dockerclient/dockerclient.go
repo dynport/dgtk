@@ -3,7 +3,6 @@ package dockerclient
 
 import (
 	"fmt"
-	"github.com/dynport/gologger"
 	"github.com/dynport/gossh"
 	"net/http"
 )
@@ -15,13 +14,11 @@ type DockerHost struct {
 	httpClient *http.Client // http client used to send requests to the host.
 
 	cachedServerVersion *Version
-
-	Logger *gologger.Logger
 }
 
 // Create a new connection to a docker host reachable at the given host and port.
 func New(host string, port int) *DockerHost {
-	return &DockerHost{host: host, port: port, httpClient: &http.Client{}, Logger: gologger.NewFromEnv()}
+	return &DockerHost{host: host, port: port, httpClient: &http.Client{}}
 }
 
 // Create a new connection to a docker host using a SSH tunnel at the given user and host. This is useful as making the
@@ -33,7 +30,7 @@ func NewViaTunnel(host, user string) (*DockerHost, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &DockerHost{httpClient: hc, Logger: gologger.NewFromEnv()}, nil
+	return &DockerHost{httpClient: hc}, nil
 }
 
 func (dh *DockerHost) url() string {
