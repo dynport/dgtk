@@ -59,6 +59,17 @@ func TestResource(t *testing.T) {
 
 		Convey("cachePath", func() {
 			So(r.cachePath(), ShouldEqual, "./tmp/127.0.0.1:11223/index")
+
+			p, e := url.Parse("http://rubygems.org/gems?letter=A")
+			if e != nil {
+				t.Fatal(e.Error())
+			}
+
+			r = &Resource{
+				Url:    p,
+				Method: "GET",
+			}
+			So(r.cachePath(), ShouldEqual, "./tmp/rubygems.org/gems/letter=A")
 		})
 
 		So(r.checksum(), ShouldEqual, "1bbb8d4bf13fee2dd452cab0019ed1ee")

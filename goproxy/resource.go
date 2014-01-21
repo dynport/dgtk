@@ -33,6 +33,9 @@ func (r *Resource) cachePath() string {
 	case "", "/":
 		p = "/index"
 	}
+	if query := r.Url.Query().Encode(); query != "" {
+		p += "/" + query
+	}
 	return dir + p
 }
 
