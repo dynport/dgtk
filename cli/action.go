@@ -128,6 +128,10 @@ func (a *action) parseArgs(params []string) (e error) {
 	for idx := 0; idx < len(params); idx++ {
 		value := params[idx]
 		switch {
+		case strings.Contains(value, " "): // Must be an arg!
+			if argIdx, e = a.handleArgs(value, argIdx); e != nil {
+				return e
+			}
 		case strings.HasPrefix(value, "--"):
 			idx, e = a.handleParams(value[2:], params, idx)
 			if e != nil {
@@ -139,16 +143,20 @@ func (a *action) parseArgs(params []string) (e error) {
 				return e
 			}
 		default:
-			arg := a.argumentForPosition(argIdx)
-			if arg != nil {
-				arg.setValue(value)
-			} else {
-				return fmt.Errorf("too many arguments given")
+			if argIdx, e = a.handleArgs(value, argIdx); e != nil {
+				return e
 			}
-			argIdx += 1
 		}
 	}
 	return a.reflectIntoRunner()
+}
+
+func (a *action) handleArgs(value string, index int) (int, error) {
+	if arg := a.argumentForPosition(index); arg != nil {
+		arg.setValue(value)
+		return index + 1, nil
+	}
+	return -1, fmt.Errorf("too many arguments given")
 }
 
 func (a *action) handleParams(paramName string, args []string, idx int) (int, error) {

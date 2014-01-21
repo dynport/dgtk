@@ -764,6 +764,31 @@ func (action *BigExampleAction2) Run() error {
 	return nil
 }
 
+func TestArgumentParsingWithWhitespacedStrings(t *testing.T) {
+	Convey("Given the second big example action", t, func() {
+		Convey("When a string is given in an option", func() {
+			actionBase := &BigExampleAction2{}
+			_, e := parseParamsTest(actionBase, []string{"-H", "-q foo bar baz", "-p", "234", "foo"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the first argument is set properly (ignoring the leading '-')", func() {
+				So(actionBase.Host, ShouldEqual, "-q foo bar baz")
+			})
+		})
+		Convey("When a string is given in an argument", func() {
+			actionBase := &BigExampleAction2{}
+			_, e := parseParamsTest(actionBase, []string{"-p", "234", "-q foo bar baz"})
+			Convey("Then no error is returned", func() {
+				So(e, ShouldBeNil)
+			})
+			Convey("Then the first argument is set properly (ignoring the leading '-')", func() {
+				So(actionBase.Action, ShouldEqual, "-q foo bar baz")
+			})
+		})
+	})
+}
+
 func TestArgumentParsingWithPresetValues(t *testing.T) {
 	Convey("Given the second big example action", t, func() {
 		Convey("When a flag value is preset to false", func() {
