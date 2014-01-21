@@ -103,11 +103,14 @@ func (a *action) createOption(field reflect.StructField, value reflect.Value, ta
 
 	opt.value = handlePresetValue(field, value)
 
+	// Do that for error checking (not necessary if value preset otherwise).
+	defaultValue, e := handleDefault(field, tagMap)
+	if e != nil {
+		return fmt.Errorf(`wrong value for "default" tag: %s`, e.Error())
+	}
+
 	if opt.value == "" {
-		opt.value, e = handleDefault(field, tagMap)
-		if e != nil {
-			return fmt.Errorf(`wrong value for "default" tag: %s`, e.Error())
-		}
+		opt.value = defaultValue
 	} else { // With a preset value that value is not required any more.
 		opt.required = false
 	}
