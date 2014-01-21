@@ -948,23 +948,43 @@ func (a *ActionWithEmbeddedInterface) Run() error {
 }
 
 func TestActionWithEmbeddedInterface(t *testing.T) {
-	Convey("Given an action with an embeded struct", t, func() {
-		Convey("When the reflect method is called on it", func() {
-			baseAction := &ActionWithEmbeddedInterface{Runner: &ActionWithFlag{}}
-			a := testCreateAction("some/path", baseAction)
-			e := a.reflect()
+	Convey("Given an action with an embeded interface", t, func() {
+		Convey("When the interface is not set", func() {
+			baseAction := &ActionWithEmbeddedInterface{}
+			Convey("When the reflect method is called on it", func() {
+				a := testCreateAction("some/path", baseAction)
+				e := a.reflect()
 
-			Convey("Then there is no error", func() {
-				So(e, ShouldBeNil)
+				Convey("Then there is no error", func() {
+					So(e, ShouldBeNil)
+				})
+
+				Convey("Then the interface is not set", func() {
+					So(baseAction.Runner, ShouldBeNil)
+				})
 			})
+		})
+	})
 
-			Convey("And there is a flag defined for the action", func() {
-				So(len(a.opts), ShouldEqual, 1)
-				if len(a.opts) == 1 {
-					So(a.opts[0].short, ShouldEqual, "f")
-					So(a.opts[0].long, ShouldEqual, "flag")
-					So(a.opts[0].isFlag, ShouldBeTrue)
-				}
+	Convey("Given an action with an embeded interface", t, func() {
+		Convey("When the reflect method is called on it", func() {
+			Convey("When the interface is set", func() {
+				baseAction := &ActionWithEmbeddedInterface{Runner: &ActionWithFlag{}}
+				a := testCreateAction("some/path", baseAction)
+				e := a.reflect()
+
+				Convey("Then there is no error", func() {
+					So(e, ShouldBeNil)
+				})
+
+				Convey("And there is a flag defined for the action", func() {
+					So(len(a.opts), ShouldEqual, 1)
+					if len(a.opts) == 1 {
+						So(a.opts[0].short, ShouldEqual, "f")
+						So(a.opts[0].long, ShouldEqual, "flag")
+						So(a.opts[0].isFlag, ShouldBeTrue)
+					}
+				})
 			})
 		})
 	})
