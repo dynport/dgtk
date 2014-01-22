@@ -4,38 +4,41 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 var b64 = base64.StdEncoding
 
 func NewStore(root string) *Store {
-	return &Store{Root: root}
+	return &Store{root: root}
 }
 
 type Store struct {
-	Root string
+	root string
 }
 
-func (store *Store) UserExist(login string) bool {
-	return fileExists(store.UserPath(login))
+func (store *Store) UserExists(login string) bool {
+	return fileExists(store.userPath(login))
 }
 
-func (store *Store) UserPath(login string) string {
-	return store.Root + "/users/" + login
+func (store *Store) userPath(login string) string {
+	return store.root + "/users/" + login
 }
 
-func (store *Store) LoadPublicKeyForUser(login string) (key *rsa.PublicKey, e error) {
-	if !store.UserExist(login) {
+func (store *Store) loadPublicKeyForUser(login string) (key *rsa.PublicKey, e error) {
+	if !store.UserExists(login) {
 		return nil, fmt.Errorf("user " + login + " does not exist")
 	}
-	rawPubKey, e := ioutil.ReadFile(store.UserPath(login) + "/id_rsa.pub")
+	rawPubKey, e := ioutil.ReadFile(store.userPath(login) + "/id_rsa.pub")
 	if e != nil {
 		return nil, e
 	}
@@ -47,12 +50,12 @@ func (store *Store) LoadPublicKeyForUser(login string) (key *rsa.PublicKey, e er
 	return pubKey, nil
 }
 
-func (store *Store) StoreFileForUser(login, name string, payload []byte, options *StoreOptions) (e error) {
+func (store *Store) storeFileForUser(login, filePath string, payload []byte, options *StoreOptions) (e error) {
 	if options == nil {
 		options = &StoreOptions{}
 	}
 	if options.Encrypt {
-		pubKey, e := store.LoadPublicKeyForUser(login)
+		pubKey, e := store.loadPublicKeyForUser(login)
 		if e != nil {
 			return e
 		}
@@ -65,12 +68,24 @@ func (store *Store) StoreFileForUser(login, name string, payload []byte, options
 	if options.Encode {
 		payload = []byte(b64.EncodeToString(payload))
 	}
-	return ioutil.WriteFile(store.UserPath(login)+"/"+name, payload, 0600)
+	e = os.MkdirAll(path.Dir(filePath), 0700)
+	if e != nil {
+		return e
+	}
+	return ioutil.WriteFile(filePath, payload, 0600)
 }
 
-func (store *Store) Read(login string, secret string) (b []byte, e error) {
+func hashPassword(pwd string) []byte {
+	out := make([]byte, 32)
+	for i, b := range sha256.Sum256([]byte(pwd)) {
+		out[i] = b
+	}
+	return out
+}
+
+func (store *Store) Get(key string, login string, secret string) (b []byte, e error) {
 	privateKey := &rsa.PrivateKey{}
-	raw, e := ioutil.ReadFile(store.UserPath(login) + "/id_rsa")
+	raw, e := ioutil.ReadFile(store.userPath(login) + "/id_rsa")
 	if e != nil {
 		return nil, e
 	}
@@ -78,7 +93,8 @@ func (store *Store) Read(login string, secret string) (b []byte, e error) {
 	if e != nil {
 		return nil, e
 	}
-	crypter := NewCrypter(secret)
+	hashedPassword := hashPassword(secret)
+	crypter := newCrypter(hashedPassword)
 	decrypted, e := crypter.Decrypt(decoded)
 	if e != nil {
 		return nil, e
@@ -88,7 +104,8 @@ func (store *Store) Read(login string, secret string) (b []byte, e error) {
 		return nil, e
 	}
 
-	secretKey, e := ioutil.ReadFile(store.UserPath(login) + "/BLOB.key")
+	dir := store.storePath(login) + "/" + key
+	secretKey, e := ioutil.ReadFile(dir + "/BLOB.key")
 	if e != nil {
 		return nil, e
 	}
@@ -102,7 +119,7 @@ func (store *Store) Read(login string, secret string) (b []byte, e error) {
 		return nil, e
 	}
 
-	blob, e := ioutil.ReadFile(store.UserPath(login) + "/BLOB")
+	blob, e := ioutil.ReadFile(dir + "/BLOB")
 	if e != nil {
 		return nil, e
 	}
@@ -110,7 +127,7 @@ func (store *Store) Read(login string, secret string) (b []byte, e error) {
 	if e != nil {
 		return nil, e
 	}
-	crypter = NewCrypter(string(s))
+	crypter = newCrypter(s)
 	decryptedDecodedBlob, e := crypter.Decrypt(decodedBlob)
 	if e != nil {
 		return nil, e
@@ -118,28 +135,34 @@ func (store *Store) Read(login string, secret string) (b []byte, e error) {
 	return []byte(decryptedDecodedBlob), nil
 }
 
-func (store *Store) Store(blob []byte, login string) error {
-	if !store.UserExist(login) {
+func (store *Store) storePath(login string) string {
+	return store.userPath(login) + "/data"
+}
+
+func (store *Store) Put(key string, value []byte, login string) error {
+	if !store.UserExists(login) {
 		return fmt.Errorf("user " + login + " does not exist")
 	}
-	key := GenerateRandomKey()
+	secret := generateRandomKey()
 
-	e := store.StoreFileForUser(login, "BLOB.key", key, &StoreOptions{Encrypt: true, Encode: true})
+	dir := store.storePath(login) + "/" + key
+
+	e := store.storeFileForUser(login, dir+"/BLOB.key", secret, &StoreOptions{Encrypt: true, Encode: true})
 	if e != nil {
 		return e
 	}
-	crypter := NewCrypter(string(key))
-	encryptedBlob, e := crypter.Encrypt(blob)
+	crypter := newCrypter(secret)
+	encryptedBlob, e := crypter.Encrypt(value)
 	if e != nil {
 		return e
 	}
 	encodedEncryptedBlob := b64.EncodeToString(encryptedBlob)
-	return ioutil.WriteFile(store.UserPath(login)+"/BLOB", []byte(encodedEncryptedBlob), 0600)
+	return ioutil.WriteFile(dir+"/BLOB", []byte(encodedEncryptedBlob), 0600)
 }
 
 func (store *Store) Users() (users []*User, e error) {
 	users = []*User{}
-	matches, e := filepath.Glob(store.Root + "/users/*")
+	matches, e := filepath.Glob(store.root + "/users/*")
 	if e != nil {
 		return nil, e
 	}
@@ -154,24 +177,31 @@ func (store *Store) Users() (users []*User, e error) {
 	return users, nil
 }
 
-const DefaultBits = 4096
+const DefaultBits = 2048
 
 func (store *Store) CreateUser(login, password string) (u *User, e error) {
-	return store.CreateUserWithBits(login, password, DefaultBits)
+	return store.createUserWithBits(login, password, DefaultBits)
 }
 
 // password needs to have a valid length
-func (store *Store) CreateUserWithBits(login, password string, bits int) (u *User, e error) {
+func (store *Store) createUserWithBits(login, password string, bits int) (u *User, e error) {
+	if store.UserExists(login) {
+		return nil, fmt.Errorf("user already exists")
+	}
 	user := &User{}
-	dir := store.UserPath(login)
+	dir := store.userPath(login)
+	log.Printf("creating directory %s", dir)
 	e = os.MkdirAll(dir, 0755)
 	if e != nil {
 		return nil, e
 	}
+	log.Printf("generating key with %d bits", DefaultBits)
+	started := time.Now()
 	key, e := rsa.GenerateKey(rand.Reader, bits)
 	if e != nil {
 		return nil, e
 	}
+	log.Printf("generated key in %.3f", time.Since(started).Seconds())
 	b, e := json.Marshal(key.PublicKey)
 	if e != nil {
 		return nil, e
@@ -180,7 +210,7 @@ func (store *Store) CreateUserWithBits(login, password string, bits int) (u *Use
 	if e != nil {
 		return nil, e
 	}
-	crypter := NewCrypter(password)
+	crypter := newCrypter(hashPassword(password))
 	b, e = json.Marshal(key)
 	if e != nil {
 		os.Remove(dir + "/id_rsa.pub")

@@ -8,23 +8,19 @@ import (
 	"io"
 )
 
-func NewCrypter(secret string) *Crypter {
-	return &Crypter{Secret: secret}
+func newCrypter(key []byte) *crypter {
+	return &crypter{key: key}
 }
 
-type Crypter struct {
-	Secret string
+type crypter struct {
+	key []byte
 }
 
-func (crypter *Crypter) Key() []byte {
-	return []byte(crypter.Secret)
+func (crypter *crypter) Cipher() (c cipher.Block, e error) {
+	return aes.NewCipher(crypter.key)
 }
 
-func (crypter *Crypter) Cipher() (c cipher.Block, e error) {
-	return aes.NewCipher(crypter.Key())
-}
-
-func (crypter *Crypter) Encrypt(plaintext []byte) (b []byte, e error) {
+func (crypter *crypter) Encrypt(plaintext []byte) (b []byte, e error) {
 	bl, e := crypter.Cipher()
 	if e != nil {
 		return b, e
@@ -40,7 +36,7 @@ func (crypter *Crypter) Encrypt(plaintext []byte) (b []byte, e error) {
 	return ciphertext, nil
 }
 
-func (crypter *Crypter) Decrypt(ciphertext []byte) (s string, e error) {
+func (crypter *crypter) Decrypt(ciphertext []byte) (s string, e error) {
 	bl, e := crypter.Cipher()
 	if e != nil {
 		return s, e

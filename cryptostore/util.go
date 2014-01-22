@@ -11,7 +11,7 @@ func fileExists(path string) bool {
 	return err == nil || !os.IsNotExist(err)
 }
 
-func GenerateRandomKey() []byte {
+func generateRandomKey() []byte {
 	key := make([]byte, 32)
 	_, e := io.ReadFull(rand.Reader, key)
 	if e != nil {
