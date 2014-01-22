@@ -49,6 +49,24 @@ func (r *Router) RunWithArgs() (e error) {
 	return r.Run(os.Args[1:]...)
 }
 
+// Run the given action with given arguments.
+func RunAction(runner Runner, args ...string) (e error) {
+	var a *action
+	if a, e = newAction("", runner, ""); e != nil {
+		return e
+	}
+	if e = a.parseArgs(args); e != nil {
+		a.showHelp()
+		return e
+	}
+	return a.runner.Run()
+}
+
+// Run the given action with the arguments given on the command line.
+func RunActionWithArgs(runner Runner) (e error) {
+	return RunAction(runner, os.Args[1:]...)
+}
+
 type annonymousAction struct {
 	runner      func() error
 	description string
