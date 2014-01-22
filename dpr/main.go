@@ -208,7 +208,9 @@ func loadImage(p string) (*Image, error) {
 
 func main() {
 	http.HandleFunc("/", ServeHTTP)
-	e := http.ListenAndServe(":8088", nil)
+	addr := ":8088"
+	log.Printf("starting dpr on %s", addr)
+	e := http.ListenAndServe(addr, nil)
 	if e != nil {
 		log.Fatal(e.Error())
 	}
