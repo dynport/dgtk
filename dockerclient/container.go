@@ -107,6 +107,21 @@ func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.Host
 	return nil
 }
 
+func (dh *DockerHost) RemoveContainer(containerId string) error {
+	req, e := http.NewRequest("DELETE", dh.url()+"/containers/"+containerId, nil)
+	if e != nil {
+		return e
+	}
+	rsp, e := http.DefaultClient.Do(req)
+	if e != nil {
+		return e
+	}
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("expected status 2xx but got %s", rsp.Status)
+	}
+	return nil
+}
+
 // Kill the container with the given identifier.
 func (dh *DockerHost) StopContainer(containerId string) (e error) {
 	rsp, e := dh.post(dh.url() + "/containers/" + containerId + "/kill")
