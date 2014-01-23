@@ -13,18 +13,17 @@ import (
 )
 
 var (
-	root               = "/tmp/dpr"
-	addr               = flag.String("H", ":80", "Address to bind to")
-	awsAccessKeyId     = flag.String("aws-access-key-id", "", "AWS Access Key ID")
-	awsSecretAccessKey = flag.String("aws-secret-access-key", "", "AWS Secret Access Key")
+	dataDir = flag.String("D", "/data/dpr", "Location of data dir")
+	addr    = flag.String("H", ":80", "Address to bind to")
+	//awsAccessKeyId     = flag.String("aws-access-key-id", "", "AWS Access Key ID")
+	//awsSecretAccessKey = flag.String("aws-secret-access-key", "", "AWS Secret Access Key")
 )
 
 func main() {
 	flag.Parse()
 	server := &Server{
-		Address:            *addr,
-		AwsAccessKeyId:     *awsAccessKeyId,
-		AwsSecretAccessKey: *awsSecretAccessKey,
+		DataRoot: *dataDir,
+		Address:  *addr,
 	}
 	log.Printf("starting dpr on %s", server.Address)
 	e := server.Run()

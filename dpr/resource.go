@@ -11,12 +11,24 @@ import (
 	"strings"
 )
 
+func NewResource(dataRoot string, r *http.Request) *Resource {
+	return &Resource{dataRoot: dataRoot, Request: r}
+}
+
 type Resource struct {
+	dataRoot string
 	*http.Request
 }
 
+func (r *Resource) root() string {
+	if r.dataRoot == "" {
+		panic("dataRoot must be set")
+	}
+	return r.dataRoot
+}
+
 func (r *Resource) localPath() string {
-	normalizedPath := root + r.Request.URL.Path
+	normalizedPath := r.root() + r.Request.URL.Path
 	if strings.HasSuffix(normalizedPath, "/") {
 		normalizedPath += "index"
 	}

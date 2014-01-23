@@ -9,6 +9,7 @@ import (
 )
 
 type Server struct {
+	DataRoot           string
 	Address            string
 	AwsAccessKeyId     string
 	AwsSecretAccessKey string
@@ -22,17 +23,12 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.Method + " http://" + r.Host + r.URL.String())
 	defer r.Body.Close()
 
-	normalizedPath := root + r.URL.Path
-	if strings.HasSuffix(normalizedPath, "/") {
-		normalizedPath += "index"
-	}
-
-	s := &Resource{r}
+	res := NewResource(server.DataRoot, r)
 	w.Header().Set("X-Docker-Registry-Version", "0.0.1")
 	w.Header().Add("X-Docker-Endpoints", r.Host)
 	switch r.Method {
 	case "PUT":
-		e := s.store()
+		e := res.store()
 		if e != nil {
 			log.Println(e.Error())
 			http.Error(w, e.Error(), 500)
@@ -49,9 +45,9 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case "GET":
 		if strings.HasSuffix(r.URL.String(), "/tags") {
-			writeTags(s.localPath(), w)
+			writeTags(res.localPath(), w)
 		} else if strings.HasSuffix(r.URL.String(), "/ancestry") {
-			p := root + path.Dir(r.URL.String())
+			p := server.DataRoot + path.Dir(r.URL.String())
 			list := []string{path.Base(p)}
 			for {
 				img, e := loadImage(p + "/json")
@@ -63,15 +59,14 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 				list = append(list, img.Parent)
-				log.Println(list)
 				p = path.Dir(p) + "/" + img.Parent
 			}
 			w.Header().Set("Content-Type", "application/json")
 			if e := json.NewEncoder(w).Encode(list); e != nil {
 				log.Print("ERROR: " + e.Error())
 			}
-		} else if s.Exists() {
-			_, e := s.Write(w)
+		} else if res.Exists() {
+			_, e := res.Write(w)
 			if e != nil {
 				log.Print("ERROR: " + e.Error())
 			}
