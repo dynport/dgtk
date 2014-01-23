@@ -64,16 +64,21 @@ func (b *Build) Build() (string, error) {
 
 	r := io.TeeReader(f, progress)
 	imageId, e := client.Build(r, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
-	imageDetails, e := client.ImageDetails(imageId)
-	if e == nil {
-		created, e := imageDetails.CreatedAt()
-		if e != nil {
-			log.Print("ERROR: " + e.Error())
-		} else {
-			tag := created.UTC().Format("2006-01-02T150405")
-			e := client.TagImage(imageId, b.Tag, tag)
+	if e != nil {
+		return imageId, e
+	}
+	if b.Tag != "" {
+		imageDetails, e := client.ImageDetails(imageId)
+		if e == nil {
+			created, e := imageDetails.CreatedAt()
 			if e != nil {
 				log.Print("ERROR: " + e.Error())
+			} else {
+				tag := created.UTC().Format("2006-01-02T150405")
+				e := client.TagImage(imageId, b.Tag, tag)
+				if e != nil {
+					log.Print("ERROR: " + e.Error())
+				}
 			}
 		}
 	}
