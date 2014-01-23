@@ -14,7 +14,7 @@ import (
 
 var (
 	root               = "/tmp/dpr"
-	addr               = flag.String("H", ":8088", "Address to bind to")
+	addr               = flag.String("H", ":80", "Address to bind to")
 	awsAccessKeyId     = flag.String("aws-access-key-id", "", "AWS Access Key ID")
 	awsSecretAccessKey = flag.String("aws-secret-access-key", "", "AWS Secret Access Key")
 )
