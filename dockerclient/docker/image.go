@@ -10,7 +10,7 @@ type Image struct {
 	Repository  string   `json:"Repository"`
 	Tags        []string `json:"RepoTags"`
 	Id          string   `json:"Id"`
-	created     int
+	Created     int
 	Size        int
 	VirtualSize int
 }
@@ -37,7 +37,7 @@ type ImageHistory []struct {
 }
 
 func (self *Image) CreatedAt() time.Time {
-	return time.Unix(int64(self.created), 0)
+	return time.Unix(int64(self.Created), 0)
 }
 
 func (image *ImageDetails) CreatedAt() (time.Time, error) {
