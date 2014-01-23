@@ -8,5 +8,9 @@ build:
 run: build
 	goproxy
 
+clean:
+	rm *.test
+	rm -Rf tmp
+
 test:
 	go test -v
