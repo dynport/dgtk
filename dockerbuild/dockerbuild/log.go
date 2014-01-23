@@ -2,8 +2,13 @@ package main
 
 import (
 	"log"
+	"os"
 )
 
 func init() {
-	log.SetFlags(0)
+	if os.Getenv("DEBUG") == "true" {
+		log.SetFlags(log.Llongfile)
+	} else {
+		log.SetFlags(0)
+	}
 }
