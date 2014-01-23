@@ -19,7 +19,7 @@ func main() {
 	flag.Parse()
 	root := flag.Arg(0)
 	if root == "" {
-		log.Fatal("root must be provided")
+		root = "."
 	}
 	root, e := filepath.Abs(root)
 	if e != nil {
