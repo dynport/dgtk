@@ -15,10 +15,6 @@ import (
 
 var root = "/tmp/dpr"
 
-func init() {
-	log.SetFlags(0)
-}
-
 type Resource struct {
 	*http.Request
 }
