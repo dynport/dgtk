@@ -4,12 +4,56 @@ import (
 	"fmt"
 	"github.com/dynport/dgtk/dockerclient/docker"
 	"io"
+	"net/http"
 	"net/url"
+	"strconv"
 )
+
+type ListContainersOptions struct {
+	All    bool
+	Limit  int
+	Since  string
+	Before string
+	Size   bool
+}
+
+func (opts *ListContainersOptions) Encode() string {
+	values := url.Values{}
+	if opts.All {
+		values.Add("all", "true")
+	}
+	if opts.Limit > 0 {
+		values.Add("limit", strconv.Itoa(opts.Limit))
+	}
+	if opts.Since != "" {
+		values.Add("since", opts.Since)
+	}
+	if opts.Before != "" {
+		values.Add("before", opts.Before)
+	}
+	if opts.Size {
+		values.Add("size", "true")
+	}
+
+	if len(values) > 0 {
+		return values.Encode()
+	}
+	return ""
+}
 
 // Get a list of all ontainers available on the host.
 func (dh *DockerHost) Containers() (containers []*docker.Container, e error) {
-	e = dh.getJSON(dh.url()+"/containers/json", &containers)
+	return dh.ListContainers(nil)
+}
+
+func (dh *DockerHost) ListContainers(opts *ListContainersOptions) (containers []*docker.Container, e error) {
+	u := dh.url() + "/containers/json"
+	if opts != nil {
+		if params := opts.Encode(); params != "" {
+			u += "?" + params
+		}
+	}
+	e = dh.getJSON(u, &containers)
 	return containers, e
 }
 
