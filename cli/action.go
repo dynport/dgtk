@@ -163,7 +163,7 @@ func (a *action) handleParams(paramName string, args []string, idx int) (int, er
 	// Keep that on top, as this is some special sort of handling. Required to make help appear in usage description,
 	// but not be injected to deep.
 	if paramName == "h" || paramName == "help" {
-		return -1, fmt.Errorf("help requested")
+		return -1, ErrorHelpRequested
 	}
 
 	option, found := a.params[paramName]
