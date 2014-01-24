@@ -7,8 +7,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
 )
 
 var assets = map[string][]byte{}
@@ -20,25 +18,6 @@ func assetNames() (names []string) {
 	return names
 }
 
-var (
-	devAssetsPath string
-	Development bool
-	Debug bool
-)
-
-func init() {
-	devAssetsPath = os.Getenv("DEV_ASSETS_PATH")
-	if devAssetsPath != "" {
-		Development = true
-	}
-}
-
-func logDebug(format string, args ...interface{}) {
-	if Debug {
-		fmt.Printf(format + "\n", args...)
-	}
-}
-
 func mustReadAsset(key string) []byte {
 	content, e := readAsset(key)
 	if e != nil {
@@ -48,14 +27,6 @@ func mustReadAsset(key string) []byte {
 }
 
 func readAsset(key string) ([]byte, error) {
-	if devAssetsPath != "" {
-		path := devAssetsPath + "/" + key
-		logDebug("reading file from dev path %s", path)
-		b, e := ioutil.ReadFile(path)
-		if e == nil {
-			return b, nil
-		}
-	}
 	b, ok := assets[key]
 	if !ok {
 		return nil, fmt.Errorf("asset %s not found in %v", key, assetNames())

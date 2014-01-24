@@ -127,7 +127,7 @@ func (assets *Assets) Build() error {
 		return e
 	}
 	if fileExists(path) {
-		return fmt.Errorf("file %s already exists (deleted it first?!?)", path)
+		return fmt.Errorf("File %q already exists (deleted it first?!?)", path)
 	}
 	f, e := os.Create(path)
 	if e != nil {

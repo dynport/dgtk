@@ -43,7 +43,7 @@ func makeLineBuffer() []string {
 func determinePackageByPath() string {
 	result, e := exec.Command("go", "list", "-f", "{{ .Name }}").CombinedOutput()
 	if e != nil {
-		log.Fatal(string(result))
+		log.Fatal(string(result), e.Error())
 	}
 	return strings.TrimSpace(string(result))
 }
