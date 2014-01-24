@@ -13,7 +13,7 @@ import (
 
 var assets = map[string][]byte{}
 
-func {{ .NamesMethodName }}() (names []string) {
+func assetNames() (names []string) {
 	for name, _ := range assets {
 		names = append(names, name)
 	}
@@ -39,7 +39,15 @@ func logDebug(format string, args ...interface{}) {
 	}
 }
 
-func {{ .GetterMethodName }}(key string) ([]byte, error) {
+func mustReadAsset(key string) []byte {
+	content, e := readAsset(key)
+	if e != nil {
+		panic(e)
+	}
+	return content
+}
+
+func readAsset(key string) ([]byte, error) {
 	if devAssetsPath != "" {
 		path := devAssetsPath + "/" + key
 		logDebug("reading file from dev path %s", path)
@@ -50,7 +58,7 @@ func {{ .GetterMethodName }}(key string) ([]byte, error) {
 	}
 	b, ok := assets[key]
 	if !ok {
-		return nil, fmt.Errorf("asset %s not found in %v", key, {{ .NamesMethodName }}())
+		return nil, fmt.Errorf("asset %s not found in %v", key, assetNames())
 	}
 	gz, err := gzip.NewReader(bytes.NewBuffer(b))
 	if err != nil {
