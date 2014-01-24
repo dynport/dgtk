@@ -57,7 +57,7 @@ func TestIntegration(t *testing.T) {
 			t.Fatal(e.Error())
 		}
 		So(fileExists("./tmp/assets.go"), ShouldBeFalse)
-		cmd := exec.Command("bash", "-c", "cd tmp && goassets -pkg main ../fixtures && go run *.go")
+		cmd := exec.Command("bash", "-c", "cd tmp && goassets ../fixtures && go run *.go")
 		b, e := cmd.CombinedOutput()
 		So(e, ShouldBeNil)
 		out := string(b)
