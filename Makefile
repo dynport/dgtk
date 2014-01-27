@@ -4,7 +4,7 @@ ASSET_DIRS  := $(shell find . -type f -name .goassets)
 ASSET_FILES := $(addsuffix assets.go,$(dir $(ASSET_DIRS)))
 
 ALL_DEPS    := $(shell go list ./... | xargs go list -f '{{join .Deps "\n"}}' | grep -e "$github.com\|code.google.com\|launchpad.net" | sort | uniq | grep -v "github.com/dynport/dgtk")
-EXTRA_DEPS  := github.com/dynport/dgtk/goassets github.com/smartystreets/goconvey github.com/stretchr/testify/assert
+EXTRA_DEPS  := github.com/dynport/dgtk/goassets github.com/smartystreets/goconvey github.com/stretchr/testify/assert github.com/jacobsa/oglematchers
 IGN_DEPS    := 
 DEPS        := $(filter-out $(IGN_DEPS),$(ALL_DEPS))
 
