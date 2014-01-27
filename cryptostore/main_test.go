@@ -88,7 +88,7 @@ func TestStore(t *testing.T) {
 		})
 
 		Convey("Read BLOB", func() {
-			b, e := store.Get("user1", "first", userSecret)
+			b, e := store.Get("first", "user1", userSecret)
 			So(e, ShouldBeNil)
 			So(b, ShouldNotBeNil)
 			So(string(b), ShouldEqual, "this is a test")
