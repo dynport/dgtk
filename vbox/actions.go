@@ -27,11 +27,21 @@ func (action *actCloneVM) Run() error {
 	return vboxHost.cloneVM(action.Name, action.Template, action.Snapshot)
 }
 
-func listVMs() (e error) {
+type actListVMs struct {
+	Running bool `cli:"type=opt short=r long=running desc='Show running VMs only.'"`
+}
+
+func (action *actListVMs) Run() (e error) {
 	var vms []*vm
-	if vms, e = vboxHost.listAllVMs(); e != nil {
+	if action.Running {
+		vms, e = vboxHost.listRunningVMs()
+	} else {
+		vms, e = vboxHost.listAllVMs()
+	}
+	if e != nil {
 		return e
 	}
+
 	for _, vm := range vms {
 		log.Printf("%s", vm.name)
 	}
