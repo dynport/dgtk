@@ -16,3 +16,25 @@
 //	  argument is required, at least one value must be present. Only the last arguments can be variadic.
 //	* Non variadic arguments must always be given.
 package cli
+
+import (
+	"os"
+)
+
+// Run the given action with given arguments.
+func RunAction(runner Runner, args ...string) (e error) {
+	var a *action
+	if a, e = newAction("", runner, ""); e != nil {
+		return e
+	}
+	if e = a.parseArgs(args); e != nil {
+		a.showHelp()
+		return e
+	}
+	return a.runner.Run()
+}
+
+// Run the given action with the arguments given on the command line.
+func RunActionWithArgs(runner Runner) (e error) {
+	return RunAction(runner, os.Args[1:]...)
+}
