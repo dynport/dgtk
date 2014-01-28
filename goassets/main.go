@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/dynport/dgtk/cli"
-	"github.com/dynport/dgtk/log"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -43,13 +42,18 @@ func makeLineBuffer() []string {
 func determinePackageByPath() string {
 	result, e := exec.Command("go", "list", "-f", "{{ .Name }}").CombinedOutput()
 	if e != nil {
-		log.Fatal(string(result), e.Error())
+		logger.Fatal(string(result), e.Error())
 	}
 	return strings.TrimSpace(string(result))
 }
 
 func main() {
 	if e := cli.RunActionWithArgs(&action{}); e != nil {
-		log.Fatal(e.Error())
+		switch e {
+		case nil, cli.ErrorHelpRequested, cli.ErrorNoRoute:
+			// ignore
+		default:
+			logger.Fatal(e.Error())
+		}
 	}
 }

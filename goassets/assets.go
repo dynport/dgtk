@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/dynport/dgtk/log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -115,7 +114,6 @@ func (assets *Assets) Build() error {
 		return e
 	}
 	for _, asset := range paths {
-		log.Debug("loading %s", asset.Path)
 		e := asset.Load()
 		if e != nil {
 			return e
@@ -138,7 +136,6 @@ func (assets *Assets) Build() error {
 	if e != nil {
 		return e
 	}
-	log.Debug("writing %d bytes to %s", len(b), path)
 	_, e = f.Write(b)
 	return e
 }
