@@ -95,8 +95,24 @@ func (a *action) reflectRecurse(value reflect.Value) (e error) {
 	return nil
 }
 
+func splitter(tagval string) (key, value string, e error) {
+	switch {
+	case tagval == "required":
+		return "required", "true", nil
+	case tagval == "opt":
+		return "type", "opt", nil
+	case tagval == "arg":
+		return "type", "arg", nil
+	case strings.HasPrefix(tagval, "--"):
+		return "long", tagval[2:], nil
+	case strings.HasPrefix(tagval, "-"):
+		return "short", tagval[1:], nil
+	}
+	return "", "", fmt.Errorf("failed")
+}
+
 func (a *action) handleField(field reflect.StructField, value reflect.Value) (e error) {
-	tagMap, e := tagparse.Parse(field, "cli")
+	tagMap, e := tagparse.ParseCustom(field, "cli", splitter)
 	if e != nil {
 		return fmt.Errorf("failed to parse tag for field %q: %s", field.Name, e)
 	}
