@@ -10,9 +10,11 @@ This is a tool to easily manage virtual boxes. Goals are to:
 ## Installation
 
 Install [VirtualBox](http://download.virtualbox.org/virtualbox/4.3.6/VirtualBox-4.3.6-91406-OSX.dmg) and the vbox tool:
+
 	go get github.com/dynport/dgtk/vbox
 
 Now retrieve your local template engine.
+
 	vbox get template ubuntu_precise.ova template
 
 `ubuntu_precise.ova` is the image to be downloaded and `template` the name of the machine created (`template` is the
