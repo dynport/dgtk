@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -27,7 +26,7 @@ func NewRouter() *Router {
 // action.
 func (r *Router) Run(args ...string) (e error) {
 	if r.initFailed {
-		log.Fatal("errors found during initialization")
+		logger.Fatal("errors found during initialization")
 	}
 	// Find action and parse args.
 	node, args := r.findNode(args, true)
@@ -70,7 +69,7 @@ func (r *Router) RegisterFunc(path string, f func() error, desc string) {
 func (r *Router) Register(path string, runner Runner, desc string) {
 	a, e := newAction(path, runner, desc)
 	if e != nil {
-		log.Printf("%s", e)
+		logger.Printf("%s", e)
 		r.initFailed = true
 		return
 	}
@@ -79,11 +78,11 @@ func (r *Router) Register(path string, runner Runner, desc string) {
 	node, pathSegments := r.findNode(pathSegments, false)
 	if node != nil {
 		if node.action != nil {
-			log.Printf("failed to register action for path %q: action for path %q already registered", a.path, node.action.path)
+			logger.Printf("failed to register action for path %q: action for path %q already registered", a.path, node.action.path)
 			r.initFailed = true
 			return
 		} else if len(pathSegments) == 0 && len(node.children) > 0 {
-			log.Printf("failed to register action for path %q: longer paths with this prefix exist", a.path)
+			logger.Printf("failed to register action for path %q: longer paths with this prefix exist", a.path)
 			r.initFailed = true
 			return
 		}

@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"github.com/dynport/dgtk/tagparse"
-	"log"
 	"reflect"
 	"strings"
 )
@@ -233,27 +232,27 @@ func (a *action) reflectArguments() (e error) {
 func (a *action) showHelp() {
 	a.showShortHelp()
 	if a.description != "" {
-		log.Print("  ", a.description)
+		logger.Print("  ", a.description)
 	}
 
 	optsAvailable := false
 	if len(a.opts) > 0 {
 		optsAvailable = true
-		log.Print("  OPTIONS")
+		logger.Print("  OPTIONS")
 		for _, opt := range a.opts {
-			log.Print(opt.description())
+			logger.Print(opt.description())
 		}
 	}
 	if len(a.args) > 0 {
 		if optsAvailable {
-			log.Println()
+			logger.Println()
 		}
-		log.Print("  ARGUMENTS")
+		logger.Print("  ARGUMENTS")
 		for _, arg := range a.args {
-			log.Print(arg.description())
+			logger.Print(arg.description())
 		}
 	}
-	log.Println()
+	logger.Println()
 }
 
 func (a *action) showShortHelp() {
@@ -265,7 +264,7 @@ func (a *action) showShortHelp() {
 		line += arg.shortDescription()
 		line += " "
 	}
-	log.Print(line)
+	logger.Print(line)
 }
 
 func (a *action) showTabularHelp(t *table) {
