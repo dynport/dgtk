@@ -102,7 +102,7 @@ func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.Host
 		return e
 	}
 	if rsp.StatusCode < 200 || rsp.StatusCode >= 300 {
-		return fmt.Errorf("error starting container %s: status=%s, response=%s", containerId, rsp.StatusCode, string(body))
+		return fmt.Errorf("error starting container %s: status=%d, response=%s", containerId, rsp.StatusCode, string(body))
 	}
 	return nil
 }
@@ -203,6 +203,7 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 					return e
 				}
 			}
+			return nil
 		case 2: // stderr
 			if stderr != nil {
 				_, e := stderr.Write(msgBuf[:msgLength])
@@ -210,11 +211,11 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 					return e
 				}
 			}
+			return nil
 		default:
 			return fmt.Errorf("unknown stream source received")
 		}
 	}
-	return nil
 }
 
 // Attach to the given container with the given writer.

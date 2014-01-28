@@ -23,7 +23,7 @@ func callback(s *dockerclient.JSONMessage) {
 		out := strings.TrimSpace(s.Status)
 		if s.Progress != nil {
 			if s.Progress.Total > 0 {
-				out += fmt.Sprintf(" %.1f", s.Progress.Current*100.0/s.Progress.Total)
+				out += fmt.Sprintf(" %.1f", float64(s.Progress.Current)*100.0/float64(s.Progress.Total))
 			}
 		}
 		debug(out)

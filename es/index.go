@@ -68,7 +68,7 @@ type Term map[string]interface{}
 type Terms map[string][]interface{}
 
 type Filter struct {
-	And   []*Filter         `json:"and,omitempty`
+	And   []*Filter         `json:"and,omitempty"`
 	Term  *Term             `json:"term,omitempty"`
 	Terms *Terms            `json:"term,omitempty"`
 	Range map[string]*Range `json:"range,omitempty"`

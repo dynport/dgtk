@@ -189,7 +189,7 @@ func (dh *DockerHost) PushImage(name string) error {
 	}
 	defer rsp.Body.Close()
 	if !success(rsp) {
-		return fmt.Errorf("failed to push image:", rsp.Status)
+		return fmt.Errorf("failed to push image: %s", rsp.Status)
 	}
 	return nil
 }
