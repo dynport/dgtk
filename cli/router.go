@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// The basic datastructure used in cli. A router is added actions for different paths using the "Register" and
+// The basic datastructure used in cli. Actions are added for different paths to a router via the "Register" and
 // "RegisterFunc" methods. These actions can be executed using the "Run" and "RunWithArgs" methods.
 type Router struct {
 	root *routingTreeNode
@@ -16,7 +16,7 @@ type Router struct {
 	initFailed bool
 }
 
-// Create a new router.
+// Create a new router that will be used to register and run the actions of the application.
 func NewRouter() *Router {
 	r := &Router{}
 	r.root = &routingTreeNode{children: map[string]*routingTreeNode{}}

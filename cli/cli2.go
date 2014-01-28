@@ -15,13 +15,16 @@
 //	* Arguments (type "arg") may be variadic (type in the struct must be a slice), i.e. arbitrary can be given. If the
 //	  argument is required, at least one value must be present. Only the last arguments can be variadic.
 //	* Non variadic arguments must always be given.
+//	* Routes use a fuzzy matching algorithm, i.e. for `do something` its sufficient to give `d s` as long as the
+//	  fragments are not ambiguous.
 package cli
 
 import (
 	"os"
 )
 
-// Run the given action with given arguments.
+// Run the given action with given arguments. This is useful for programms that don't need the routing features, i.e.
+// only have one action to run. The example on the short notation uses this feature.
 func RunAction(runner Runner, args ...string) (e error) {
 	var a *action
 	if a, e = newAction("", runner, ""); e != nil {

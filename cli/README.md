@@ -5,14 +5,15 @@ generate those. The existing frameworks failed to deliver features for extended 
 
 The core ideas of cli are:
 
-* Have routes to actions (like in a web API).
+* Have routes to actions (like in a web API). There is a fuzzy matching for routes, that allows for giving short cuts
+  (like `d s` for `do something`), as long as the given short cuts are unambiguous.
 * Actions have parameters like options, flags and arguments. Each action is associated with a struct that has annotated
   fields. The annotations are used to fill the associated fields with the value given on the command line (or by the
   defaults). Action struct must implement the `Runner` interface.
 * Options are given via a handle in short or long form (`-c` vs. `--config-file`) and have a value.
 * Flags are options with a boolean value, that is set to `true` if the flag is given.
 * Arguments are given additionally with out a special handle. This is why order and existence are essential!
-* Actions can have hierarchies to faciliate reuse of code.
+* Actions can have hierarchies to facilitate reuse of code.
 
 
 ## Examples
@@ -60,7 +61,7 @@ If an action doesn't need parameters it's also possible to directly register a f
 
 	router.RegisterFunc("do/something", func() error { return fmt.Errorf("I should do something") }, "do something")
 
-If there is only a single action for a programm the router is not required and this action can be registered directly:
+If there is only a single action for a program the router is not required and this action can be registered directly:
 
 	cli.RunActionWithArgs(&ExampleRunner{})
 
