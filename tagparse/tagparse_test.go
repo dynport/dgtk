@@ -1,6 +1,7 @@
 package tagparse
 
 import (
+	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
@@ -99,11 +100,15 @@ func TestTagSplit(t *testing.T) {
 	})
 }
 
+func customHandler(string) (string, string, error) {
+	return "", "", fmt.Errorf("failed")
+}
+
 func TestParseTag(t *testing.T) {
 	Convey("Given an empty tag string", t, func() {
 		tagString := ""
 		Convey("When the tag parser is called", func() {
-			tagMap, e := parseTag(tagString)
+			tagMap, e := parseTag(tagString, customHandler)
 			Convey("Then there is no error", func() {
 				So(e, ShouldBeNil)
 			})
@@ -116,7 +121,7 @@ func TestParseTag(t *testing.T) {
 	Convey("Given a tag string with a single key value pair", t, func() {
 		tagString := "key=value"
 		Convey("When the tag parser is called", func() {
-			tagMap, e := parseTag(tagString)
+			tagMap, e := parseTag(tagString, customHandler)
 			Convey("Then there is no error", func() {
 				So(e, ShouldBeNil)
 			})
@@ -132,7 +137,7 @@ func TestParseTag(t *testing.T) {
 	Convey("Given a tag string with two key value pairs", t, func() {
 		tagString := "key1=value1 key2=value2"
 		Convey("When the tag parser is called", func() {
-			tagMap, e := parseTag(tagString)
+			tagMap, e := parseTag(tagString, customHandler)
 			Convey("Then there is no error", func() {
 				So(e, ShouldBeNil)
 			})
@@ -149,7 +154,7 @@ func TestParseTag(t *testing.T) {
 	Convey("Given a tag string with a quoted value", t, func() {
 		tagString := "key='quoted value with spaces'"
 		Convey("When the tag parser is called", func() {
-			tagMap, e := parseTag(tagString)
+			tagMap, e := parseTag(tagString, customHandler)
 			Convey("Then there is no error", func() {
 				So(e, ShouldBeNil)
 			})
@@ -165,7 +170,7 @@ func TestParseTag(t *testing.T) {
 	Convey("Given a tag string with a quoted value with enclosing whitespace", t, func() {
 		tagString := "key=' quoted value with spaces \t '"
 		Convey("When the tag parser is called", func() {
-			tagMap, e := parseTag(tagString)
+			tagMap, e := parseTag(tagString, customHandler)
 			Convey("Then there is no error", func() {
 				So(e, ShouldBeNil)
 			})
@@ -181,7 +186,7 @@ func TestParseTag(t *testing.T) {
 	Convey("Given a tag string with a key without value", t, func() {
 		tagString := "foo=bar keywithoutvalue"
 		Convey("When the tag parser is called", func() {
-			tagMap, e := parseTag(tagString)
+			tagMap, e := parseTag(tagString, customHandler)
 			Convey("Then there is an error", func() {
 				So(e, ShouldNotBeNil)
 				So(e.Error(), ShouldEqual, `failed to parse annotation (value missing): "keywithoutvalue"`)
