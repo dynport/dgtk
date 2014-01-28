@@ -1,11 +1,25 @@
 # cli
 
-A library to easily create command line interfaces.
+A library to easily create command line interfaces. This is driven by the desire to have a simple but powerful way to
+generate those. The existing frameworks failed to deliver features for extended parsing of arguments.
+
+The core ideas of cli are:
+
+* Have routes to actions (like in a web API).
+* Actions have parameters like options, flags and arguments. Each action is associated with a struct that has annotated
+  fields. The annotations are used to fill the associated fields with the value given on the command line (or by the
+  defaults). Action struct must implement the `Runner` interface.
+* Options are given via a handle in short or long form (`-c` vs. `--config-file`) and have a value.
+* Flags are options with a boolean value, that is set to `true` if the flag is given.
+* Arguments are given additionally with out a special handle. This is why order and existence are essential!
+* Actions can have hierarchies to faciliate reuse of code.
 
 
-## Example
+## Examples
 
-The following example creates a simple CLI action for running commands at a remote host (like `example run on host -c "uname -a" 192.168.1.1` given the binary has the `example` name and the `uname` command should be executed on `192.168.1.1`).
+The following example creates a simple CLI action for running commands at a remote host (like `example run on host -c
+"uname -a" 192.168.1.1` given the binary has the `example` name and the `uname` command should be executed on
+`192.168.1.1`).
 
 	// Struct used to configure an action.
 	type ExampleRunner struct {
@@ -32,12 +46,21 @@ The following example creates a simple CLI action for running commands at a remo
 		router.RunWithArgs() // Run with args given on the command line.
 	}
 
+This example used the long notation of the annotation parser. The following would have the very same effect, but be much
+more concise:
 
-## Usage
+	// Struct used to configure an action.
+	type ExampleRunner struct {
+		Verbose bool   `cli:"opt -v --verbose"`          // Flag (boolean option) example. This is either set or not.
+		Command string `cli:"opt -c --command required"` // Option that has a default value.
+		Hosts   string `cli:"arg required"`              // Argument with at least one required.
+	}
 
-There are three steps to take:
-	1. Create a struct with the options and arguments to be supported. Description of those entities is done using
-	   annotations.
-	2. Implement the Runner interface for this struct.
-	3. Register the struct as action with a path on the router.
+If an action doesn't need parameters it's also possible to directly register a function:
+
+	router.RegisterFunc("do/something", func() error { return fmt.Errorf("I should do something") }, "do something")
+
+If there is only a single action for a programm the router is not required and this action can be registered directly:
+
+	cli.RunActionWithArgs(&ExampleRunner{})
 
