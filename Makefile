@@ -11,6 +11,8 @@ DEPS        := $(filter-out $(IGN_DEPS),$(ALL_DEPS))
 ALL_PKGS    := $(shell go list ./...)
 IGN_PKGS    := 
 PACKAGES    := $(filter-out $(IGN_PKGS),$(ALL_PKGS))
+IGN_TEST_PKGS := github.com/dynport/dgtk/es
+TEST_PKGS   := $(filter-out $(IGN_TEST_PKGS),$(PACKAGES))
 
 default: build
 
@@ -35,7 +37,7 @@ deps:
 	done
 
 test: build
-	@go test -v $(PACKAGES)
+	@go test $(TEST_PKGS)
 
 vet: build
 	@go vet $(PACKAGES)
