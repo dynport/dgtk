@@ -42,7 +42,7 @@ func tagSplit(tag string) (fields []string, e error) {
 	return fields, nil
 }
 
-func parseTag(tagString string) (result map[string]string, e error) {
+func parseTag(tagString string, customS CustomSplitter) (result map[string]string, e error) {
 	fields, e := tagSplit(tagString)
 	if e != nil {
 		return nil, e
@@ -51,11 +51,16 @@ func parseTag(tagString string) (result map[string]string, e error) {
 	result = map[string]string{}
 	for fIdx := range fields {
 		kvList := strings.SplitN(fields[fIdx], "=", 2)
-		if len(kvList) != 2 {
-			return nil, fmt.Errorf("failed to parse annotation (value missing): %q", fields[fIdx])
+		var key, value string
+		if len(kvList) == 2 {
+			key = strings.TrimSpace(kvList[0])
+			value = strings.Trim(kvList[1], "'")
+		} else {
+			key, value, e = customS(fields[fIdx])
+			if e != nil {
+				return nil, fmt.Errorf("failed to parse annotation (value missing): %q", fields[fIdx])
+			}
 		}
-		key := strings.TrimSpace(kvList[0])
-		value := strings.Trim(kvList[1], "'")
 
 		if _, found := result[key]; found {
 			return nil, fmt.Errorf("key %q set multiple times", key)
@@ -65,10 +70,17 @@ func parseTag(tagString string) (result map[string]string, e error) {
 	return result, nil
 }
 
+type CustomSplitter func(string) (string, string, error)
+
 // Parse tag with the given prefix of the given field. Return a map of strings to strings. If errors occur they are
 // returned accordingly.
-func Parse(field reflect.StructField, prefix string) (result map[string]string, e error) {
+func Parse(field reflect.StructField, prefix string, customHander func(string) (string, string, error)) (result map[string]string, e error) {
+	return ParseCustom(field, prefix, func(_ string) (string, string, error) { return "", "", fmt.Errorf("failed") })
+}
+
+// Like Parse, but with a custom splitter used for tag values that don't have the form `key=value`.
+func ParseCustom(field reflect.StructField, prefix string, customF CustomSplitter) (result map[string]string, e error) {
 	tagString := field.Tag.Get(prefix)
 
-	return parseTag(tagString)
+	return parseTag(tagString, customF)
 }
