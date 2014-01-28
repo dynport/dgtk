@@ -191,6 +191,11 @@ func (h *host) stopVM(name string) (e error) {
 	return e
 }
 
+func (h *host) shutdownVM(name string) (e error) {
+	_, e = h.run("controlvm", name, "acpipowerbutton")
+	return e
+}
+
 func (h *host) isVMRunning(name string) (bool, error) {
 	vms, e := h.listRunningVMs()
 	if e != nil {

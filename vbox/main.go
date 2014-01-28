@@ -18,6 +18,7 @@ func main() {
 	router.Register("vm/start", &startVM{}, "Start the VM with the given name.")
 	router.Register("vm/save", &vmBase{Action: "save"}, "Stop the VM with the given name (saving the current state).")
 	router.Register("vm/stop", &vmBase{Action: "stop"}, "Stop the VM with the given name (unplug the VM).")
+	router.Register("vm/shutdown", &vmBase{Action: "shutdown"}, "Send the VM the ACPI shutdown signal.")
 
 	router.Register("vm/props", &vmBase{Action: "props"}, "List properties of given VM.")
 

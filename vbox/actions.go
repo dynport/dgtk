@@ -59,6 +59,8 @@ func (action *vmBase) Run() (e error) {
 		return listVMProps(action.Name)
 	case "stop":
 		return vboxHost.stopVM(action.Name)
+	case "shutdown":
+		return vboxHost.shutdownVM(action.Name)
 	case "save":
 		return vboxHost.saveVM(action.Name)
 	case "delete":
