@@ -16,12 +16,14 @@ var ignoreNames = []string{"Packages.gz", "Release", "Release.gpg", "Sources.bz2
 
 func main() {
 	addr := ":1234"
-	log.Println("listening on " + addr)
-	handler := &goproxy.Handler{}
-	for _, name := range ignoreNames {
-		handler.Ignore(name)
+	proxy := goproxy.Proxy{
+		Address: addr,
 	}
-	e := http.ListenAndServe(addr, handler)
+	log.Printf("starting goproxy with listen=%s with cached_dir=%q", proxy.Address, proxy.CacheDir())
+	for _, name := range ignoreNames {
+		proxy.Ignore(name)
+	}
+	e := proxy.Run()
 	if e != nil {
 		log.Fatal("ERROR: " + e.Error())
 	}

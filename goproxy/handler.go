@@ -4,35 +4,22 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path"
 	"strings"
 	"time"
 )
 
-type Handler struct {
-	ignored map[string]struct{}
+type handler struct {
+	Proxy *Proxy
 }
 
-func (handler *Handler) Ignored(p string) bool {
-	_, ok := handler.ignored[path.Base(p)]
-	return ok
-}
-
-func (handler *Handler) DoStore(r *Resource) bool {
+func (handler *handler) DoStore(r *Resource) bool {
 	if r.Response.StatuCode < 200 || r.Response.StatuCode >= 500 {
 		return false
 	}
-	return !handler.Ignored(r.cachePath())
+	return !handler.Proxy.Ignored(handler.Proxy.cachePath(r))
 }
 
-func (handler *Handler) Ignore(name string) {
-	if handler.ignored == nil {
-		handler.ignored = map[string]struct{}{}
-	}
-	handler.ignored[name] = struct{}{}
-}
-
-func (handler *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s", r.Method, r.URL)
 	u := r.URL.String()
 	if strings.HasPrefix(u, "//") {
@@ -45,13 +32,13 @@ func (handler *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Header: r.Header,
 	}
 
-	loaded, e := res.Load()
+	loaded, e := handler.Proxy.Load(res)
 	logLine := fmt.Sprintf("method=%s url=%q size=%d", res.Method, res.Url.String(), len(res.Response.Body))
 	if loaded {
 		logLine += " status=loaded"
 
 		if handler.DoStore(res) {
-			e := res.store()
+			e := handler.Proxy.Store(res)
 			if e != nil {
 				log.Println("ERROR: " + e.Error())
 			} else {

@@ -44,6 +44,14 @@ func testServer(t *testing.T) (net.Listener, error) {
 	}
 }
 
+func newGetResource(t *testing.T, theUrl string) *Resource {
+	u, e := url.Parse(theUrl)
+	if e != nil {
+		t.Fatal(e.Error())
+	}
+	return &Resource{Method: "GET", Url: u}
+}
+
 func TestResource(t *testing.T) {
 	DefaultCacheDir = "./tmp"
 	l, e := testServer(t)
@@ -53,41 +61,30 @@ func TestResource(t *testing.T) {
 	defer l.Close()
 	Convey("Resource", t, func() {
 		os.RemoveAll("./tmp")
+		os.MkdirAll("./tmp", 0755)
+		proxy, e := New("./tmp")
+		if e != nil {
+			t.Fatal(e.Error())
+		}
+
 		u, e := url.Parse("http://" + addr)
 		So(e, ShouldBeNil)
 		r := &Resource{Method: "GET", Url: u}
 
-		Convey("cachePath", func() {
-			So(r.cachePath(), ShouldEqual, "./tmp/127.0.0.1:11223/index")
-
-			p, e := url.Parse("http://rubygems.org/gems?letter=A")
-			if e != nil {
-				t.Fatal(e.Error())
-			}
-
-			r = &Resource{
-				Url:    p,
-				Method: "GET",
-			}
-			So(r.cachePath(), ShouldEqual, "./tmp/rubygems.org/gems/letter=A")
-		})
-
-		So(r.checksum(), ShouldEqual, "1bbb8d4bf13fee2dd452cab0019ed1ee")
-		So(r.cachePath(), ShouldEqual, "./tmp/127.0.0.1:11223/index")
-		So(r.cached(), ShouldBeFalse)
-		fetched, e := r.Load()
+		So(proxy.cached(r), ShouldBeFalse)
+		fetched, e := proxy.Load(r)
 		So(fetched, ShouldBeTrue)
 		So(e, ShouldBeNil)
 
-		So(r.store(), ShouldBeNil)
-		t.Log(r.cachePath())
-		So(r.cached(), ShouldBeTrue)
+		So(proxy.Store(r), ShouldBeNil)
+		So(proxy.cached(r), ShouldBeTrue)
 
-		r.Load()
-		fetched, e = r.Load()
+		proxy.Load(r)
+		fetched, e = proxy.Load(r)
 		So(fetched, ShouldBeFalse)
 		So(e, ShouldBeNil)
-		So(r.cached(), ShouldBeTrue)
+		So(proxy.cached(r), ShouldBeTrue)
 		So(r.Response.FetchedAt.UnixNano(), ShouldBeGreaterThan, time.Now().Add(-1*time.Second).UnixNano())
+		So(string(r.Response.Body), ShouldEqual, "hello world")
 	})
 }

@@ -2,6 +2,9 @@ GEM_PATH = /tmp/gems
 
 default: build
 
+restart: build
+	killall goproxy
+
 build:
 	go get ./...
 
