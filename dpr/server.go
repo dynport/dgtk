@@ -9,6 +9,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Server struct {
@@ -35,6 +36,49 @@ func (server *Server) newResource(r *http.Request) Resource {
 
 func (server *Server) awsConfigured() bool {
 	return server.AwsAccessKeyId != "" && server.AwsSecretAccessKey != ""
+}
+
+var ancestryCache = map[string]string{}
+var ancestryMutex = &sync.Mutex{}
+
+func lookupImageId(res Resource, imagePath string) (string, error) {
+	imageId := path.Base(imagePath)
+	ancestryMutex.Lock()
+	defer ancestryMutex.Unlock()
+
+	if parent, ok := ancestryCache[imageId]; ok {
+		logger.Printf("found cached parent for %s (%s)", imageId, parent)
+		return parent, nil
+	}
+	b, e := res.LoadResource(imagePath + "/json")
+	if e != nil {
+		return "", e
+	}
+	image := &Image{}
+	e = json.Unmarshal(b, image)
+	if e != nil {
+		return "", e
+	}
+	ancestryCache[imageId] = image.Parent
+	return image.Parent, nil
+}
+
+func loadAncestry(thePath string, res Resource) ([]string, error) {
+	imagePath := path.Dir(thePath)
+	imageRoot := path.Dir(imagePath)
+	imageId := path.Base(imagePath)
+	list := []string{imageId}
+	for {
+		parentId, e := lookupImageId(res, imagePath)
+		if e != nil {
+			return nil, e
+		}
+		if parentId == "" {
+			return list, nil
+		}
+		list = append(list, parentId)
+		imagePath = imageRoot + "/" + parentId
+	}
 }
 
 func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -71,24 +115,17 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeTags(tags, w)
 			return
 		} else if strings.HasSuffix(r.URL.String(), "/ancestry") {
-			p := server.DataRoot + path.Dir(r.URL.String())
-			list := []string{path.Base(p)}
-			for {
-				img, e := loadImage(p + "/json")
-				if e != nil {
-					log.Print(e.Error())
-					break
-				}
-				if img.Parent == "" {
-					break
-				}
-				list = append(list, img.Parent)
-				p = path.Dir(p) + "/" + img.Parent
+			list, e := loadAncestry(r.URL.Path, res)
+			if e != nil {
+				http.Error(w, e.Error(), 500)
+				return
 			}
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
 			if e := json.NewEncoder(w).Encode(list); e != nil {
 				log.Print("ERROR: " + e.Error())
 			}
+			return
 		} else if res.Exists() {
 			f, size, e := res.Open()
 			if e != nil {

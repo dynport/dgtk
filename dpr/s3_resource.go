@@ -82,6 +82,18 @@ func (resource *S3Resource) Tags() (map[string]string, error) {
 	return m, nil
 }
 
+func (r *S3Resource) LoadResource(p string) ([]byte, error) {
+	key := strings.TrimPrefix(p, "/")
+	rsp, e := r.Client.Get(r.Bucket, key)
+	if e != nil {
+		return nil, e
+	}
+	if rsp.Status[0] != '2' {
+		return nil, fmt.Errorf("expected status 2xx but got %s", rsp.Status)
+	}
+	return ioutil.ReadAll(rsp.Body)
+}
+
 func (resource *S3Resource) Store() error {
 	opts := &s3.PutOptions{
 		ServerSideEncryption: true,

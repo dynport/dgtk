@@ -17,6 +17,7 @@ type Resource interface {
 	Exists() bool
 	Open() (io.Reader, int64, error)
 	DockerSize() (int64, error)
+	LoadResource(p string) ([]byte, error)
 }
 
 func NewResource(dataRoot string, r *http.Request) Resource {
@@ -29,6 +30,10 @@ func NewResource(dataRoot string, r *http.Request) Resource {
 type FileResource struct {
 	dataRoot string
 	*http.Request
+}
+
+func (r *FileResource) LoadResource(p string) ([]byte, error) {
+	return ioutil.ReadFile(r.dataRoot + p)
 }
 
 func (r *FileResource) root() string {
