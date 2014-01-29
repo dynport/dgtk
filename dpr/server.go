@@ -30,7 +30,7 @@ func (server *Server) newResource(r *http.Request) Resource {
 		client.CustomEndpointHost = "s3-eu-west-1.amazonaws.com"
 		return &S3Resource{Request: r, Bucket: "de.1414.registry", Client: client}
 	} else {
-		return NewResource(server.DataRoot, r)
+		return NewFileResource(server.DataRoot, r)
 	}
 }
 
