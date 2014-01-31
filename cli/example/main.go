@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/dynport/dgtk/cli"
+	"log"
 	"strings"
 )
 
