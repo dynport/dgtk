@@ -43,7 +43,7 @@ func (resource *S3Resource) DockerSize() (int64, error) {
 		return 0, e
 	}
 	if rsp.Status[0] != '2' {
-		return 0, fmt.Errorf("expected status of 2xx but got", rsp.Status)
+		return 0, fmt.Errorf("expected status of 2xx but got %q", rsp.Status)
 	}
 	return strconv.ParseInt(rsp.Header.Get("Content-Length"), 10, 64)
 }
