@@ -3,8 +3,6 @@ package dockerbuild
 import (
 	"archive/tar"
 	"fmt"
-	"github.com/dynport/dgtk/dockerclient"
-	"github.com/dynport/dgtk/git"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/dynport/dgtk/dockerclient"
+	"github.com/dynport/dgtk/git"
 )
 
 type Build struct {
@@ -20,6 +21,7 @@ type Build struct {
 	Proxy           string
 	Root            string
 	DockerHost      string
+	DockerPort      int
 	Revision        string
 	dockerfileAdded bool
 }
@@ -51,7 +53,12 @@ func (b *Build) Build() (string, error) {
 	}
 	defer func() { os.Remove(f.Name()) }()
 	log.Printf("wrote file %s", f.Name())
-	client := dockerclient.New(b.DockerHost, 4243)
+	port := b.DockerPort
+	if port == 0 {
+		port = 4243
+	}
+
+	client := dockerclient.New(b.DockerHost, port)
 	f, e = os.Open(f.Name())
 	if e != nil {
 		return "", e
