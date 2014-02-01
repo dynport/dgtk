@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/dynport/gocloud/aws/s3"
 	"io"
 	"log"
 	"net/http"
@@ -10,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/dynport/gocloud/aws/s3"
 )
 
 type Server struct {
@@ -17,6 +18,7 @@ type Server struct {
 	Address            string
 	AwsAccessKeyId     string
 	AwsSecretAccessKey string
+	Bucket             string
 }
 
 func (s *Server) Run() error {
@@ -28,14 +30,14 @@ func (server *Server) newResource(r *http.Request) Resource {
 		client := s3.NewFromEnv()
 		client.UseSsl = true
 		client.CustomEndpointHost = "s3-eu-west-1.amazonaws.com"
-		return &S3Resource{Request: r, Bucket: "de.1414.registry", Client: client}
+		return &S3Resource{Request: r, Bucket: server.Bucket, Client: client}
 	} else {
 		return NewFileResource(server.DataRoot, r)
 	}
 }
 
 func (server *Server) awsConfigured() bool {
-	return server.AwsAccessKeyId != "" && server.AwsSecretAccessKey != ""
+	return server.AwsAccessKeyId != "" && server.AwsSecretAccessKey != "" && server.Bucket != ""
 }
 
 var ancestryCache = map[string]string{}

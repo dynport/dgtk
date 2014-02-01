@@ -11,6 +11,7 @@ import (
 var (
 	dataDir = flag.String("D", os.Getenv("HOME")+"/.dpr", "Location of data dir")
 	addr    = flag.String("H", ":80", "Address to bind to")
+	bucket  = flag.String("B", "", "S3 bucket to use for push")
 )
 
 func main() {
@@ -18,6 +19,7 @@ func main() {
 	server := &Server{
 		DataRoot:           *dataDir,
 		Address:            *addr,
+		Bucket:             *bucket,
 		AwsAccessKeyId:     os.Getenv("AWS_ACCESS_KEY_ID"),
 		AwsSecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
 	}
