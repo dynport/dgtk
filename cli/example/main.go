@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/dynport/dgtk/cli"
 	"log"
 	"strings"
+
+	"github.com/dynport/dgtk/cli"
 )
 
 type BaseEntity struct {
