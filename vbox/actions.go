@@ -32,7 +32,7 @@ type actListVMs struct {
 }
 
 func (action *actListVMs) Run() (e error) {
-	var vms []*vm
+	var vms []*vbox
 	if action.Running {
 		vms, e = listRunningVMs()
 	} else {

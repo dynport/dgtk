@@ -94,15 +94,15 @@ func run(action string, args ...string) (output []string, e error) {
 	return output, e
 }
 
-func listAllVMs() ([]*vm, error) {
+func listAllVMs() ([]*vbox, error) {
 	return listVMs(true)
 }
 
-func listRunningVMs() ([]*vm, error) {
+func listRunningVMs() ([]*vbox, error) {
 	return listVMs(false)
 }
 
-func listVMs(all bool) (vms []*vm, e error) {
+func listVMs(all bool) (vms []*vbox, e error) {
 	listType := "vms"
 	if !all {
 		listType = "runningvms"
@@ -113,7 +113,7 @@ func listVMs(all bool) (vms []*vm, e error) {
 		return nil, e
 	}
 
-	vms = make([]*vm, 0, len(output))
+	vms = make([]*vbox, 0, len(output))
 
 	for i := range output {
 		if len(output[i]) == 0 {
@@ -124,7 +124,7 @@ func listVMs(all bool) (vms []*vm, e error) {
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("failed to parse line: %s", output[i])
 		}
-		vms = append(vms, &vm{name: strings.Trim(parts[0], "\""), uuid: parts[1]})
+		vms = append(vms, &vbox{name: strings.Trim(parts[0], "\""), uuid: parts[1]})
 	}
 	return vms, nil
 }
@@ -165,7 +165,7 @@ func cloneVM(name string, template string, snapshot string) (e error) {
 	return e
 }
 
-type vm struct {
+type vbox struct {
 	name string
 	uuid string
 }
