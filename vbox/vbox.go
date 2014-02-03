@@ -182,6 +182,12 @@ func vmInfos(vm *vbox) (e error) {
 			}
 		case "VMState":
 			vm.status = strings.Trim(parts[1], "\"")
+		case "boot1", "boot2", "boot3", "boot4":
+			idx, e := strconv.Atoi(parts[0][4:])
+			if e != nil {
+				return e
+			}
+			vm.bootOrder[idx-1] = strings.Trim(parts[1], "\"")
 		}
 	}
 
@@ -200,6 +206,7 @@ type vbox struct {
 	name      string
 	uuid      string
 	status    string
+	bootOrder [4]string
 	memory    int
 	cpus      int
 }
@@ -322,6 +329,10 @@ func configureVM(vm *vbox) (e error) {
 	args := []string{vm.name}
 	args = append(args, "--memory", strconv.Itoa(vm.memory))
 	args = append(args, "--cpus", strconv.Itoa(vm.cpus))
+
+	for i := 0; i < 4; i++ {
+		args = append(args, "--boot"+strconv.Itoa(i+1), vm.bootOrder[i])
+	}
 
 	_, e = run("modifyvm", args...)
 

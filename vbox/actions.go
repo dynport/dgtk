@@ -98,6 +98,7 @@ func showVMInfo(name string) (e error) {
 	log.Printf("VM %q", name)
 	log.Printf("cpus:       %d", vm.cpus)
 	log.Printf("memory:     %d kB", vm.memory)
+	log.Printf("boot order: %s", strings.Join(vm.bootOrder[:], ","))
 	return nil
 }
 
@@ -138,6 +139,7 @@ type actConfigureVM struct {
 
 	CPUs      int    `cli:"opt -c --cpus default=-1 desc='Change the number of CPUs of the VM.'"`
 	Memory    int    `cli:"opt -m --memory default=-1 desc='Change the amount of memory the VM has.'"`
+	BootOrder string `cli:"opt -b --boot-order desc='Comma separated list of devices used for boot from floppy, dvd, disk or net'"`
 }
 
 func (action *actConfigureVM) Run() (e error) {
@@ -152,6 +154,17 @@ func (action *actConfigureVM) Run() (e error) {
 
 	if action.Memory != -1 {
 		vm.memory = action.Memory
+	}
+
+	if action.BootOrder != "" {
+		devices := strings.Split(action.BootOrder, ",")
+		for i := 0; i < 4; i++ {
+			if i < len(devices) {
+				vm.bootOrder[i] = strings.TrimSpace(devices[i])
+			} else {
+				vm.bootOrder[i] = "none"
+			}
+		}
 	}
 
 	return configureVM(vm)
