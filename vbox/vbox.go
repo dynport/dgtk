@@ -188,6 +188,23 @@ func vmInfos(vm *vbox) (e error) {
 				return e
 			}
 			vm.bootOrder[idx-1] = strings.Trim(parts[1], "\"")
+		case "nic1", "nic2":
+			ntype := strings.Trim(parts[1], "\"")
+			if ntype == "none" {
+				continue
+			}
+			idx, e := strconv.Atoi(parts[0][3:])
+			if e != nil {
+				return e
+			}
+			vm.nics[idx-1].ntype = ntype
+		case "hostonlyadapter1", "hostonlyadapter2":
+			name := strings.Trim(parts[1], "\"")
+			idx, e := strconv.Atoi(parts[0][15:])
+			if e != nil {
+				return e
+			}
+			vm.nics[idx-1].name = name
 		}
 	}
 
@@ -209,6 +226,12 @@ type vbox struct {
 	bootOrder [4]string
 	memory    int
 	cpus      int
+	nics      [2]vnet
+}
+
+type vnet struct {
+	ntype string
+	name  string
 }
 
 func startVM(name string, withGui bool) (e error) {
@@ -332,6 +355,13 @@ func configureVM(vm *vbox) (e error) {
 
 	for i := 0; i < 4; i++ {
 		args = append(args, "--boot"+strconv.Itoa(i+1), vm.bootOrder[i])
+	}
+
+	for i := 0; i < 2; i++ {
+		args = append(args, "--nic"+strconv.Itoa(i+1), vm.nics[i].ntype)
+		if vm.nics[i].ntype == "hostonly" {
+			args = append(args, "--hostonlyadapter"+strconv.Itoa(i+1), vm.nics[i].name)
+		}
 	}
 
 	_, e = run("modifyvm", args...)

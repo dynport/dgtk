@@ -99,6 +99,15 @@ func showVMInfo(name string) (e error) {
 	log.Printf("cpus:       %d", vm.cpus)
 	log.Printf("memory:     %d kB", vm.memory)
 	log.Printf("boot order: %s", strings.Join(vm.bootOrder[:], ","))
+	for i := 0; i < 2; i++ {
+		if vm.nics[i].ntype != "" {
+			networkName := ""
+			if vm.nics[i].ntype == "hostonly" {
+				networkName = " [->" + vm.nics[i].name + "]"
+			}
+			log.Printf("nic [%d]:    %s%s", i+1, vm.nics[i].ntype, networkName)
+		}
+	}
 	return nil
 }
 
@@ -140,6 +149,7 @@ type actConfigureVM struct {
 	CPUs      int    `cli:"opt -c --cpus default=-1 desc='Change the number of CPUs of the VM.'"`
 	Memory    int    `cli:"opt -m --memory default=-1 desc='Change the amount of memory the VM has.'"`
 	BootOrder string `cli:"opt -b --boot-order desc='Comma separated list of devices used for boot from floppy, dvd, disk or net'"`
+	NICs      string `cli:"opt -n --nics desc='Comma separated list of nic types (hostonly is followed by the network name separated by a colon).'""`
 }
 
 func (action *actConfigureVM) Run() (e error) {
@@ -163,6 +173,25 @@ func (action *actConfigureVM) Run() (e error) {
 				vm.bootOrder[i] = strings.TrimSpace(devices[i])
 			} else {
 				vm.bootOrder[i] = "none"
+			}
+		}
+	}
+
+	if action.NICs != "" {
+		nics := strings.Split(action.NICs, ",")
+		for i := 0; i < 2; i++ {
+			if i < len(nics) {
+				vm.nics[i].ntype = nics[i]
+				if strings.HasPrefix(nics[i], "hostonly:") {
+					vm.nics[i].ntype = "hostonly"
+					if len(nics[i]) > 8 {
+						vm.nics[i].name = strings.TrimPrefix(nics[i], "hostonly:")
+					} else {
+						vm.nics[i].name = "vboxnet0"
+					}
+				}
+			} else {
+				vm.nics[i].ntype = "none"
 			}
 		}
 	}
