@@ -12,6 +12,7 @@ func main() {
 	router.Register("get/template", &actDownloadTemplateVM{}, "Get template VM used for cloning.")
 
 	router.Register("vm/list", &actListVMs{}, "List available VMs.")
+	router.Register("vm/info", &vmBase{Action: "info"}, "Show information on the given VM.")
 
 	router.Register("vm/clone", &actCloneVM{}, "Clone a new VM from a template VM.")
 	router.Register("vm/delete", &vmBase{Action: "delete"}, "Delete the VM with the given name.")

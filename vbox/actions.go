@@ -69,6 +69,8 @@ func (action *vmBase) Run() (e error) {
 		return saveVM(action.Name)
 	case "delete":
 		return deleteVM(action.Name)
+	case "info":
+		return showVMInfo(action.Name)
 	}
 	return nil
 }
@@ -85,6 +87,17 @@ func listVMProps(vm string) (e error) {
 		}
 		log.Printf("%s%-*s%q", k, 50-len(k), "", v)
 	}
+	return nil
+}
+
+func showVMInfo(name string) (e error) {
+	vm := &vbox{name: name}
+	if e = vmInfos(vm); e != nil {
+		return e
+	}
+	log.Printf("VM %q", name)
+	log.Printf("cpus:       %d", vm.cpus)
+	log.Printf("memory:     %d kB", vm.memory)
 	return nil
 }
 

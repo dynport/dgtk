@@ -170,6 +170,16 @@ func vmInfos(vm *vbox) (e error) {
 	for _, line := range output {
 		parts := strings.Split(line, "=")
 		switch parts[0] {
+		case "cpus":
+			vm.cpus, e = strconv.Atoi(parts[1])
+			if e != nil {
+				return e
+			}
+		case "memory":
+			vm.memory, e = strconv.Atoi(parts[1])
+			if e != nil {
+				return e
+			}
 		case "VMState":
 			vm.status = strings.Trim(parts[1], "\"")
 		}
@@ -190,6 +200,8 @@ type vbox struct {
 	name      string
 	uuid      string
 	status    string
+	memory    int
+	cpus      int
 }
 
 func startVM(name string, withGui bool) (e error) {
