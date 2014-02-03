@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-type getTemplateVM struct {
+type actDownloadTemplateVM struct {
 	SourceURL  string `cli:"type=opt short=s long=source default='http://192.168.1.10/vbox' desc='location of the template to download'"`
 	Template   string `cli:"type=arg required=true desc='The name of the template to load (try ubuntu_precise_template.ova)'"`
 	Identifier string `cli:"type=arg required=true desc='Identifier of the template VM'"`
 }
 
-func (action *getTemplateVM) Run() error {
-	return vboxHost.getTemplateVM(action.SourceURL, action.Template, action.Identifier)
+func (action *actDownloadTemplateVM) Run() error {
+	return downloadTemplateVM(action.SourceURL, action.Template, action.Identifier)
 }
 
 type actCloneVM struct {
@@ -24,7 +24,7 @@ type actCloneVM struct {
 }
 
 func (action *actCloneVM) Run() error {
-	return vboxHost.cloneVM(action.Name, action.Template, action.Snapshot)
+	return cloneVM(action.Name, action.Template, action.Snapshot)
 }
 
 type actListVMs struct {
@@ -34,9 +34,9 @@ type actListVMs struct {
 func (action *actListVMs) Run() (e error) {
 	var vms []*vm
 	if action.Running {
-		vms, e = vboxHost.listRunningVMs()
+		vms, e = listRunningVMs()
 	} else {
-		vms, e = vboxHost.listAllVMs()
+		vms, e = listAllVMs()
 	}
 	if e != nil {
 		return e
@@ -58,20 +58,20 @@ func (action *vmBase) Run() (e error) {
 	case "props":
 		return listVMProps(action.Name)
 	case "stop":
-		return vboxHost.stopVM(action.Name)
+		return stopVM(action.Name)
 	case "shutdown":
-		return vboxHost.shutdownVM(action.Name)
+		return shutdownVM(action.Name)
 	case "save":
-		return vboxHost.saveVM(action.Name)
+		return saveVM(action.Name)
 	case "delete":
-		return vboxHost.deleteVM(action.Name)
+		return deleteVM(action.Name)
 	}
 	return nil
 }
 
 func listVMProps(vm string) (e error) {
 	var props map[string]string
-	if props, e = vboxHost.getVMProperties(vm); e != nil {
+	if props, e = getVMProperties(vm); e != nil {
 		return e
 	}
 
@@ -84,28 +84,30 @@ func listVMProps(vm string) (e error) {
 	return nil
 }
 
-type startVM struct {
+type actStartVM struct {
 	vmBase
 	WithGUI bool `cli:"type=opt short=g long=gui desc='Show the GUI of the virtual machine?'"`
 }
 
-func (action *startVM) Run() (e error) {
-	return vboxHost.startVM(action.Name, action.WithGUI)
+func (action *actStartVM) Run() (e error) {
+	return startVM(action.Name, action.WithGUI)
 }
 
 type sshInto struct {
 	vmBase
 
-	User    string `cli:"type=opt short=u long=user default=root desc='User used to log in to the VM.'"`
+	User    string `cli:"type=opt short=l long=login default=root desc='User used to log in to the VM.'"`
 	IFace   int    `cli:"type=opt short=i long=interface default=0 desc='Number of the nic to connect to.'"`
 	Timeout int    `cli:"type=opt short=t long=timeout default=15 desc='Time to wait for machine to boot.'"`
 }
 
 func (action *sshInto) Run() error {
-	ip, e := vboxHost.getIP(action.Name, action.IFace, action.Timeout)
+	ip, e := getIP(action.Name, action.IFace, action.Timeout)
 	if e != nil {
 		return e
 	}
+
+	log.Printf("connecting to machine %q using ip %q", action.Name, ip)
 
 	cmd := exec.Command("ssh", "-l", action.User, ip)
 	cmd.Stdin = os.Stdin

@@ -12,9 +12,7 @@ import (
 	"strings"
 )
 
-type host struct {
-	command string
-}
+var VBoxManage = "VBoxManage"
 
 func createVBoxError(output []string, e error) error {
 	vboxErrorPrefix := "VBoxManage: error: "
@@ -58,8 +56,8 @@ func downloadFile(baseUrl, filename string) (target string, e error) {
 	return target, nil
 }
 
-func (h *host) getTemplateVM(sourceURL, filename, vm string) (e error) {
-	vmList, e := h.listAllVMs()
+func downloadTemplateVM(sourceURL, filename, vm string) (e error) {
+	vmList, e := listAllVMs()
 	if e != nil {
 		return e
 	}
@@ -77,14 +75,14 @@ func (h *host) getTemplateVM(sourceURL, filename, vm string) (e error) {
 	defer os.Remove(target)
 
 	log.Print("importing vm ...")
-	_, e = h.run("import", target, "--vsys", "0", "--vmname", vm)
+	_, e = run("import", target, "--vsys", "0", "--vmname", vm)
 	log.Print(" ... done")
 	return e
 }
 
-func (h *host) run(action string, args ...string) (output []string, e error) {
+func run(action string, args ...string) (output []string, e error) {
 	args = append([]string{action}, args...)
-	cmd := exec.Command(h.command, args...)
+	cmd := exec.Command(VBoxManage, args...)
 
 	out, e := cmd.CombinedOutput()
 	if out != nil {
@@ -96,22 +94,22 @@ func (h *host) run(action string, args ...string) (output []string, e error) {
 	return output, e
 }
 
-func (h *host) listAllVMs() ([]*vm, error) {
-	return h.listVMs(true)
+func listAllVMs() ([]*vm, error) {
+	return listVMs(true)
 }
 
-func (h *host) listRunningVMs() ([]*vm, error) {
-	return h.listVMs(false)
+func listRunningVMs() ([]*vm, error) {
+	return listVMs(false)
 }
 
-func (h *host) listVMs(all bool) (vms []*vm, e error) {
+func listVMs(all bool) (vms []*vm, e error) {
 	listType := "vms"
 	if !all {
 		listType = "runningvms"
 	}
 
 	var output []string
-	if output, e = h.run("list", listType); e != nil {
+	if output, e = run("list", listType); e != nil {
 		return nil, e
 	}
 
@@ -140,9 +138,9 @@ func parsePropertyLine(line string) (name string, value string) {
 	return name, value
 }
 
-func (h *host) getVMProperties(vm string) (properties map[string]string, e error) {
+func getVMProperties(vm string) (properties map[string]string, e error) {
 	var output []string
-	if output, e = h.run("guestproperty", "enumerate", vm); e != nil {
+	if output, e = run("guestproperty", "enumerate", vm); e != nil {
 		return nil, e
 	}
 
@@ -159,12 +157,12 @@ func (h *host) getVMProperties(vm string) (properties map[string]string, e error
 	return properties, nil
 }
 
-func (h *host) cloneVM(name string, template string, snapshot string) (e error) {
-	if _, e = h.run("clonevm", template, "--name", name, "--snapshot", snapshot, "--options", "link", "--register"); e != nil {
+func cloneVM(name string, template string, snapshot string) (e error) {
+	if _, e = run("clonevm", template, "--name", name, "--snapshot", snapshot, "--options", "link", "--register"); e != nil {
 		return e
 	}
 
-	return h.startVM(name, false)
+	return e
 }
 
 type vm struct {
@@ -172,32 +170,32 @@ type vm struct {
 	uuid string
 }
 
-func (h *host) startVM(name string, withGui bool) (e error) {
+func startVM(name string, withGui bool) (e error) {
 	vmtype := "headless"
 	if withGui {
 		vmtype = "gui"
 	}
-	_, e = h.run("startvm", name, "--type", vmtype)
+	_, e = run("startvm", name, "--type", vmtype)
 	return e
 }
 
-func (h *host) saveVM(name string) (e error) {
-	_, e = h.run("controlvm", name, "savestate")
+func saveVM(name string) (e error) {
+	_, e = run("controlvm", name, "savestate")
 	return e
 }
 
-func (h *host) stopVM(name string) (e error) {
-	_, e = h.run("controlvm", name, "poweroff")
+func stopVM(name string) (e error) {
+	_, e = run("controlvm", name, "poweroff")
 	return e
 }
 
-func (h *host) shutdownVM(name string) (e error) {
-	_, e = h.run("controlvm", name, "acpipowerbutton")
+func shutdownVM(name string) (e error) {
+	_, e = run("controlvm", name, "acpipowerbutton")
 	return e
 }
 
-func (h *host) isVMRunning(name string) (bool, error) {
-	vms, e := h.listRunningVMs()
+func isVMRunning(name string) (bool, error) {
+	vms, e := listRunningVMs()
 	if e != nil {
 		return false, e
 	}
@@ -210,8 +208,8 @@ func (h *host) isVMRunning(name string) (bool, error) {
 	return false, nil
 }
 
-func (h *host) isVM(name string) (bool, error) {
-	vms, e := h.listAllVMs()
+func isVM(name string) (bool, error) {
+	vms, e := listAllVMs()
 	if e != nil {
 		return false, e
 	}
@@ -224,8 +222,8 @@ func (h *host) isVM(name string) (bool, error) {
 	return false, nil
 }
 
-func (h *host) getProperty(vm string, property string) (value string, e error) {
-	result, e := h.run("guestproperty", "get", vm, property)
+func getProperty(vm string, property string) (value string, e error) {
+	result, e := run("guestproperty", "get", vm, property)
 	if e != nil {
 		return "", e
 	}
@@ -241,8 +239,8 @@ func (h *host) getProperty(vm string, property string) (value string, e error) {
 	return "", fmt.Errorf("failed to retrieve property")
 }
 
-func (h *host) waitForProperty(vm string, property string, timeout int) (value string, e error) {
-	result, e := h.run("guestproperty", "wait", vm, property, "--timeout", strconv.Itoa(1000*timeout))
+func waitForProperty(vm string, property string, timeout int) (value string, e error) {
+	result, e := run("guestproperty", "wait", vm, property, "--timeout", strconv.Itoa(1000*timeout))
 	if e != nil {
 		return "", e
 	} else if strings.HasPrefix(result[0], "Time out or interruption while waiting.") {
@@ -253,15 +251,15 @@ func (h *host) waitForProperty(vm string, property string, timeout int) (value s
 	return ip, nil
 }
 
-func (h *host) getIP(vm string, iface int, timeout int) (ip string, e error) {
+func getIP(vm string, iface int, timeout int) (ip string, e error) {
 	var valid, running bool
-	if valid, e = h.isVM(vm); e != nil {
+	if valid, e = isVM(vm); e != nil {
 		return "", e
 	} else if !valid {
 		return "", fmt.Errorf("VM %q does not exist", vm)
 	}
 
-	if running, e = h.isVMRunning(vm); e != nil {
+	if running, e = isVMRunning(vm); e != nil {
 		return "", e
 	} else if !running {
 		return "", fmt.Errorf("VM %q not running", vm)
@@ -269,11 +267,11 @@ func (h *host) getIP(vm string, iface int, timeout int) (ip string, e error) {
 
 	property := fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", iface)
 
-	ip, e = h.getProperty(vm, property)
+	ip, e = getProperty(vm, property)
 	if e != nil {
 		return "", e
 	} else if ip == "" {
-		ip, e = h.waitForProperty(vm, property, timeout)
+		ip, e = waitForProperty(vm, property, timeout)
 		if e != nil {
 			return "", e
 		}
@@ -281,7 +279,7 @@ func (h *host) getIP(vm string, iface int, timeout int) (ip string, e error) {
 	return ip, nil
 }
 
-func (h *host) deleteVM(name string) (e error) {
-	_, e = h.run("unregistervm", name, "--delete")
+func deleteVM(name string) (e error) {
+	_, e = run("unregistervm", name, "--delete")
 	return e
 }
