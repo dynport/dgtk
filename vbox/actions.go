@@ -43,7 +43,11 @@ func (action *actListVMs) Run() (e error) {
 	}
 
 	for _, vm := range vms {
-		log.Printf("%s", vm.name)
+		r := ""
+		if vm.status == "running" {
+			r = "*"
+		}
+		log.Printf("%s%s", vm.name, r)
 	}
 	return nil
 }

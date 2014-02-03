@@ -124,7 +124,11 @@ func listVMs(all bool) (vms []*vbox, e error) {
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("failed to parse line: %s", output[i])
 		}
-		vms = append(vms, &vbox{name: strings.Trim(parts[0], "\""), uuid: parts[1]})
+		vm := &vbox{name: strings.Trim(parts[0], "\""), uuid: parts[1]}
+		if e = vmInfos(vm); e != nil {
+			return nil, e
+		}
+		vms = append(vms, vm)
 	}
 	return vms, nil
 }
@@ -157,6 +161,23 @@ func getVMProperties(vm string) (properties map[string]string, e error) {
 	return properties, nil
 }
 
+func vmInfos(vm *vbox) (e error) {
+	var output []string
+	if output, e = run("showvminfo", "--machinereadable", vm.name); e != nil {
+		return e
+	}
+
+	for _, line := range output {
+		parts := strings.Split(line, "=")
+		switch parts[0] {
+		case "VMState":
+			vm.status = strings.Trim(parts[1], "\"")
+		}
+	}
+
+	return nil
+}
+
 func cloneVM(name string, template string, snapshot string) (e error) {
 	if _, e = run("clonevm", template, "--name", name, "--snapshot", snapshot, "--options", "link", "--register"); e != nil {
 		return e
@@ -166,8 +187,9 @@ func cloneVM(name string, template string, snapshot string) (e error) {
 }
 
 type vbox struct {
-	name string
-	uuid string
+	name      string
+	uuid      string
+	status    string
 }
 
 func startVM(name string, withGui bool) (e error) {
