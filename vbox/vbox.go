@@ -317,3 +317,13 @@ func deleteVM(name string) (e error) {
 	_, e = run("unregistervm", name, "--delete")
 	return e
 }
+
+func configureVM(vm *vbox) (e error) {
+	args := []string{vm.name}
+	args = append(args, "--memory", strconv.Itoa(vm.memory))
+	args = append(args, "--cpus", strconv.Itoa(vm.cpus))
+
+	_, e = run("modifyvm", args...)
+
+	return e
+}

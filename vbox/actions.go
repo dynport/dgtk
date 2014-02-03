@@ -132,3 +132,27 @@ func (action *sshInto) Run() error {
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
+
+type actConfigureVM struct {
+	vmBase
+
+	CPUs      int    `cli:"opt -c --cpus default=-1 desc='Change the number of CPUs of the VM.'"`
+	Memory    int    `cli:"opt -m --memory default=-1 desc='Change the amount of memory the VM has.'"`
+}
+
+func (action *actConfigureVM) Run() (e error) {
+	vm := &vbox{name: action.Name}
+	if e = vmInfos(vm); e != nil {
+		return e
+	}
+
+	if action.CPUs != -1 {
+		vm.cpus = action.CPUs
+	}
+
+	if action.Memory != -1 {
+		vm.memory = action.Memory
+	}
+
+	return configureVM(vm)
+}
