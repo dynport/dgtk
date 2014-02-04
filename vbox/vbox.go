@@ -375,3 +375,13 @@ func configureVM(vm *vbox) (e error) {
 
 	return e
 }
+
+func shareFolder(name, tname, folder string) (e error) {
+	_, e = run("sharefolder", "add", name, "--name", tname, "--hostpath", folder, "--automount")
+	return e
+}
+
+func unshareFolder(name, tname string) (e error) {
+	_, e = run("sharefolder", "remove", name, "--name", tname)
+	return e
+}

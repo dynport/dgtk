@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -141,6 +143,31 @@ func (action *sshInto) Run() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+type actShareFolder struct {
+	vmBase
+
+	RemoteName string `cli:"arg desc='Remote name of the path (mounted in /media).'"`
+	LocalPath  string `cli:"arg desc='Absolute path of the folder shared with the guest.'"`
+}
+
+func (action *actShareFolder) Run() error {
+	if !filepath.IsAbs(action.LocalPath) {
+		return fmt.Errorf("%q is not an absolute path.")
+	}
+
+	return shareFolder(action.Name, action.RemoteName, action.LocalPath)
+}
+
+type actUnshareFolder struct {
+	vmBase
+
+	RemoteName string `cli:"arg desc='Remote name of the path (mounted in /media).'"`
+}
+
+func (action *actUnshareFolder) Run() error {
+	return unshareFolder(action.Name, action.RemoteName)
 }
 
 type actConfigureVM struct {

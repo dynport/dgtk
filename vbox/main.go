@@ -15,6 +15,9 @@ func main() {
 	router.Register("vm/info", &vmBase{Action: "info"}, "Show information on the given VM.")
 	router.Register("vm/configure ", &actConfigureVM{}, "Configure the given VM.")
 
+	router.Register("vm/share", &actShareFolder{}, "Share a folder with the given VM.")
+	router.Register("vm/unshare", &actUnshareFolder{}, "Unshare a folder with the given VM.")
+
 	router.Register("vm/clone", &actCloneVM{}, "Clone a new VM from a template VM.")
 	router.Register("vm/delete", &vmBase{Action: "delete"}, "Delete the VM with the given name.")
 
