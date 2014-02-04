@@ -314,7 +314,7 @@ func waitForProperty(vm string, property string, timeout int) (value string, e e
 	result, e := run("guestproperty", "wait", vm, property, "--timeout", strconv.Itoa(1000*timeout))
 	if e != nil {
 		return "", e
-	} else if strings.HasPrefix(result[0], "Time out or interruption while waiting.") {
+	} else if strings.HasPrefix(result[0], "VBoxManage: error: Time out or interruption while waiting for a notification.") {
 		return "", fmt.Errorf("Machine not reachable.")
 	}
 
