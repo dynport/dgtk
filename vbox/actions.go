@@ -105,7 +105,7 @@ func showVMInfo(name string) (e error) {
 			if vm.nics[i].ntype == "hostonly" {
 				networkName = " [->" + vm.nics[i].name + "]"
 			}
-			log.Printf("nic [%d]:    %s%s", i+1, vm.nics[i].ntype, networkName)
+			log.Printf("nic [%d]:    %s %s%s", i+1, vm.nics[i].ntype, vm.nics[i].mac, networkName)
 		}
 	}
 	return nil

@@ -205,6 +205,12 @@ func vmInfos(vm *vbox) (e error) {
 				return e
 			}
 			vm.nics[idx-1].name = name
+		case "macaddress1", "macaddress2":
+			idx, e := strconv.Atoi(parts[0][10:])
+			if e != nil {
+				return e
+			}
+			vm.nics[idx-1].mac = strings.Trim(parts[1], "\"")
 		}
 	}
 
@@ -232,6 +238,7 @@ type vbox struct {
 type vnet struct {
 	ntype string
 	name  string
+	mac   string
 }
 
 func startVM(name string, withGui bool) (e error) {
