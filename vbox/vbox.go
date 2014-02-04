@@ -167,50 +167,44 @@ func vmInfos(vm *vbox) (e error) {
 		return e
 	}
 
+	values := map[string]string{}
+
 	for _, line := range output {
+		if len(line) == 0 {
+			continue
+		}
 		parts := strings.Split(line, "=")
-		switch parts[0] {
-		case "cpus":
-			vm.cpus, e = strconv.Atoi(parts[1])
-			if e != nil {
-				return e
-			}
-		case "memory":
-			vm.memory, e = strconv.Atoi(parts[1])
-			if e != nil {
-				return e
-			}
-		case "VMState":
-			vm.status = strings.Trim(parts[1], "\"")
-		case "boot1", "boot2", "boot3", "boot4":
-			idx, e := strconv.Atoi(parts[0][4:])
-			if e != nil {
-				return e
-			}
-			vm.bootOrder[idx-1] = strings.Trim(parts[1], "\"")
-		case "nic1", "nic2":
-			ntype := strings.Trim(parts[1], "\"")
+		values[parts[0]] = strings.Trim(parts[1], "\"")
+	}
+
+	if vm.cpus, e = strconv.Atoi(values["cpus"]); e != nil {
+		return e
+	}
+
+	if vm.memory, e = strconv.Atoi(values["memory"]); e != nil {
+		return e
+	}
+
+	vm.status = values["VMState"]
+
+	for i := 0; i < 4; i++ {
+		vm.bootOrder[i] = values[fmt.Sprintf("boot%d", i+1)]
+	}
+
+	for i := 0; i < 8; i++ {
+		if ntype, found := values[fmt.Sprintf("nic%d", i+1)]; found {
 			if ntype == "none" {
 				continue
 			}
-			idx, e := strconv.Atoi(parts[0][3:])
-			if e != nil {
-				return e
+			nic := &vnet{
+				id:    i + 1,
+				ntype: ntype,
 			}
-			vm.nics[idx-1].ntype = ntype
-		case "hostonlyadapter1", "hostonlyadapter2":
-			name := strings.Trim(parts[1], "\"")
-			idx, e := strconv.Atoi(parts[0][15:])
-			if e != nil {
-				return e
+			nic.mac = values[fmt.Sprintf("macaddress%d", nic.id)]
+			if ntype == "hostonly" {
+				nic.name = values[fmt.Sprintf("hostonlyadapter%d", nic.id)]
 			}
-			vm.nics[idx-1].name = name
-		case "macaddress1", "macaddress2":
-			idx, e := strconv.Atoi(parts[0][10:])
-			if e != nil {
-				return e
-			}
-			vm.nics[idx-1].mac = strings.Trim(parts[1], "\"")
+			vm.nics = append(vm.nics, nic)
 		}
 	}
 
@@ -232,10 +226,11 @@ type vbox struct {
 	bootOrder [4]string
 	memory    int
 	cpus      int
-	nics      [2]vnet
+	nics      []*vnet
 }
 
 type vnet struct {
+	id    int
 	ntype string
 	name  string
 	mac   string
@@ -364,10 +359,10 @@ func configureVM(vm *vbox) (e error) {
 		args = append(args, "--boot"+strconv.Itoa(i+1), vm.bootOrder[i])
 	}
 
-	for i := 0; i < 2; i++ {
-		args = append(args, "--nic"+strconv.Itoa(i+1), vm.nics[i].ntype)
-		if vm.nics[i].ntype == "hostonly" {
-			args = append(args, "--hostonlyadapter"+strconv.Itoa(i+1), vm.nics[i].name)
+	for _, nic := range vm.nics {
+		args = append(args, "--nic"+strconv.Itoa(nic.id), nic.ntype)
+		if nic.ntype == "hostonly" {
+			args = append(args, "--hostonlyadapter"+strconv.Itoa(nic.id), nic.name)
 		}
 	}
 

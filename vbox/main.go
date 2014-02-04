@@ -13,7 +13,10 @@ func main() {
 
 	router.Register("vm/list", &actListVMs{}, "List available VMs.")
 	router.Register("vm/info", &vmBase{Action: "info"}, "Show information on the given VM.")
-	router.Register("vm/configure ", &actConfigureVM{}, "Configure the given VM.")
+
+	router.Register("vm/config/mem", &actConfigMemVM{}, "Configure the VM to have given amount of memory.")
+	router.Register("vm/config/cpu", &actConfigCPUsVM{}, "Configure the VM to have given amount of CPUs.")
+	router.Register("vm/config/nic", &actConfigNetworkIFacesVM{}, "Configure the according NIC of the VM.")
 
 	router.Register("vm/share", &actShareFolder{}, "Share a folder with the given VM.")
 	router.Register("vm/unshare", &actUnshareFolder{}, "Unshare a folder with the given VM.")

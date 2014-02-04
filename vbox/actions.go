@@ -101,14 +101,12 @@ func showVMInfo(name string) (e error) {
 	log.Printf("cpus:       %d", vm.cpus)
 	log.Printf("memory:     %d kB", vm.memory)
 	log.Printf("boot order: %s", strings.Join(vm.bootOrder[:], ","))
-	for i := 0; i < 2; i++ {
-		if vm.nics[i].ntype != "" {
-			networkName := ""
-			if vm.nics[i].ntype == "hostonly" {
-				networkName = " [->" + vm.nics[i].name + "]"
-			}
-			log.Printf("nic [%d]:    %s %s%s", i+1, vm.nics[i].ntype, vm.nics[i].mac, networkName)
+	for _, nic := range vm.nics {
+		networkName := ""
+		if nic.ntype == "hostonly" {
+			networkName = " [->" + nic.name + "]"
 		}
+		log.Printf("nic [%d]:    %s %s%s", nic.id, nic.ntype, nic.mac, networkName)
 	}
 	return nil
 }
@@ -170,57 +168,99 @@ func (action *actUnshareFolder) Run() error {
 	return unshareFolder(action.Name, action.RemoteName)
 }
 
-type actConfigureVM struct {
+type actConfigMemVM struct {
 	vmBase
 
-	CPUs      int    `cli:"opt -c --cpus default=-1 desc='Change the number of CPUs of the VM.'"`
-	Memory    int    `cli:"opt -m --memory default=-1 desc='Change the amount of memory the VM has.'"`
-	BootOrder string `cli:"opt -b --boot-order desc='Comma separated list of devices used for boot from floppy, dvd, disk or net'"`
-	NICs      string `cli:"opt -n --nics desc='Comma separated list of nic types (hostonly is followed by the network name separated by a colon).'""`
+	Memory int `cli:"arg required desc='The amount of memory the VM has in MB.'"`
 }
 
-func (action *actConfigureVM) Run() (e error) {
+func (action *actConfigMemVM) Run() (e error) {
 	vm := &vbox{name: action.Name}
 	if e = vmInfos(vm); e != nil {
 		return e
 	}
 
-	if action.CPUs != -1 {
-		vm.cpus = action.CPUs
+	vm.memory = action.Memory
+
+	return configureVM(vm)
+}
+
+type actConfigCPUsVM struct {
+	vmBase
+
+	CPUs int `cli:"arg required desc='The amount of CPUs the VM has.'"`
+}
+
+func (action *actConfigCPUsVM) Run() (e error) {
+	vm := &vbox{name: action.Name}
+	if e = vmInfos(vm); e != nil {
+		return e
 	}
 
-	if action.Memory != -1 {
-		vm.memory = action.Memory
+	vm.cpus = action.CPUs
+
+	return configureVM(vm)
+}
+
+type actConfigBootOrderVM struct {
+	vmBase
+
+	Devices []string `cli:"arg required desc='Ordered list of boot devices (at most 4 of floppy, disk, dvd, and net)'"`
+}
+
+func (action *actConfigBootOrderVM) Run() (e error) {
+	vm := &vbox{name: action.Name}
+	if e = vmInfos(vm); e != nil {
+		return e
 	}
 
-	if action.BootOrder != "" {
-		devices := strings.Split(action.BootOrder, ",")
-		for i := 0; i < 4; i++ {
-			if i < len(devices) {
-				vm.bootOrder[i] = strings.TrimSpace(devices[i])
-			} else {
-				vm.bootOrder[i] = "none"
-			}
+	for i := 0; i < 4; i++ {
+		if i < len(action.Devices) {
+			vm.bootOrder[i] = action.Devices[i]
+		} else {
+			vm.bootOrder[i] = "none"
 		}
 	}
 
-	if action.NICs != "" {
-		nics := strings.Split(action.NICs, ",")
-		for i := 0; i < 2; i++ {
-			if i < len(nics) {
-				vm.nics[i].ntype = nics[i]
-				if strings.HasPrefix(nics[i], "hostonly:") {
-					vm.nics[i].ntype = "hostonly"
-					if len(nics[i]) > 8 {
-						vm.nics[i].name = strings.TrimPrefix(nics[i], "hostonly:")
-					} else {
-						vm.nics[i].name = "vboxnet0"
-					}
-				}
-			} else {
-				vm.nics[i].ntype = "none"
-			}
+	return configureVM(vm)
+}
+
+type actConfigNetworkIFacesVM struct {
+	vmBase
+
+	Id      int    `cli:"arg required desc='Network interface to configure.'"`
+	NType   string `cli:"arg required desc='Type of NIC (one of none, bridged, nat, and hostonly).'"`
+	Network string `cli:"arg desc='Network name (required for hostonly).'"`
+}
+
+func (action *actConfigNetworkIFacesVM) Run() (e error) {
+	vm := &vbox{name: action.Name}
+	if e = vmInfos(vm); e != nil {
+		return e
+	}
+
+	if action.Id >= 8 {
+		return fmt.Errorf("Only 8 nics supported!")
+	}
+
+	var nic *vnet
+	for i := range vm.nics {
+		if vm.nics[i].id == action.Id {
+			nic = vm.nics[i]
 		}
+	}
+
+	if nic == nil {
+		nic = &vnet{}
+		vm.nics = append(vm.nics, nic)
+	}
+
+	nic.ntype = action.NType
+	if action.NType == "hostonly" {
+		if action.Network == "" {
+			return fmt.Errorf("No name for the hostonly network specified!")
+		}
+		nic.name = action.Network
 	}
 
 	return configureVM(vm)
