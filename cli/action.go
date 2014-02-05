@@ -282,5 +282,7 @@ func (a *action) showTabularHelp(t *table) {
 		row{
 			strings.Replace(a.path, "/", " ", -1),
 			strings.Join(oDesc, " "),
-			strings.Join(aDesc, " ")})
+			strings.Join(aDesc, " "),
+			a.description,
+		})
 }
