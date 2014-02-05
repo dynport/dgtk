@@ -208,6 +208,19 @@ func vmInfos(vm *vbox) (e error) {
 		}
 	}
 
+	if vm.sfolders == nil {
+		vm.sfolders = map[string]string{}
+	}
+	for i := 1; ; i++ {
+		sfMap, found := values[fmt.Sprintf("SharedFolderNameMachineMapping%d", i)]
+
+		if !found {
+			break
+		}
+
+		vm.sfolders[sfMap] = values[fmt.Sprintf("SharedFolderPathMachineMapping%d", i)]
+	}
+
 	return nil
 }
 
@@ -227,6 +240,7 @@ type vbox struct {
 	memory    int
 	cpus      int
 	nics      []*vnet
+	sfolders  map[string]string
 }
 
 type vnet struct {
@@ -372,11 +386,15 @@ func configureVM(vm *vbox) (e error) {
 }
 
 func shareFolder(name, tname, folder string) (e error) {
-	_, e = run("sharefolder", "add", name, "--name", tname, "--hostpath", folder, "--automount")
+	if _, e = os.Stat(folder); os.IsNotExist(e) {
+		return fmt.Errorf("folder %q does not exist!", folder)
+	}
+
+	_, e = run("sharedfolder", "add", name, "--name", tname, "--hostpath", folder, "--automount")
 	return e
 }
 
 func unshareFolder(name, tname string) (e error) {
-	_, e = run("sharefolder", "remove", name, "--name", tname)
+	_, e = run("sharedfolder", "remove", name, "--name", tname)
 	return e
 }

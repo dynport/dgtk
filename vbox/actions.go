@@ -98,15 +98,18 @@ func showVMInfo(name string) (e error) {
 		return e
 	}
 	log.Printf("VM %q", name)
-	log.Printf("cpus:       %d", vm.cpus)
-	log.Printf("memory:     %d kB", vm.memory)
-	log.Printf("boot order: %s", strings.Join(vm.bootOrder[:], ","))
+	log.Printf("cpus:          %d", vm.cpus)
+	log.Printf("memory:        %d MB", vm.memory)
+	log.Printf("boot order:    %s", strings.Join(vm.bootOrder[:], ","))
 	for _, nic := range vm.nics {
 		networkName := ""
 		if nic.ntype == "hostonly" {
 			networkName = " [->" + nic.name + "]"
 		}
-		log.Printf("nic [%d]:    %s %s%s", nic.id, nic.ntype, nic.mac, networkName)
+		log.Printf("nic [%d]:       %s %s%s", nic.id, nic.ntype, nic.mac, networkName)
+	}
+	for k, v := range vm.sfolders {
+		log.Printf("shared folder: %s [->%s]", v, k)
 	}
 	return nil
 }
@@ -146,22 +149,25 @@ func (action *sshInto) Run() error {
 type actShareFolder struct {
 	vmBase
 
-	RemoteName string `cli:"arg desc='Remote name of the path (mounted in /media).'"`
-	LocalPath  string `cli:"arg desc='Absolute path of the folder shared with the guest.'"`
+	LocalPath  string `cli:"arg required desc='Absolute path of the folder shared with the guest.'"`
+	RemoteName string `cli:"arg required desc='Remote name of the path (mounted in /media).'"`
 }
 
-func (action *actShareFolder) Run() error {
-	if !filepath.IsAbs(action.LocalPath) {
-		return fmt.Errorf("%q is not an absolute path.")
+func (action *actShareFolder) Run() (e error) {
+	path := action.LocalPath
+	if !filepath.IsAbs(path) {
+		if path, e = filepath.Abs(path); e != nil {
+			return e
+		}
 	}
 
-	return shareFolder(action.Name, action.RemoteName, action.LocalPath)
+	return shareFolder(action.Name, action.RemoteName, path)
 }
 
 type actUnshareFolder struct {
 	vmBase
 
-	RemoteName string `cli:"arg desc='Remote name of the path (mounted in /media).'"`
+	RemoteName string `cli:"arg required desc='Remote name of the path (mounted in /media).'"`
 }
 
 func (action *actUnshareFolder) Run() error {
