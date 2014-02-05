@@ -107,8 +107,15 @@ func (a *assetFile) Read(p []byte) (n int, e error) {
 }
 
 func init() {
-	path := os.Getenv(fmt.Sprintf("GOASSETS_%s_PATH", strings.ToUpper("{{ .Package }}")))
+	env_name := fmt.Sprintf("GOASSETS_%s_PATH", strings.ToUpper("{{ .Package }}"))
+	path := os.Getenv(env_name)
 	if path != "" {
+		if !filepath.IsAbs(path) {
+			log.Fatalf("path %q given in %s must be absolute!", path, env_name)
+		}
+		if _, e := os.Stat(path); e != nil {
+			log.Fatalf("path %q does not exist!", path)
+		}
 		assets = &assetOsFS{root: path}
 		return
 	}
