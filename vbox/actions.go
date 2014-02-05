@@ -126,7 +126,7 @@ func (action *actStartVM) Run() (e error) {
 type sshInto struct {
 	vmBase
 
-	User    string `cli:"type=opt short=l long=login default=root desc='User used to log in to the VM.'"`
+	User    string `cli:"type=opt short=l long=login default=ubuntu desc='User used to log in to the VM.'"`
 	IFace   int    `cli:"type=opt short=i long=interface default=0 desc='Number of the nic to connect to.'"`
 	Timeout int    `cli:"type=opt short=t long=timeout default=15 desc='Time to wait for machine to boot.'"`
 }
