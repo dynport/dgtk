@@ -24,7 +24,7 @@ but go files (having the `.go` suffix).
 
 Run the `goassets` tool on your assets folder:
 
-	`goassets ./assets`
+	goassets ./assets
 
 This will generate a `assets.go` file that contains all (zipped) assets and some helper structures to use them. The
 default target file name `assets.go` can be modified using the `--target` option.
@@ -45,9 +45,9 @@ If handling these errors is not required and a panic is tolerated, then `mustRea
 
 	mustReadAsset(key string) []byte
 
-Besides these helper methods the assets are handled using a fake filesystem approach (idea taken from
-[http://nf.wh3rd.net/10things/#8]), i.e. you can use the `Open` method of the `assets` value. That will return a value
-that implements the `ReadCloser` interface.
+Besides these helper methods the assets are handled using a fake filesystem approach (idea taken from [these slides by
+Andrew Gerrand](http://nf.wh3rd.net/10things/#8)), i.e. you can use the `Open` method of the `assets` value. That will
+return a value that implements the `ReadCloser` interface.
 
 	asset, e := assets.Read("some_asset")
 	if e != nil {
@@ -62,11 +62,13 @@ that implements the `ReadCloser` interface.
 ## Usage Of Assets In Development Mode
 
 Sometimes it might not be appropriate to rebuild the assets each time something changes, i.e. when assets are used by a
-web server it would be necessary to restart the server. Therefore there is the option to specify the
-`GOASSETS_<pkg_name>_PATH` environment variable, that will trigger usage of this path as source for the assets (this is
-where the fake filesystem is used actually). The part with `pkg_name` must be replaced by the name of the respective
-package. This allows for using multiple packages with assets simultaneously and decided on a per package basis which
-assets to use from the binary or not.
+web server it would be necessary to restart the server after updating the assets. Therefore there is the option to
+specify the `GOASSETS_<pkg_name>_PATH` environment variable, that will trigger usage of this path as source for the
+assets (this is where the fake filesystem is used actually). The part with `pkg_name` must be replaced by the name of
+the respective package. This allows for using multiple packages with assets simultaneously and decided on a per package
+basis which assets to use from the binary or not.
+
+In most cases it should be sufficient to have a decent makefile at hands that will trigger an update if necessary.
 
 
 ## Makefile Integration
@@ -86,10 +88,6 @@ The following snippet might help a lot in a Makefile:
 This will collect all available assets and add them as dependency to the assets.go file. The assets will only be built
 when necessary (i.e. let `make` do its magic).
 
-For libraries we recommend to check in the compiled binary assets into your VCS. The problem of out-of-sync source and
-binary assets can be prevented by using make. If assets change the resulting `assets.go` file will have changes and
-thereby be shown by the VCS toolchain. Additionally you should consider your CI tool to break in those conditions.
-
 If there are multiple sub-packages with assets in the top level package the following Makefile snippet might help:
 
 	ASSET_DIRS  := $(patsubst %/.goassets,%,$(shell find . -type f -name .goassets))
@@ -104,6 +102,17 @@ If there are multiple sub-packages with assets in the top level package the foll
 
 This searches for directories containing the `.goassets` file (a marker for assets so to say) and compiles those when
 required.
+
+
+## Recommendation
+
+For libraries we recommend to check in the compiled binary assets into your VCS. This makes sure it possible to build
+and install using `go get` as usually done. Otherwise users see error messages (because of the missing `assets.go` file
+in a fresh clone of the repository) and can't easily add the library.
+
+The problem of out-of-sync source and binary assets can be prevented using make (see previous section). If assets change
+the resulting `assets.go` file will have changes and thereby be shown by the VCS toolchain. Additionally you should
+consider your CI tool to break in those conditions.
 
 
 ## ToDo
