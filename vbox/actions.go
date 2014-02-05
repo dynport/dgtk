@@ -257,7 +257,7 @@ func (action *actConfigNetworkIFacesVM) Run() (e error) {
 	}
 
 	if nic == nil {
-		nic = &vnet{}
+		nic = &vnet{id: action.Id}
 		vm.nics = append(vm.nics, nic)
 	}
 
