@@ -153,7 +153,7 @@ func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Wri
 }
 
 func (repo *Repository) addFileToArchive(file, subpath string, w *tar.Writer) (e error) {
-	if strings.Contains(file, "/.git/") {
+	if strings.Contains(file, "/.git") {
 		return nil
 	}
 	f, e := os.Open(file)
