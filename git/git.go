@@ -104,6 +104,12 @@ func (repo *Repository) MostRecentCommitFor(pattern string) (commit string, e er
 var validTar = regexp.MustCompile("^([0-9a-f]{40})$")
 
 func (repo *Repository) Tar(revision string, w *tar.Writer) error {
+	return repo.TarToSubpath(revision, "./", w)
+}
+
+func (repo *Repository) TarToSubpath(revision, subpath string, w *tar.Writer) error {
+	subpath = normalizeSubpath(subpath)
+
 	if !validTar.MatchString(revision) {
 		return fmt.Errorf("revision %q not valid (must be 40 digit git sha)", revision)
 	}
@@ -111,7 +117,7 @@ func (repo *Repository) Tar(revision string, w *tar.Writer) error {
 	if e != nil {
 		return e
 	}
-	e = repo.addFileToArchive(repo.cachePath(), w)
+	e = repo.addFileToArchive(repo.cachePath(), subpath, w)
 	if e != nil {
 		return e
 	}
@@ -126,6 +132,17 @@ func (repo *Repository) Tar(revision string, w *tar.Writer) error {
 	return addFileToArchive("REVISION", []byte(revision), lastUpdate, w)
 }
 
+func normalizeSubpath(subpath string) string {
+	switch {
+	case strings.HasPrefix(subpath, "./"):
+		return subpath
+	case subpath == "":
+		return "./"
+	}
+
+	return "./" + strings.TrimPrefix(subpath, "/")
+}
+
 func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Writer) error {
 	e := w.WriteHeader(&tar.Header{Name: name, Size: int64(len(content)), ModTime: modTime, Mode: 0644})
 	if e != nil {
@@ -135,7 +152,7 @@ func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Wri
 	return e
 }
 
-func (repo *Repository) addFileToArchive(file string, w *tar.Writer) (e error) {
+func (repo *Repository) addFileToArchive(file, subpath string, w *tar.Writer) (e error) {
 	if strings.Contains(file, "/.git/") {
 		return nil
 	}
@@ -148,7 +165,7 @@ func (repo *Repository) addFileToArchive(file string, w *tar.Writer) (e error) {
 	if e != nil {
 		return e
 	}
-	header := &tar.Header{Name: "./" + strings.TrimPrefix(file, repo.cachePath()+"/"), Size: 0}
+	header := &tar.Header{Name: subpath + strings.TrimPrefix(file, repo.cachePath()), Size: 0}
 	header.ModTime = stat.ModTime()
 	header.Mode = 0644
 	if stat.IsDir() {
@@ -163,7 +180,7 @@ func (repo *Repository) addFileToArchive(file string, w *tar.Writer) (e error) {
 			return e
 		}
 		for _, file := range files {
-			e := repo.addFileToArchive(file, w)
+			e := repo.addFileToArchive(file, subpath, w)
 			if e != nil {
 				return e
 			}

@@ -17,6 +17,7 @@ import (
 
 type Build struct {
 	GitRepository   string
+	RepositoryPath  string
 	Tag             string
 	Proxy           string
 	Root            string
@@ -111,7 +112,7 @@ func (b *Build) buildArchive() (*os.File, error) {
 		if e != nil {
 			return nil, e
 		}
-		if e := repo.Tar(b.Revision, t); e != nil {
+		if e := repo.TarToSubpath(b.Revision, b.RepositoryPath, t); e != nil {
 			return nil, e
 		}
 	}
