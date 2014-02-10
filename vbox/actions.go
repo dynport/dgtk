@@ -49,7 +49,7 @@ func (action *actListVMs) Run() (e error) {
 		if vm.status == "running" {
 			r = "*"
 		}
-		log.Printf("%s%s", vm.name, r)
+		fmt.Printf("%s%s\n", vm.name, r)
 	}
 	return nil
 }
@@ -87,7 +87,7 @@ func listVMProps(vm string) (e error) {
 		if !strings.HasPrefix(k, "/VirtualBox/GuestInfo") {
 			continue
 		}
-		log.Printf("%s%-*s%q", k, 50-len(k), "", v)
+		fmt.Printf("%s%-*s%q\n", k, 50-len(k), "", v)
 	}
 	return nil
 }
@@ -97,19 +97,19 @@ func showVMInfo(name string) (e error) {
 	if e = vmInfos(vm); e != nil {
 		return e
 	}
-	log.Printf("VM %q", name)
-	log.Printf("cpus:          %d", vm.cpus)
-	log.Printf("memory:        %d MB", vm.memory)
-	log.Printf("boot order:    %s", strings.Join(vm.bootOrder[:], ","))
+	fmt.Printf("VM %q\n", name)
+	fmt.Printf("cpus:          %d\n", vm.cpus)
+	fmt.Printf("memory:        %d MB\n", vm.memory)
+	fmt.Printf("boot order:    %s\n", strings.Join(vm.bootOrder[:], ","))
 	for _, nic := range vm.nics {
 		networkName := ""
 		if nic.ntype == "hostonly" {
 			networkName = " [->" + nic.name + "]"
 		}
-		log.Printf("nic [%d]:       %s %s%s", nic.id, nic.ntype, nic.mac, networkName)
+		fmt.Printf("nic [%d]:       %s %s%s\n", nic.id, nic.ntype, nic.mac, networkName)
 	}
 	for k, v := range vm.sfolders {
-		log.Printf("shared folder: %s [->%s]", v, k)
+		fmt.Printf("shared folder: %s [->%s]\n", v, k)
 	}
 	return nil
 }
