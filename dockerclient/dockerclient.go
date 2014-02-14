@@ -3,8 +3,9 @@ package dockerclient
 
 import (
 	"fmt"
-	"github.com/dynport/gossh"
 	"net/http"
+
+	"github.com/dynport/gossh"
 )
 
 type DockerHost struct {
@@ -24,8 +25,10 @@ func New(host string, port int) *DockerHost {
 // Create a new connection to a docker host using a SSH tunnel at the given user and host. This is useful as making the
 // docker API public isn't recommended (allows to do stuff you don't want to allow publicly). A SSH connection will be
 // set up and utilized for all communication to the docker API.
-func NewViaTunnel(host, user string) (*DockerHost, error) {
+func NewViaTunnel(host, user, password string) (*DockerHost, error) {
 	sc := gossh.New(host, user)
+	sc.SetPassword(password)
+
 	hc, e := gossh.NewHttpClient(sc)
 	if e != nil {
 		return nil, e

@@ -16,13 +16,16 @@ import (
 )
 
 type Build struct {
-	GitRepository   string
-	RepositoryPath  string
-	Tag             string
-	Proxy           string
-	Root            string
-	DockerHost      string
-	DockerPort      int
+	GitRepository string
+	Tag           string
+	Proxy         string
+	Root          string
+
+	DockerHost         string // IP of the host running docker.
+	DockerPort         int    // Port docker is listening on.
+	DockerHostUser     string // If set an SSH tunnel will be setup and used for communication.
+	DockerHostPassword string // Password of the user, if required for SSH (public key authentication should be preferred).
+
 	Revision        string
 	dockerfileAdded bool
 }
@@ -47,6 +50,17 @@ func (p *progress) Write(b []byte) (int, error) {
 	return i, nil
 }
 
+func (b *Build) connectToDockerHost() (*dockerclient.DockerHost, error) {
+	if b.DockerHostUser == "" {
+		port := b.DockerPort
+		if port == 0 {
+			port = 4243
+		}
+		return dockerclient.New(b.DockerHost, port), nil
+	}
+	return dockerclient.NewViaTunnel(b.DockerHost, b.DockerHostUser, b.DockerHostPassword)
+}
+
 func (b *Build) Build() (string, error) {
 	f, e := b.buildArchive()
 	if e != nil {
@@ -54,12 +68,12 @@ func (b *Build) Build() (string, error) {
 	}
 	defer func() { os.Remove(f.Name()) }()
 	log.Printf("wrote file %s", f.Name())
-	port := b.DockerPort
-	if port == 0 {
-		port = 4243
+
+	client, e := b.connectToDockerHost()
+	if e != nil {
+		return "", e
 	}
 
-	client := dockerclient.New(b.DockerHost, port)
 	f, e = os.Open(f.Name())
 	if e != nil {
 		return "", e
@@ -112,7 +126,7 @@ func (b *Build) buildArchive() (*os.File, error) {
 		if e != nil {
 			return nil, e
 		}
-		if e := repo.TarToSubpath(b.Revision, b.RepositoryPath, t); e != nil {
+		if e := repo.WriteArchiveToTar(b.Revision, t); e != nil {
 			return nil, e
 		}
 	}

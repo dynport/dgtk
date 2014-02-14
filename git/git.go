@@ -2,6 +2,7 @@ package git
 
 import (
 	"archive/tar"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -27,26 +28,19 @@ func (repo *Repository) cacheDir() string {
 	return os.Getenv("HOME") + "/.dgtk/cache/git_repositories"
 }
 
-func (repo *Repository) Clean() error {
-	log.Println("cleaning repository")
-	_, e := repo.executeGitCommand("clean -d -x -f")
-	return e
-}
-
 func (repo *Repository) Fetch() error {
 	log.Println("fetching origin")
-	_, e := repo.executeGitCommand("git fetch")
+	_, e := repo.executeGitCommand("fetch")
 	return e
 }
 
 func (repo *Repository) cachePath() string {
-	chunks := strings.Split(repo.Origin, "/")
-	return repo.cacheDir() + "/" + chunks[len(chunks)-1]
+	return repo.cacheDir() + "/" + repo.Name()
 }
 
 func (repo *Repository) clone() error {
 	log.Printf("cloning %s into %s", repo.Origin, repo.cachePath())
-	cmd := exec.Command("git", "clone", repo.Origin, repo.cachePath())
+	cmd := exec.Command("git", "clone", "--bare", repo.Origin, repo.cachePath())
 	if b, e := cmd.CombinedOutput(); e != nil {
 		log.Printf("ERROR: %s", strings.TrimSpace(string(b)))
 		return e
@@ -70,18 +64,12 @@ func (repo *Repository) Init() error {
 	return nil
 }
 
-func (repo *Repository) Checkout(revision string) error {
-	e := repo.Init()
-	if e != nil {
-		return e
-	}
-	log.Printf("checking out revision %q", revision)
-	_, e = repo.executeGitCommand(checkoutCommand(revision))
-	return e
+func (repo *Repository) createGitCommand(gitCommand ...string) *exec.Cmd {
+	return exec.Command("git", append([]string{"--git-dir=" + repo.cachePath()}, gitCommand...)...)
 }
 
-func (repo *Repository) executeGitCommand(gitCommand string) (b []byte, e error) {
-	cmd := exec.Command("bash", "-c", "cd "+repo.cachePath()+" && "+gitCommand)
+func (repo *Repository) executeGitCommand(gitCommand ...string) (b []byte, e error) {
+	cmd := repo.createGitCommand(gitCommand...)
 	b, e = cmd.CombinedOutput()
 	if e != nil {
 		log.Printf("ERROR: %s", strings.TrimSpace(string(b)))
@@ -103,44 +91,23 @@ func (repo *Repository) MostRecentCommitFor(pattern string) (commit string, e er
 
 var validTar = regexp.MustCompile("^([0-9a-f]{40})$")
 
-func (repo *Repository) Tar(revision string, w *tar.Writer) error {
-	return repo.TarToSubpath(revision, "./", w)
-}
-
-func (repo *Repository) TarToSubpath(revision, subpath string, w *tar.Writer) error {
-	subpath = normalizeSubpath(subpath)
-
+// Writes tgz archive to the given tar writer.
+func (repo *Repository) WriteArchiveToTar(revision string, w *tar.Writer) (e error) {
 	if !validTar.MatchString(revision) {
 		return fmt.Errorf("revision %q not valid (must be 40 digit git sha)", revision)
 	}
-	e := repo.Checkout(revision)
-	if e != nil {
-		return e
-	}
-	e = repo.addFileToArchive(repo.cachePath(), subpath, w)
-	if e != nil {
-		return e
-	}
-	commits, e := repo.Commits(nil)
-	if e != nil {
-		return e
-	}
-	lastUpdate := time.Now()
-	if len(commits) > 0 {
-		lastUpdate = commits[0].AuthorDate
-	}
-	return addFileToArchive("REVISION", []byte(revision), lastUpdate, w)
-}
 
-func normalizeSubpath(subpath string) string {
-	switch {
-	case strings.HasPrefix(subpath, "./"):
-		return subpath
-	case subpath == "":
-		return "./"
+	mtime, e := repo.DateOfRevision(revision)
+	if e != nil {
+		return e
 	}
 
-	return "./" + strings.TrimPrefix(subpath, "/")
+	e = repo.addArchiveToTar(revision, mtime, w)
+	if e != nil {
+		return e
+	}
+
+	return addFileToArchive("REVISION", []byte(revision), mtime, w)
 }
 
 func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Writer) error {
@@ -152,61 +119,53 @@ func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Wri
 	return e
 }
 
-func (repo *Repository) addFileToArchive(file, subpath string, w *tar.Writer) (e error) {
-	if strings.Contains(file, "/.git") {
-		return nil
+func (repo *Repository) addArchiveToTar(revision string, mtime time.Time, w *tar.Writer) (e error) {
+	filename := repo.Name() + ".tar.gz"
+
+	buf := bytes.NewBuffer(nil)
+
+	cmd := repo.createGitCommand("archive", "--format=tar.gz", revision)
+	cmd.Stdout = buf
+
+	if e = cmd.Run(); e != nil {
+		return e
 	}
-	f, e := os.Open(file)
+
+	e = w.WriteHeader(&tar.Header{Name: filename, Size: int64(buf.Len()), ModTime: mtime, Mode: 0644})
 	if e != nil {
 		return e
 	}
-	defer f.Close()
-	stat, e := f.Stat()
+
+	_, e = io.Copy(w, buf)
+	return e
+}
+
+func (repo *Repository) Name() string {
+	return strings.TrimSuffix(filepath.Base(repo.Origin), ".git")
+}
+
+func (repo *Repository) DateOfRevision(revision string) (time.Time, error) {
+	b, e := repo.executeGitCommand("log", "-1", "--format='%ct'", revision)
 	if e != nil {
-		return e
+		return time.Now(), e
 	}
-	header := &tar.Header{Name: subpath + strings.TrimPrefix(file, repo.cachePath()), Size: 0}
-	header.ModTime = stat.ModTime()
-	header.Mode = 0644
-	if stat.IsDir() {
-		header.Mode = 0755
-		header.Typeflag = tar.TypeDir
-		e := w.WriteHeader(header)
-		if e != nil {
-			return e
-		}
-		files, e := filepath.Glob(file + "/*")
-		if e != nil {
-			return e
-		}
-		for _, file := range files {
-			e := repo.addFileToArchive(file, subpath, w)
-			if e != nil {
-				return e
-			}
-		}
-		return nil
-	} else {
-		header.Size = stat.Size()
-		e = w.WriteHeader(header)
-		if e != nil {
-			return e
-		}
-		_, e = io.Copy(w, f)
-		return e
+	d, e := strconv.Atoi(strings.Trim(string(b), "'\n"))
+	if e != nil {
+		return time.Now(), e
 	}
+
+	return time.Unix(int64(d), 0), nil
 }
 
 func (repo *Repository) Commits(options *CommitOptions) (commits []*Commit, e error) {
 	if options == nil {
 		options = &CommitOptions{Limit: 10}
 	}
-	cmd := fmt.Sprintf("git log -n %d --pretty=format:'%%H\t%%at\t%%s' %s", options.Limit, options.Pattern)
 	path := repo.LocalPath
 	if path == "" {
 		path = repo.cachePath()
 	}
-	b, e := repo.executeGitCommand(cmd)
+	b, e := repo.executeGitCommand("log", "-n", strconv.Itoa(options.Limit), "--pretty=format:'%%H\t%%at\t%%s'", options.Pattern)
 	if e != nil {
 		return nil, e
 	}
@@ -229,8 +188,4 @@ func (repo *Repository) Commits(options *CommitOptions) (commits []*Commit, e er
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || !os.IsNotExist(err)
-}
-
-func checkoutCommand(revision string) string {
-	return "git fetch && git reset --hard " + revision
 }
