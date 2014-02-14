@@ -14,9 +14,8 @@ type PubSub struct {
 	Stats
 }
 
-func (pubsub *PubSub) Publish(i interface{}) error {
+func (pubsub *PubSub) Publish(i interface{}) (e error) {
 	pubsub.Stats.MessageReceived()
-	var e error
 	value := reflect.ValueOf(i)
 	for _, s := range pubsub.subscriptions {
 		if !s.closed && s.Matches(value) {
@@ -24,7 +23,8 @@ func (pubsub *PubSub) Publish(i interface{}) error {
 			case s.buffer <- value:
 				pubsub.Stats.MessageDispatched()
 			default:
-				e = fmt.Errorf("unable to publish to %v", s)
+				pubsub.Stats.MessageIgnored()
+				e = fmt.Errorf("unable to publish (subscriber buffer full) to %+v", s)
 			}
 		}
 	}
