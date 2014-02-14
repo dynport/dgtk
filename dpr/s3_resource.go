@@ -3,13 +3,14 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/dynport/gocloud/aws/s3"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/dynport/gocloud/aws/s3"
 )
 
 type S3Resource struct {
