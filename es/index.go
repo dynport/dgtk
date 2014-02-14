@@ -306,7 +306,6 @@ func (index *Index) GlobalMapping() (m *Mapping, e error) {
 
 func (index *Index) Mapping() (i interface{}, e error) {
 	u := index.IndexUrl() + "/_mapping"
-	index.LogInfo("checking for url %s", u)
 	rsp, e := index.request("GET", u, i)
 	if rsp != nil && rsp.StatusCode == 404 {
 		return nil, nil

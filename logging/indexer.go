@@ -2,12 +2,14 @@ package logging
 
 import (
 	"fmt"
-	"github.com/dynport/dgtk/es"
-	"github.com/dynport/dgtk/util"
-	"github.com/streadway/amqp"
+	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/dynport/dgtk/es"
+	"github.com/dynport/dgtk/util"
+	"github.com/streadway/amqp"
 )
 
 var (
@@ -27,9 +29,7 @@ const (
 	DefaultTtl   = int32(60000)
 )
 
-func log(format string, i ...interface{}) {
-	fmt.Printf(format+"\n", i...)
-}
+var logger = log.New(os.Stderr, "", 0)
 
 type Indexer struct {
 	AMQPAddress        string
@@ -115,35 +115,38 @@ func (indexer *Indexer) RunWithoutReconnect() error {
 		if line := parseLine(raw); line != nil {
 			ok, e := index.EnqueueBulkIndex(util.MD5String(raw), line)
 			if e != nil {
-				log(e.Error())
+				logger.Print(e.Error())
 			} else if ok {
 				del.Ack(true)
 			}
 		}
 	}
 	index.RunBatchIndex()
-	log("finished")
+	logger.Print("finished")
 	return nil
 }
 
 func (indexer *Indexer) CreateMappingWhenNotExists(esIndex *es.Index) error {
+	logger.Print("getting mapping from %v", esIndex.IndexUrl())
 	mapping, e := esIndex.Mapping()
 	if e != nil {
 		return e
 	}
+	logger.Printf("got mapping %#v", mapping)
 	if mapping == nil {
 		if esIndex.Type == "" {
 			return fmt.Errorf("type must be set for elastic search index")
 		}
 		indexMapping := indexer.IndexMapping(esIndex.Type)
-		log("creating mapping %#v", indexMapping)
+		logger.Printf("creating mapping %#v", indexMapping)
 		rsp, e := esIndex.PutMapping(indexMapping)
 		if e != nil {
 			return e
 		}
-		log("created mapping %#v", string(rsp.Body))
+		log.Printf("create mapping status=%s", rsp.Status)
+		logger.Printf("created mapping %#v", string(rsp.Body))
 	} else {
-		log("mapping already exists!")
+		logger.Print("mapping already exists!")
 	}
 	return nil
 }

@@ -21,6 +21,10 @@ type SyslogLine struct {
 	tagsParsed bool
 }
 
+func (line *SyslogLine) TagString(key string) string {
+	return fmt.Sprint(line.Tags()[key])
+}
+
 var validKeyRegexp = regexp.MustCompile("(?i)^[a-z]+$")
 var callsRegexp = regexp.MustCompile("^([0-9.]+)\\/([0-9]+)$")
 
@@ -185,6 +189,7 @@ type NginxLine struct {
 	UserAgentName string
 	Uri           string
 	Referer       string
+	Action        string
 }
 
 var quotesRegexp = regexp.MustCompile(`(ua|uri|ref)="(.*?)"`)
@@ -206,6 +211,8 @@ func (line *NginxLine) Parse(raw string) error {
 			key := parts[0]
 			value := parts[1]
 			switch key {
+			case "action":
+				line.Action = value
 			case "method":
 				line.Method = value
 			case "status":
