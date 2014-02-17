@@ -2,8 +2,8 @@ package dockerclient
 
 import (
 	"encoding/json"
+
 	"github.com/dynport/dgtk/version"
-	"net/http"
 )
 
 type Version struct {
@@ -43,7 +43,7 @@ func (dh *DockerHost) ServerVersion() (*Version, error) {
 	if dh.cachedServerVersion != nil {
 		return dh.cachedServerVersion, nil
 	}
-	rsp, e := http.Get(dh.url() + "/version")
+	rsp, e := dh.httpClient.Get(dh.url() + "/version")
 	if e != nil {
 		return nil, e
 	}

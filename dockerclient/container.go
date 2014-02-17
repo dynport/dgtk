@@ -2,11 +2,12 @@ package dockerclient
 
 import (
 	"fmt"
-	"github.com/dynport/dgtk/dockerclient/docker"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/dynport/dgtk/dockerclient/docker"
 )
 
 type ListContainersOptions struct {
@@ -112,7 +113,7 @@ func (dh *DockerHost) RemoveContainer(containerId string) error {
 	if e != nil {
 		return e
 	}
-	rsp, e := http.DefaultClient.Do(req)
+	rsp, e := dh.httpClient.Do(req)
 	if e != nil {
 		return e
 	}
