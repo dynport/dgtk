@@ -21,6 +21,12 @@ type Build struct {
 	Proxy         string
 	Root          string
 
+	// If this is a ruby project then add the Gemfiles to the archive separately. That way bundler's inefficiency can be
+	// mitigated using docker's caching strategy. Just call copy the Gemfile's somewhere (using the 'ADD' command) and
+	// run bundler on them. Then extract the sources and use the app. This way only changes to the Gemfiles will result
+	// in a rerun of bundler.
+	RubyProject bool
+
 	DockerHost         string // IP of the host running docker.
 	DockerPort         int    // Port docker is listening on.
 	DockerHostUser     string // If set an SSH tunnel will be setup and used for communication.
@@ -128,6 +134,11 @@ func (b *Build) buildArchive() (*os.File, error) {
 		}
 		if e := repo.WriteArchiveToTar(b.Revision, t); e != nil {
 			return nil, e
+		}
+		if b.RubyProject {
+			if e := repo.WriteFilesToTar(b.Revision, t, "Gemfile", "Gemfile.lock"); e != nil {
+				return nil, e
+			}
 		}
 	}
 	if e := b.addFilesToArchive(b.Root, t); e != nil {

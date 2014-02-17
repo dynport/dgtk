@@ -97,7 +97,7 @@ func (repo *Repository) WriteArchiveToTar(revision string, w *tar.Writer) (e err
 		return fmt.Errorf("revision %q not valid (must be 40 digit git sha)", revision)
 	}
 
-	mtime, e := repo.DateOfRevision(revision)
+	mtime, e := repo.DateOf(revision, ".")
 	if e != nil {
 		return e
 	}
@@ -108,6 +108,47 @@ func (repo *Repository) WriteArchiveToTar(revision string, w *tar.Writer) (e err
 	}
 
 	return addFileToArchive("REVISION", []byte(revision), mtime, w)
+}
+
+func (repo *Repository) WriteFilesToTar(revision string, w *tar.Writer, files ...string) (e error) {
+	if len(files) == 0 {
+		return fmt.Errorf("empty file list given")
+	}
+
+	if !validTar.MatchString(revision) {
+		return fmt.Errorf("revision %q not valid (must be 40 digit git sha)", revision)
+	}
+
+	for _, file := range files {
+		mtime, e := repo.DateOf(revision, file)
+		if e != nil {
+			return e
+		}
+
+		buf, e := repo.getFileAtRevision(revision, file)
+		if e != nil {
+			return e
+		}
+
+		if e = addFileToArchive(file, buf, mtime, w); e != nil {
+			return e
+		}
+	}
+
+	return nil
+}
+
+func (repo *Repository) getFileAtRevision(revision, file string) (content []byte, e error) {
+	buf := bytes.NewBuffer(nil)
+
+	cmd := repo.createGitCommand("show", revision+":"+file)
+	cmd.Stdout = buf
+
+	if e = cmd.Run(); e != nil {
+		return nil, e
+	}
+
+	return buf.Bytes(), nil
 }
 
 func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Writer) error {
@@ -144,8 +185,8 @@ func (repo *Repository) Name() string {
 	return strings.TrimSuffix(filepath.Base(repo.Origin), ".git")
 }
 
-func (repo *Repository) DateOfRevision(revision string) (time.Time, error) {
-	b, e := repo.executeGitCommand("log", "-1", "--format='%ct'", revision)
+func (repo *Repository) DateOf(revision, file string) (time.Time, error) {
+	b, e := repo.executeGitCommand("log", "-1", "--format='%ct'", revision, "--", file)
 	if e != nil {
 		return time.Now(), e
 	}
