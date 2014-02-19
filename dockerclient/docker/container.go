@@ -88,6 +88,7 @@ type ContainerInfo struct {
 	Args            []string
 	ContainerConfig ContainerConfig `json:"Config"`
 	NetworkConfig   NetworkSettings `json:"NetworkSettings"`
+	HostConfig      HostConfig      `json:"HostConfig"`
 }
 
 func (self *ContainerInfo) CreatedAt() time.Time {
