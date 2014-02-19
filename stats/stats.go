@@ -13,6 +13,7 @@ type Stats struct {
 }
 
 func (stats *Stats) Add(i int) {
+	stats.sum += i
 	stats.Values = append(stats.Values, i)
 }
 
@@ -33,12 +34,6 @@ func (stats *Stats) Min() int {
 }
 
 func (stats *Stats) Sum() int {
-	if stats.sum > 0 {
-		return stats.sum
-	}
-	for _, i := range stats.Values {
-		stats.sum += i
-	}
 	return stats.sum
 }
 
