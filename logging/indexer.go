@@ -127,7 +127,7 @@ func (indexer *Indexer) RunWithoutReconnect() error {
 }
 
 func (indexer *Indexer) CreateMappingWhenNotExists(esIndex *es.Index) error {
-	logger.Print("getting mapping from %v", esIndex.IndexUrl())
+	logger.Printf("getting mapping from %v", esIndex.IndexUrl())
 	mapping, e := esIndex.Mapping()
 	if e != nil {
 		return e
