@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func New(root string) (*Proxy, error) {
@@ -125,7 +126,7 @@ func (proxy *Proxy) Load(r *Resource) (bool, error) {
 }
 
 func (proxy *Proxy) cached(r *Resource) bool {
-	it := proxy.db.NewIterator(nil)
+	it := proxy.db.NewIterator(nil, nil)
 	key := proxy.cacheKey(r)
 	return it.Seek(key)
 }
