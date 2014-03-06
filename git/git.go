@@ -32,7 +32,14 @@ func (repo *Repository) Fetch() error {
 	return e
 }
 
+const githubPrefix = "git@github.com:"
+
 func (repo *Repository) cachePath() string {
+	name := repo.Name()
+	if strings.HasPrefix(repo.Origin, githubPrefix) {
+		name = strings.TrimPrefix(repo.Origin, githubPrefix)
+		return repo.cacheDir() + "/github.com/" + name
+	}
 	return repo.cacheDir() + "/" + repo.Name()
 }
 
