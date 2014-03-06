@@ -50,6 +50,11 @@ func (repo *Repository) clone() error {
 		logger.Printf("ERROR: %s", strings.TrimSpace(string(b)))
 		return e
 	}
+	cmd = exec.Command("git", "--git-dir="+repo.cachePath(), "config", "remote.origin.fetch", "refs/heads/*:refs/heads/*")
+	if b, e := cmd.CombinedOutput(); e != nil {
+		logger.Printf("ERROR: %s", strings.TrimSpace(string(b)))
+		return e
+	}
 	return nil
 }
 
