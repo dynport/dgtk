@@ -15,9 +15,7 @@ import (
 	"time"
 )
 
-func init() {
-	log.SetFlags(0)
-}
+var logger = log.New(os.Stderr, "", 0)
 
 type Repository struct {
 	Origin    string
@@ -29,7 +27,7 @@ func (repo *Repository) cacheDir() string {
 }
 
 func (repo *Repository) Fetch() error {
-	log.Println("fetching origin")
+	logger.Println("fetching origin")
 	_, e := repo.executeGitCommand("fetch")
 	return e
 }
@@ -39,10 +37,10 @@ func (repo *Repository) cachePath() string {
 }
 
 func (repo *Repository) clone() error {
-	log.Printf("cloning %s into %s", repo.Origin, repo.cachePath())
+	logger.Printf("cloning %s into %s", repo.Origin, repo.cachePath())
 	cmd := exec.Command("git", "clone", "--bare", repo.Origin, repo.cachePath())
 	if b, e := cmd.CombinedOutput(); e != nil {
-		log.Printf("ERROR: %s", strings.TrimSpace(string(b)))
+		logger.Printf("ERROR: %s", strings.TrimSpace(string(b)))
 		return e
 	}
 	return nil
@@ -59,7 +57,7 @@ func (repo *Repository) Init() error {
 			return e
 		}
 	} else {
-		log.Printf("already cloned %s to %s", repo.Origin, repo.cachePath())
+		logger.Printf("already cloned %s to %s", repo.Origin, repo.cachePath())
 	}
 	return nil
 }
@@ -72,7 +70,7 @@ func (repo *Repository) executeGitCommand(gitCommand ...string) (b []byte, e err
 	cmd := repo.createGitCommand(gitCommand...)
 	b, e = cmd.CombinedOutput()
 	if e != nil {
-		log.Printf("ERROR: %s", strings.TrimSpace(string(b)))
+		logger.Printf("ERROR: %s (%v)", strings.TrimSpace(string(b)), cmd)
 		return b, e
 	}
 	return b, nil
@@ -219,7 +217,7 @@ func (repo *Repository) Commits(options *CommitOptions) (commits []*Commit, e er
 			if t, e := strconv.ParseInt(parts[1], 10, 64); e == nil {
 				commits = append(commits, &Commit{Checksum: parts[0], AuthorDate: time.Unix(t, 0), Message: parts[2]})
 			} else {
-				log.Printf("ERROR: %s", e.Error())
+				logger.Printf("ERROR: %s", e.Error())
 			}
 		}
 	}
