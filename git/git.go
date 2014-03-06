@@ -216,7 +216,11 @@ func (repo *Repository) Commits(options *CommitOptions) (commits []*Commit, e er
 	if path == "" {
 		path = repo.cachePath()
 	}
-	b, e := repo.executeGitCommand("log", "-n", strconv.Itoa(options.Limit), "--pretty=format:'%%H\t%%at\t%%s'", options.Pattern)
+	parts := []string{"log", "-n", strconv.Itoa(options.Limit), "--pretty=format:%H\t%at\t%s"}
+	if options.Pattern != "" {
+		parts = append(parts, options.Pattern)
+	}
+	b, e := repo.executeGitCommand(parts...)
 	if e != nil {
 		return nil, e
 	}
