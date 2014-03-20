@@ -180,6 +180,7 @@ func (line *UnicornLine) Parse(raw string) error {
 
 type NginxLine struct {
 	*SyslogLine
+	XForwardedFor []string
 	Method        string
 	Status        string
 	Length        int
@@ -205,6 +206,7 @@ func (line *NginxLine) Parse(raw string) error {
 	if line.Tag != "ssl_endpoint" && line.Tag != "nginx" {
 		return fmt.Errorf("tag %q not supported", line.Tag)
 	}
+	forwarded := false
 	for _, field := range line.fields {
 		parts := strings.SplitN(field, "=", 2)
 		if len(parts) == 2 {
@@ -213,6 +215,8 @@ func (line *NginxLine) Parse(raw string) error {
 			switch key {
 			case "action":
 				line.Action = value
+			case "nginx":
+				forwarded = true
 			case "method":
 				line.Method = value
 			case "status":
@@ -226,6 +230,12 @@ func (line *NginxLine) Parse(raw string) error {
 			case "unicorn_time":
 				line.UnicornTime, _ = strconv.ParseFloat(value, 64)
 			}
+		} else if field == "nginx:" {
+			forwarded = true
+		} else if forwarded {
+			line.XForwardedFor = append(line.XForwardedFor, field)
+		} else if strings.HasPrefix(field, "host=") {
+			forwarded = false
 		}
 	}
 	quotes := quotesRegexp.FindAllStringSubmatch(raw, -1)
