@@ -1,5 +1,5 @@
 build:
-	go get github.com/dynport/dgtk/goassets
+	go get .
 
 test:
 	go test -v

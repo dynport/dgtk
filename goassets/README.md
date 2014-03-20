@@ -63,7 +63,7 @@ return a value that implements the `ReadCloser` interface.
 
 Sometimes it might not be appropriate to rebuild the assets each time something changes, i.e. when assets are used by a
 web server it would be necessary to restart the server after updating the assets. Therefore there is the option to
-specify the `GOASSETS_<pkg_name>_PATH` environment variable, that will trigger usage of this path as source for the
+specify the `GOASSETS_PATH` environment variable, that will trigger usage of this path as source for the
 assets (this is where the fake filesystem is used actually). The part with `pkg_name` must be replaced by the name of
 the respective package. This allows for using multiple packages with assets simultaneously and decided on a per package
 basis which assets to use from the binary or not.
