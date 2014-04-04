@@ -97,7 +97,7 @@ func diffMap(a reflect.Value, b interface{}) *DiffResult {
 	}
 
 	if len(diff) > 0 {
-		return &DiffResult{Diff: strings.Join(diff, ", ")}
+		return &DiffResult{Diff: strings.Join(diff, "\n")}
 	}
 
 	return nil
