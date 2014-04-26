@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"text/template"
 )
@@ -65,39 +64,23 @@ func removePrefix(path, prefix string) (suffix string, e error) {
 }
 
 func assetsInPath(path string, packagePath string) (assets []*Asset, e error) {
-	stat, e := os.Stat(path)
-	if e != nil {
-		return assets, e
-	}
-	if stat.IsDir() {
-		paths, e := filepath.Glob(path + "/*")
+	e = filepath.Walk(path, func(p string, stat os.FileInfo, e error) error {
 		if e != nil {
-			return assets, e
+			return e
 		}
-		sort.Strings(paths)
-		for _, path := range paths {
-			stat, e := os.Stat(path)
-			if e != nil {
-				return assets, e
-			}
-			if stat.IsDir() {
-				tmp, e := assetsInPath(path, packagePath)
-				if e != nil {
-					return assets, e
-				}
-				assets = append(assets, tmp...)
-			} else {
-				abs, e := filepath.Abs(path)
-				if e != nil {
-					return assets, e
-				}
-				if abs != packagePath {
-					assets = append(assets, &Asset{Path: path})
-				}
-			}
+		if stat.IsDir() {
+			return nil
 		}
-	}
-	return assets, nil
+		abs, e := filepath.Abs(p)
+		if e != nil {
+			return e
+		}
+		if abs != packagePath {
+			assets = append(assets, &Asset{Path: p})
+		}
+		return nil
+	})
+	return assets, e
 }
 
 func (assets *Assets) PackagePath() (path string, e error) {

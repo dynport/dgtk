@@ -1,11 +1,11 @@
 package main
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func cleanup(t *testing.T) {
