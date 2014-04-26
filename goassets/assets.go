@@ -109,11 +109,14 @@ func (assets *Assets) PackagePath() (path string, e error) {
 }
 
 func (assets *Assets) Build() error {
+	debugger.Print("loading assets paths")
 	paths, e := assets.AssetPaths()
+	debugger.Printf("got %d assets", len(paths))
 	if e != nil {
 		return e
 	}
 	for _, asset := range paths {
+		debugger.Printf("loading assets %q", asset.Key)
 		e := asset.Load()
 		if e != nil {
 			return e

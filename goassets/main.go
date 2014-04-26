@@ -2,15 +2,29 @@ package main
 
 import (
 	"fmt"
-	"github.com/dynport/dgtk/cli"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/dynport/dgtk/cli"
 )
 
 type action struct {
 	TargetFile string   `cli:"type=opt short=t long=target default=assets.go desc='The name of the file created.'"`
 	AssetPaths []string `cli:"type=arg required=true desc='Paths where raw assets are located.'"`
+}
+
+var debugger = log.New(debugStream(), "", 0)
+
+func debugStream() io.Writer {
+	if os.Getenv("DEBUG") == "true" {
+		return os.Stderr
+	}
+	return ioutil.Discard
 }
 
 func (a *action) Run() error {
@@ -25,6 +39,8 @@ func (a *action) Run() error {
 		CustomPackagePath: a.TargetFile,
 		Paths:             a.AssetPaths,
 	}
+
+	debugger.Print("building assets")
 
 	if e := assets.Build(); e != nil {
 		return e
