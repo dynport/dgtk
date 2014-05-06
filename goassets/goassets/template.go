@@ -1,4 +1,4 @@
-package main
+package goassets
 
 const TPL = `package {{ .Package }}
 
@@ -6,23 +6,20 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
+	"strings"
 )
 
-type assetFileSystemI interface {
-	Open(name string) (assetFileI, error)
-	AssetNames() []string
-}
+var builtAt time.Time
 
-type assetFileI interface {
-	io.Closer
-	io.Reader
-	Seek(int64, int) (int64, error)
-	Stat() (os.FileInfo, error)
+type assetFileSystemI interface {
+	Open(name string) (http.File, error)
+	AssetNames() []string
 }
 
 var assets assetFileSystemI
@@ -36,7 +33,9 @@ func readAsset(key string) ([]byte, error) {
 	if e != nil {
 		return nil, e
 	}
-	defer r.Close()
+	defer func() {
+		_ = r.Close()
+	}()
 
 	p, e := ioutil.ReadAll(r)
 	if e != nil {
@@ -55,7 +54,7 @@ func mustReadAsset(key string) []byte {
 
 type assetOsFS struct{ root string }
 
-func (aFS assetOsFS) Open(name string) (assetFileI, error) {
+func (aFS assetOsFS) Open(name string) (http.File, error) {
 	return os.Open(filepath.Join(aFS.root, name))
 }
 
@@ -70,7 +69,45 @@ func (aFS *assetOsFS) AssetNames() ([]string) {
 type assetIntFS map[string][]byte
 
 type assetFile struct {
-	decompressor io.ReadCloser
+	name string
+	*bytes.Reader
+}
+
+type assetFileInfo struct {
+	*assetFile
+}
+
+func (info assetFileInfo) Name() string {
+	return info.assetFile.name
+}
+
+func (info assetFileInfo) ModTime() time.Time {
+	return builtAt
+}
+
+func (info assetFileInfo) Mode() os.FileMode {
+	return 0644
+}
+
+func (info assetFileInfo) Sys() interface{} {
+	return nil
+}
+
+func (info assetFileInfo) Size() int64 {
+	return int64(info.assetFile.Reader.Len())
+}
+
+func (info assetFileInfo) IsDir() bool {
+	return false
+}
+
+func (info assetFile) Readdir(count int) ([]os.FileInfo, error) {
+	return nil, nil
+}
+
+func (f *assetFile) Stat() (os.FileInfo, error) {
+	info := assetFileInfo{assetFile: f}
+	return info, nil
 }
 
 func (afs assetIntFS) AssetNames() (names []string) {
@@ -81,33 +118,43 @@ func (afs assetIntFS) AssetNames() (names []string) {
 	return names
 }
 
-func (afs assetIntFS) Open(name string) (af assetFileI, e error) {
+func (afs assetIntFS) Open(name string) (af http.File, e error) {
+	name = strings.TrimPrefix(name, "/")
+	if name == "" {
+		name = "index.html"
+	}
+	log.Printf("opening %q", name)
 	if asset, found := afs[name]; found {
 		decomp, e := gzip.NewReader(bytes.NewBuffer(asset))
 		if e != nil {
 			return nil, e
 		}
-		af = &assetFile{decompressor: decomp}
+		defer func() {
+			_ = decomp.Close()
+		}()
+		b, e := ioutil.ReadAll(decomp)
+		if e != nil {
+			return nil, e
+		}
+		af = &assetFile{Reader: bytes.NewReader(b)}
 		return af, nil
 	}
 	return nil, os.ErrNotExist
 }
 
 func (a *assetFile) Close() error {
-	if a.decompressor != nil {
-		return a.decompressor.Close()
-	}
 	return nil
 }
 
 func (a *assetFile) Read(p []byte) (n int, e error) {
-	if a.decompressor == nil {
+	if a.Reader == nil {
 		return 0, os.ErrInvalid
 	}
-	return a.decompressor.Read(p)
+	return a.Reader.Read(p)
 }
 
 func init() {
+	builtAt, _ = time.Parse(time.RFC3339Nano, "{{ .BuiltAt }}")
 	env_name := fmt.Sprintf("GOASSETS_PATH")
 	path := os.Getenv(env_name)
 	if path != "" {

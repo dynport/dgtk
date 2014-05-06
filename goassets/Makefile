@@ -1,5 +1,5 @@
 build:
-	go get .
+	go get ./...
 
 test:
 	go test -v

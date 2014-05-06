@@ -1,4 +1,4 @@
-package main
+package goassets
 
 import (
 	"io/ioutil"
@@ -22,11 +22,11 @@ func TestAssets(t *testing.T) {
 			So(assets, ShouldNotBeNil)
 			paths, e := assets.AssetPaths()
 			So(e, ShouldBeNil)
-			So(len(paths), ShouldEqual, 2)
+			So(len(paths), ShouldEqual, 4)
 			So(paths[0].Path, ShouldEqual, "fixtures/a.html")
 			So(paths[0].Key, ShouldEqual, "a.html")
-			So(paths[1].Path, ShouldEqual, "fixtures/vendor/jquery.js")
-			So(paths[1].Key, ShouldEqual, "vendor/jquery.js")
+			So(paths[1].Path, ShouldEqual, "fixtures/a.txt")
+			So(paths[1].Key, ShouldEqual, "a.txt")
 		})
 		Convey("Build", func() {
 			Convey("raise an error when file exists", func() {
@@ -48,7 +48,7 @@ func TestAssets(t *testing.T) {
 	})
 }
 
-func TestIntegration(t *testing.T) {
+func TestIntegration2(t *testing.T) {
 	Convey("Integration test", t, func() {
 		cleanup(t)
 		os.MkdirAll("./tmp", 0755)
