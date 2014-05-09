@@ -123,7 +123,6 @@ func (afs assetIntFS) Open(name string) (af http.File, e error) {
 	if name == "" {
 		name = "index.html"
 	}
-	log.Printf("opening %q", name)
 	if asset, found := afs[name]; found {
 		decomp, e := gzip.NewReader(bytes.NewBuffer(asset))
 		if e != nil {
