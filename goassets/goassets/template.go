@@ -153,7 +153,7 @@ func (a *assetFile) Read(p []byte) (n int, e error) {
 }
 
 func init() {
-	builtAt, _ = time.Parse(time.RFC3339Nano, "{{ .BuiltAt }}")
+	builtAt = time.Now()
 	env_name := fmt.Sprintf("GOASSETS_PATH")
 	path := os.Getenv(env_name)
 	if path != "" {
