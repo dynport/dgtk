@@ -1,9 +1,9 @@
 package es
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func waitFor(checkEvery time.Duration, maxWait time.Duration, check func() bool) bool {
