@@ -304,6 +304,20 @@ func (index *Index) GlobalMapping() (m *Mapping, e error) {
 	return m, nil
 }
 
+func (index *Index) Stats() (*Stats, error) {
+	rsp, e := http.Get(index.IndexUrl() + "/_stats")
+	if e != nil {
+		return nil, e
+	}
+	defer rsp.Body.Close()
+	if rsp.Status[0] != '2' {
+		return nil, fmt.Errorf("expected status 2xx, got %s", rsp.Status)
+	}
+	stats := &Stats{}
+	e = json.NewDecoder(rsp.Body).Decode(stats)
+	return stats, e
+}
+
 func (index *Index) Mapping() (i interface{}, e error) {
 	u := index.IndexUrl() + "/_mapping"
 	rsp, e := index.request("GET", u, i)
