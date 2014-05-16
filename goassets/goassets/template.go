@@ -17,6 +17,10 @@ import (
 
 var builtAt time.Time
 
+func FileSystem() assetFileSystemI {
+	return assets
+}
+
 type assetFileSystemI interface {
 	Open(name string) (http.File, error)
 	AssetNames() []string

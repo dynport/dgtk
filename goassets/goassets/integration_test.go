@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,7 +43,7 @@ func TestIntegration(t *testing.T) {
 
 		So(json.Unmarshal(b, &m), ShouldBeNil)
 		So(m["Status"], ShouldEqual, "ok")
-		So(m["Names"], ShouldEqual, "a.html,a.txt,b.txt,vendor/jquery.js")
+		So(m["Content"], ShouldStartWith, "this is a")
 	})
 }
 
@@ -51,16 +52,24 @@ const mainTpl = `package main
 import (
 	"encoding/json"
 	"os"
-	"sort"
-	"strings"
+	"io/ioutil"
 )
 
 func main() {
-	names := assetNames()
-	sort.Strings(names)
+	fs := FileSystem()
+	a, e := fs.Open("a.txt")
+	if e != nil {
+		panic(e.Error())
+	}
+
+	b, e := ioutil.ReadAll(a)
+	if e != nil {
+		panic(e.Error())
+	}
+
 	m := map[string]interface{}{
 		"Status": "ok",
-		"Names": strings.Join(names, ","),
+		"Content": string(b),
 	}
 	json.NewEncoder(os.Stdout).Encode(m)
 }

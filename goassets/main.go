@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -20,7 +22,10 @@ func (a *action) Run() error {
 		return fmt.Errorf("The target %q must be located in the directory goassets is called in.", a.TargetFile)
 	}
 
-	packageName := determinePackageByPath()
+	packageName, e := determinePackageByPath()
+	if e != nil {
+		logger.Fatal(e)
+	}
 
 	assets := &goassets.Assets{
 		Package:           packageName,
@@ -35,12 +40,16 @@ func (a *action) Run() error {
 	return nil
 }
 
-func determinePackageByPath() string {
+func determinePackageByPath() (string, error) {
 	result, e := exec.Command("go", "list", "-f", "{{ .Name }}").CombinedOutput()
 	if e != nil {
-		logger.Fatal(string(result), e.Error())
+		wd, e2 := os.Getwd()
+		if e2 != nil {
+			return "", e2
+		}
+		return path.Base(wd), nil
 	}
-	return strings.TrimSpace(string(result))
+	return strings.TrimSpace(string(result)), nil
 }
 
 func main() {
