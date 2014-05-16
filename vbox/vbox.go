@@ -1,4 +1,4 @@
-package main
+package vbox
 
 import (
 	"fmt"
@@ -56,14 +56,14 @@ func downloadFile(baseUrl, filename string) (target string, e error) {
 	return target, nil
 }
 
-func downloadTemplateVM(sourceURL, filename, vm string) (e error) {
-	vmList, e := listAllVMs()
+func DownloadTemplateVM(sourceURL, filename, vm string) (e error) {
+	vmList, e := ListAllVMs()
 	if e != nil {
 		return e
 	}
 
 	for i := range vmList {
-		if vmList[i].name == vm {
+		if vmList[i].Name == vm {
 			return fmt.Errorf("vm %q already exists!", vm)
 		}
 	}
@@ -94,15 +94,15 @@ func run(action string, args ...string) (output []string, e error) {
 	return output, e
 }
 
-func listAllVMs() ([]*vbox, error) {
+func ListAllVMs() ([]*VM, error) {
 	return listVMs(true)
 }
 
-func listRunningVMs() ([]*vbox, error) {
+func ListRunningVMs() ([]*VM, error) {
 	return listVMs(false)
 }
 
-func listVMs(all bool) (vms []*vbox, e error) {
+func listVMs(all bool) (vms []*VM, e error) {
 	listType := "vms"
 	if !all {
 		listType = "runningvms"
@@ -113,7 +113,7 @@ func listVMs(all bool) (vms []*vbox, e error) {
 		return nil, e
 	}
 
-	vms = make([]*vbox, 0, len(output))
+	vms = make([]*VM, 0, len(output))
 
 	for i := range output {
 		if len(output[i]) == 0 {
@@ -124,8 +124,8 @@ func listVMs(all bool) (vms []*vbox, e error) {
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("failed to parse line: %s", output[i])
 		}
-		vm := &vbox{name: strings.Trim(parts[0], "\""), uuid: parts[1]}
-		if e = vmInfos(vm); e != nil {
+		vm := &VM{Name: strings.Trim(parts[0], "\""), Uuid: parts[1]}
+		if e = vm.load(); e != nil {
 			return nil, e
 		}
 		vms = append(vms, vm)
@@ -142,7 +142,7 @@ func parsePropertyLine(line string) (name string, value string) {
 	return name, value
 }
 
-func getVMProperties(vm string) (properties map[string]string, e error) {
+func GetVMProperties(vm string) (properties map[string]string, e error) {
 	var output []string
 	if output, e = run("guestproperty", "enumerate", vm); e != nil {
 		return nil, e
@@ -161,9 +161,9 @@ func getVMProperties(vm string) (properties map[string]string, e error) {
 	return properties, nil
 }
 
-func vmInfos(vm *vbox) (e error) {
+func (vm *VM) load() (e error) {
 	var output []string
-	if output, e = run("showvminfo", "--machinereadable", vm.name); e != nil {
+	if output, e = run("showvminfo", "--machinereadable", vm.Name); e != nil {
 		return e
 	}
 
@@ -177,18 +177,18 @@ func vmInfos(vm *vbox) (e error) {
 		values[parts[0]] = strings.Trim(parts[1], "\"")
 	}
 
-	if vm.cpus, e = strconv.Atoi(values["cpus"]); e != nil {
+	if vm.Cpus, e = strconv.Atoi(values["cpus"]); e != nil {
 		return e
 	}
 
-	if vm.memory, e = strconv.Atoi(values["memory"]); e != nil {
+	if vm.Memory, e = strconv.Atoi(values["memory"]); e != nil {
 		return e
 	}
 
-	vm.status = values["VMState"]
+	vm.Status = values["VMState"]
 
 	for i := 0; i < 4; i++ {
-		vm.bootOrder[i] = values[fmt.Sprintf("boot%d", i+1)]
+		vm.BootOrder[i] = values[fmt.Sprintf("boot%d", i+1)]
 	}
 
 	for i := 0; i < 8; i++ {
@@ -196,20 +196,20 @@ func vmInfos(vm *vbox) (e error) {
 			if ntype == "none" {
 				continue
 			}
-			nic := &vnet{
-				id:    i + 1,
-				ntype: ntype,
+			nic := &VNet{
+				Id:    i + 1,
+				NType: ntype,
 			}
-			nic.mac = values[fmt.Sprintf("macaddress%d", nic.id)]
+			nic.Mac = values[fmt.Sprintf("macaddress%d", nic.Id)]
 			if ntype == "hostonly" {
-				nic.name = values[fmt.Sprintf("hostonlyadapter%d", nic.id)]
+				nic.Name = values[fmt.Sprintf("hostonlyadapter%d", nic.Id)]
 			}
-			vm.nics = append(vm.nics, nic)
+			vm.Nics = append(vm.Nics, nic)
 		}
 	}
 
-	if vm.sfolders == nil {
-		vm.sfolders = map[string]string{}
+	if vm.SFolders == nil {
+		vm.SFolders = map[string]string{}
 	}
 	for i := 1; ; i++ {
 		sfMap, found := values[fmt.Sprintf("SharedFolderNameMachineMapping%d", i)]
@@ -218,13 +218,13 @@ func vmInfos(vm *vbox) (e error) {
 			break
 		}
 
-		vm.sfolders[sfMap] = values[fmt.Sprintf("SharedFolderPathMachineMapping%d", i)]
+		vm.SFolders[sfMap] = values[fmt.Sprintf("SharedFolderPathMachineMapping%d", i)]
 	}
 
 	return nil
 }
 
-func cloneVM(name string, template string, snapshot string) (e error) {
+func CloneVM(name string, template string, snapshot string) (e error) {
 	if _, e = run("clonevm", template, "--name", name, "--snapshot", snapshot, "--options", "link", "--register"); e != nil {
 		return e
 	}
@@ -232,25 +232,30 @@ func cloneVM(name string, template string, snapshot string) (e error) {
 	return e
 }
 
-type vbox struct {
-	name      string
-	uuid      string
-	status    string
-	bootOrder [4]string
-	memory    int
-	cpus      int
-	nics      []*vnet
-	sfolders  map[string]string
+type VM struct {
+	Name      string
+	Uuid      string
+	Status    string
+	BootOrder [4]string
+	Memory    int
+	Cpus      int
+	Nics      []*VNet
+	SFolders  map[string]string
 }
 
-type vnet struct {
-	id    int
-	ntype string
-	name  string
-	mac   string
+type VNet struct {
+	Id    int
+	NType string
+	Name  string
+	Mac   string
 }
 
-func startVM(name string, withGui bool) (e error) {
+func LoadVM(name string) (vm *VM, e error) {
+	vm = &VM{Name: name}
+	return vm, vm.load()
+}
+
+func StartVM(name string, withGui bool) (e error) {
 	vmtype := "headless"
 	if withGui {
 		vmtype = "gui"
@@ -259,29 +264,29 @@ func startVM(name string, withGui bool) (e error) {
 	return e
 }
 
-func saveVM(name string) (e error) {
+func SaveVM(name string) (e error) {
 	_, e = run("controlvm", name, "savestate")
 	return e
 }
 
-func stopVM(name string) (e error) {
+func StopVM(name string) (e error) {
 	_, e = run("controlvm", name, "poweroff")
 	return e
 }
 
-func shutdownVM(name string) (e error) {
+func ShutdownVM(name string) (e error) {
 	_, e = run("controlvm", name, "acpipowerbutton")
 	return e
 }
 
 func isVMRunning(name string) (bool, error) {
-	vms, e := listRunningVMs()
+	vms, e := ListRunningVMs()
 	if e != nil {
 		return false, e
 	}
 
 	for i := range vms {
-		if vms[i].name == name {
+		if vms[i].Name == name {
 			return true, nil
 		}
 	}
@@ -289,13 +294,13 @@ func isVMRunning(name string) (bool, error) {
 }
 
 func isVM(name string) (bool, error) {
-	vms, e := listAllVMs()
+	vms, e := ListAllVMs()
 	if e != nil {
 		return false, e
 	}
 
 	for i := range vms {
-		if vms[i].name == name {
+		if vms[i].Name == name {
 			return true, nil
 		}
 	}
@@ -331,7 +336,7 @@ func waitForProperty(vm string, property string, timeout int) (value string, e e
 	return ip, nil
 }
 
-func getIP(vm string, iface int, timeout int) (ip string, e error) {
+func GetIP(vm string, iface int, timeout int) (ip string, e error) {
 	var valid, running bool
 	if valid, e = isVM(vm); e != nil {
 		return "", e
@@ -359,24 +364,24 @@ func getIP(vm string, iface int, timeout int) (ip string, e error) {
 	return ip, nil
 }
 
-func deleteVM(name string) (e error) {
+func DeleteVM(name string) (e error) {
 	_, e = run("unregistervm", name, "--delete")
 	return e
 }
 
-func configureVM(vm *vbox) (e error) {
-	args := []string{vm.name}
-	args = append(args, "--memory", strconv.Itoa(vm.memory))
-	args = append(args, "--cpus", strconv.Itoa(vm.cpus))
+func (vm *VM) Save() (e error) {
+	args := []string{vm.Name}
+	args = append(args, "--memory", strconv.Itoa(vm.Memory))
+	args = append(args, "--cpus", strconv.Itoa(vm.Cpus))
 
 	for i := 0; i < 4; i++ {
-		args = append(args, "--boot"+strconv.Itoa(i+1), vm.bootOrder[i])
+		args = append(args, "--boot"+strconv.Itoa(i+1), vm.BootOrder[i])
 	}
 
-	for _, nic := range vm.nics {
-		args = append(args, "--nic"+strconv.Itoa(nic.id), nic.ntype)
-		if nic.ntype == "hostonly" {
-			args = append(args, "--hostonlyadapter"+strconv.Itoa(nic.id), nic.name)
+	for _, nic := range vm.Nics {
+		args = append(args, "--nic"+strconv.Itoa(nic.Id), nic.NType)
+		if nic.NType == "hostonly" {
+			args = append(args, "--hostonlyadapter"+strconv.Itoa(nic.Id), nic.Name)
 		}
 	}
 
@@ -385,7 +390,7 @@ func configureVM(vm *vbox) (e error) {
 	return e
 }
 
-func shareFolder(name, tname, folder string) (e error) {
+func ShareFolder(name, tname, folder string) (e error) {
 	if _, e = os.Stat(folder); os.IsNotExist(e) {
 		return fmt.Errorf("folder %q does not exist!", folder)
 	}
@@ -394,7 +399,26 @@ func shareFolder(name, tname, folder string) (e error) {
 	return e
 }
 
-func unshareFolder(name, tname string) (e error) {
+func UnshareFolder(name, tname string) (e error) {
 	_, e = run("sharedfolder", "remove", name, "--name", tname)
 	return e
+}
+
+func (vm *VM) String() string {
+	s := ""
+	s += fmt.Sprintf("VM %q\n", vm.Name)
+	s += fmt.Sprintf("cpus:          %d\n", vm.Cpus)
+	s += fmt.Sprintf("memory:        %d MB\n", vm.Memory)
+	s += fmt.Sprintf("boot order:    %s\n", strings.Join(vm.BootOrder[:], ","))
+	for _, nic := range vm.Nics {
+		networkName := ""
+		if nic.NType == "hostonly" {
+			networkName = " [->" + nic.Name + "]"
+		}
+		s += fmt.Sprintf("nic [%d]:       %s %s%s\n", nic.Id, nic.NType, nic.Mac, networkName)
+	}
+	for k, v := range vm.SFolders {
+		s += fmt.Sprintf("shared folder: %s [->%s]\n", v, k)
+	}
+	return s
 }

@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/dynport/dgtk/vbox"
 )
 
 type actDownloadTemplateVM struct {
@@ -16,7 +18,7 @@ type actDownloadTemplateVM struct {
 }
 
 func (action *actDownloadTemplateVM) Run() error {
-	return downloadTemplateVM(action.SourceURL, action.Template, action.Identifier)
+	return vbox.DownloadTemplateVM(action.SourceURL, action.Template, action.Identifier)
 }
 
 type actCloneVM struct {
@@ -26,7 +28,7 @@ type actCloneVM struct {
 }
 
 func (action *actCloneVM) Run() error {
-	return cloneVM(action.Name, action.Template, action.Snapshot)
+	return vbox.CloneVM(action.Name, action.Template, action.Snapshot)
 }
 
 type actListVMs struct {
@@ -34,11 +36,11 @@ type actListVMs struct {
 }
 
 func (action *actListVMs) Run() (e error) {
-	var vms []*vbox
+	var vms []*vbox.VM
 	if action.Running {
-		vms, e = listRunningVMs()
+		vms, e = vbox.ListRunningVMs()
 	} else {
-		vms, e = listAllVMs()
+		vms, e = vbox.ListAllVMs()
 	}
 	if e != nil {
 		return e
@@ -46,10 +48,10 @@ func (action *actListVMs) Run() (e error) {
 
 	for _, vm := range vms {
 		r := ""
-		if vm.status == "running" {
+		if vm.Status == "running" {
 			r = "*"
 		}
-		fmt.Printf("%s%s\n", vm.name, r)
+		fmt.Printf("%s%s\n", vm.Name, r)
 	}
 	return nil
 }
@@ -64,13 +66,13 @@ func (action *vmBase) Run() (e error) {
 	case "props":
 		return listVMProps(action.Name)
 	case "stop":
-		return stopVM(action.Name)
+		return vbox.StopVM(action.Name)
 	case "shutdown":
-		return shutdownVM(action.Name)
+		return vbox.ShutdownVM(action.Name)
 	case "save":
-		return saveVM(action.Name)
+		return vbox.SaveVM(action.Name)
 	case "delete":
-		return deleteVM(action.Name)
+		return vbox.DeleteVM(action.Name)
 	case "info":
 		return showVMInfo(action.Name)
 	}
@@ -79,7 +81,7 @@ func (action *vmBase) Run() (e error) {
 
 func listVMProps(vm string) (e error) {
 	var props map[string]string
-	if props, e = getVMProperties(vm); e != nil {
+	if props, e = vbox.GetVMProperties(vm); e != nil {
 		return e
 	}
 
@@ -93,24 +95,13 @@ func listVMProps(vm string) (e error) {
 }
 
 func showVMInfo(name string) (e error) {
-	vm := &vbox{name: name}
-	if e = vmInfos(vm); e != nil {
+	vm, e := vbox.LoadVM(name)
+	if e != nil {
 		return e
 	}
-	fmt.Printf("VM %q\n", name)
-	fmt.Printf("cpus:          %d\n", vm.cpus)
-	fmt.Printf("memory:        %d MB\n", vm.memory)
-	fmt.Printf("boot order:    %s\n", strings.Join(vm.bootOrder[:], ","))
-	for _, nic := range vm.nics {
-		networkName := ""
-		if nic.ntype == "hostonly" {
-			networkName = " [->" + nic.name + "]"
-		}
-		fmt.Printf("nic [%d]:       %s %s%s\n", nic.id, nic.ntype, nic.mac, networkName)
-	}
-	for k, v := range vm.sfolders {
-		fmt.Printf("shared folder: %s [->%s]\n", v, k)
-	}
+
+	log.Printf("%s", vm)
+
 	return nil
 }
 
@@ -120,7 +111,7 @@ type actStartVM struct {
 }
 
 func (action *actStartVM) Run() (e error) {
-	return startVM(action.Name, action.WithGUI)
+	return vbox.StartVM(action.Name, action.WithGUI)
 }
 
 type sshInto struct {
@@ -132,7 +123,7 @@ type sshInto struct {
 }
 
 func (action *sshInto) Run() error {
-	ip, e := getIP(action.Name, action.IFace, action.Timeout)
+	ip, e := vbox.GetIP(action.Name, action.IFace, action.Timeout)
 	if e != nil {
 		return e
 	}
@@ -161,7 +152,7 @@ func (action *actShareFolder) Run() (e error) {
 		}
 	}
 
-	return shareFolder(action.Name, action.RemoteName, path)
+	return vbox.ShareFolder(action.Name, action.RemoteName, path)
 }
 
 type actUnshareFolder struct {
@@ -171,7 +162,7 @@ type actUnshareFolder struct {
 }
 
 func (action *actUnshareFolder) Run() error {
-	return unshareFolder(action.Name, action.RemoteName)
+	return vbox.UnshareFolder(action.Name, action.RemoteName)
 }
 
 type actConfigMemVM struct {
@@ -181,14 +172,13 @@ type actConfigMemVM struct {
 }
 
 func (action *actConfigMemVM) Run() (e error) {
-	vm := &vbox{name: action.Name}
-	if e = vmInfos(vm); e != nil {
+	vm, e := vbox.LoadVM(action.Name)
+	if e != nil {
 		return e
 	}
 
-	vm.memory = action.Memory
-
-	return configureVM(vm)
+	vm.Memory = action.Memory
+	return vm.Save()
 }
 
 type actConfigCPUsVM struct {
@@ -198,14 +188,14 @@ type actConfigCPUsVM struct {
 }
 
 func (action *actConfigCPUsVM) Run() (e error) {
-	vm := &vbox{name: action.Name}
-	if e = vmInfos(vm); e != nil {
+	vm, e := vbox.LoadVM(action.Name)
+	if e != nil {
 		return e
 	}
 
-	vm.cpus = action.CPUs
+	vm.Cpus = action.CPUs
 
-	return configureVM(vm)
+	return vm.Save()
 }
 
 type actConfigBootOrderVM struct {
@@ -215,20 +205,20 @@ type actConfigBootOrderVM struct {
 }
 
 func (action *actConfigBootOrderVM) Run() (e error) {
-	vm := &vbox{name: action.Name}
-	if e = vmInfos(vm); e != nil {
+	vm, e := vbox.LoadVM(action.Name)
+	if e != nil {
 		return e
 	}
 
 	for i := 0; i < 4; i++ {
 		if i < len(action.Devices) {
-			vm.bootOrder[i] = action.Devices[i]
+			vm.BootOrder[i] = action.Devices[i]
 		} else {
-			vm.bootOrder[i] = "none"
+			vm.BootOrder[i] = "none"
 		}
 	}
 
-	return configureVM(vm)
+	return vm.Save()
 }
 
 type actConfigNetworkIFacesVM struct {
@@ -240,8 +230,8 @@ type actConfigNetworkIFacesVM struct {
 }
 
 func (action *actConfigNetworkIFacesVM) Run() (e error) {
-	vm := &vbox{name: action.Name}
-	if e = vmInfos(vm); e != nil {
+	vm, e := vbox.LoadVM(action.Name)
+	if e != nil {
 		return e
 	}
 
@@ -249,25 +239,25 @@ func (action *actConfigNetworkIFacesVM) Run() (e error) {
 		return fmt.Errorf("Only 8 nics supported!")
 	}
 
-	var nic *vnet
-	for i := range vm.nics {
-		if vm.nics[i].id == action.Id {
-			nic = vm.nics[i]
+	var nic *vbox.VNet
+	for i := range vm.Nics {
+		if vm.Nics[i].Id == action.Id {
+			nic = vm.Nics[i]
 		}
 	}
 
 	if nic == nil {
-		nic = &vnet{id: action.Id}
-		vm.nics = append(vm.nics, nic)
+		nic = &vbox.VNet{Id: action.Id}
+		vm.Nics = append(vm.Nics, nic)
 	}
 
-	nic.ntype = action.NType
+	nic.NType = action.NType
 	if action.NType == "hostonly" {
 		if action.Network == "" {
 			return fmt.Errorf("No name for the hostonly network specified!")
 		}
-		nic.name = action.Network
+		nic.Name = action.Network
 	}
 
-	return configureVM(vm)
+	return vm.Save()
 }
