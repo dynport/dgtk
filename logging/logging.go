@@ -14,6 +14,7 @@ type RemoteLog struct {
 	Time          time.Time
 	Compress      bool
 	CustomLogRoot string
+	FromBegin     bool // to be used with tail
 }
 
 const (
@@ -68,12 +69,16 @@ func (rl *RemoteLog) GrepCmd() string {
 
 func (rl *RemoteLog) CatCmd() string {
 	if rl.Tail {
-		return "tail -n 0 -F " + rl.Current()
+		n := "0"
+		if rl.FromBegin {
+			n = "+0"
+		}
+		return "tail -n " + n + " -F " + rl.Current()
 	}
 	return "{ test -e " + rl.Path() + " && cat " + rl.Path() + "; test -e " + rl.GzipPath() + " && cat " + rl.GzipPath() + " | gunzip; }"
 }
 
-func (rl *RemoteLog) Reader() (reader io.ReadCloser, e error) {
+func (rl *RemoteLog) Open() (reader io.ReadCloser, e error) {
 	c := rl.Command()
 	var cmd *exec.Cmd
 	if rl.Host != "" {
