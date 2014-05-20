@@ -1,12 +1,17 @@
 package es
 
+import "encoding/json"
+
 type Request struct {
-	Index  string `json:"-"`
-	Query  *Query `json:"query,omitempty"`
-	Size   int    `json:"size"`
-	Facets `json:"facets,omitempty"`
-	*Sort  `json:"sort,omitempty"`
+	Index        string `json:"-"`
+	Query        *Query `json:"query,omitempty"`
+	Size         int    `json:"size"`
+	Facets       `json:"facets,omitempty"`
+	Aggregations json.Marshaler `json:"aggregations,omitempty"`
+	*Sort        `json:"sort,omitempty"`
 }
+
+type hash map[string]interface{}
 
 func (request *Request) AddFacet(key string, facet *Facet) {
 	if request.Facets == nil {

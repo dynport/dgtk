@@ -1,10 +1,22 @@
 package es
 
+import "github.com/dynport/dgtk/es/aggregations"
+
+func NewResponse(raw []byte) *Response {
+	return &Response{
+		Raw:          raw,
+		Aggregations: aggregations.Aggregations{},
+	}
+}
+
 type Response struct {
-	Took     int            `json:"took"`
-	TimedOut bool           `json:"timed_out"`
-	Facets   ResponseFacets `json:"facets"`
-	Hits     Hits           `json:"hits"`
+	Took         int                       `json:"took"`
+	TimedOut     bool                      `json:"timed_out"`
+	Facets       ResponseFacets            `json:"facets"`
+	Hits         Hits                      `json:"hits"`
+	Aggregations aggregations.Aggregations `json:"aggregations"`
+
+	Raw []byte `json:"-"`
 }
 
 type ResponseFacets map[string]*ResponseFacet

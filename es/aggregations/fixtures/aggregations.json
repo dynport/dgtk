@@ -1,0 +1,66 @@
+{
+  "days": {
+     "buckets": [
+        {
+           "key_as_string": "2014-05-11T00:00:00.000Z",
+           "key": 1399766400000,
+           "doc_count": 2341,
+           "types": {
+              "buckets": [
+                 {
+                    "key": 1,
+                    "doc_count": 2325
+                 },
+                 {
+                    "key": 3,
+                    "doc_count": 7
+                 },
+                 {
+                    "key": 2,
+                    "doc_count": 6
+                 },
+                 {
+                    "key": 4,
+                    "doc_count": 2
+                 },
+                 {
+                    "key": 101,
+                    "doc_count": 1
+                 }
+              ]
+           },
+           "uniques": {
+              "value": 1991
+           }
+        },
+        {
+           "key_as_string": "2014-05-12T00:00:00.000Z",
+           "key": 1399852800000,
+           "doc_count": 468,
+           "types": {
+              "buckets": [
+                 {
+                    "key": 1,
+                    "doc_count": 455
+                 },
+                 {
+                    "key": 3,
+                    "doc_count": 7
+                 },
+                 {
+                    "key": 4,
+                    "doc_count": 4
+                 },
+                 {
+                    "key": 2,
+                    "doc_count": 2
+                 }
+              ]
+           },
+           "uniques": {
+              "value": 430
+           }
+        }
+     ]
+  }
+}
