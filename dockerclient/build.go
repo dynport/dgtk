@@ -40,6 +40,25 @@ func (rsp BuildResponse) ImageId() string {
 	return ""
 }
 
+func ScanJson(r io.Reader, f func(b []byte) error) error {
+	scanner := bufio.NewReader(r)
+	buf := &bytes.Buffer{}
+	for {
+		b, e := scanner.ReadBytes('}')
+		if e == io.EOF {
+			break
+		} else if e != nil {
+			return e
+		}
+		e = f(b)
+		if e != nil {
+			return e
+		}
+		buf.Reset()
+	}
+	return nil
+}
+
 func (dh *DockerHost) handleBuildImageJson(r io.Reader, f func(s *JSONMessage)) (rsp BuildResponse, e error) {
 	scanner := bufio.NewReader(r)
 	buf := &bytes.Buffer{}
