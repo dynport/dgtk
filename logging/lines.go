@@ -191,6 +191,8 @@ type NginxLine struct {
 	Uri           string
 	Referer       string
 	Action        string
+	Revision      string
+	UUID          string
 }
 
 var quotesRegexp = regexp.MustCompile(`(ua|uri|ref)="(.*?)"`)
@@ -213,12 +215,16 @@ func (line *NginxLine) Parse(raw string) error {
 			key := parts[0]
 			value := parts[1]
 			switch key {
+			case "rev":
+				line.Revision = value
 			case "action":
 				line.Action = value
 			case "nginx":
 				forwarded = true
 			case "method":
 				line.Method = value
+			case "uuid":
+				line.UUID = value
 			case "status":
 				line.Status = value
 			case "host":
