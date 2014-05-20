@@ -21,6 +21,9 @@ func Diff(a, b interface{}) *DiffResult {
 	case float64:
 		return diffFloat(ta, b)
 	default:
+		if a == nil {
+			return diffNil(b)
+		}
 		v := reflect.ValueOf(a)
 		switch v.Kind() {
 		case reflect.Map:
@@ -31,6 +34,14 @@ func Diff(a, b interface{}) *DiffResult {
 			return &DiffResult{Diff: fmt.Sprintf("type %T not supported yet", a)}
 		}
 	}
+}
+
+func diffNil(b interface{}) *DiffResult {
+	if b == nil {
+		return nil
+	}
+	return &DiffResult{Diff: fmt.Sprintf("expected nil, got %v", b)}
+
 }
 
 func diffSlice(a reflect.Value, b interface{}) *DiffResult {
