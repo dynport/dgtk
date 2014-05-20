@@ -399,9 +399,12 @@ func (index *Index) Search(req *Request) (rsp *Response, e error) {
 		return nil, e
 	}
 	defer httpResponse.Body.Close()
-	dec := json.NewDecoder(httpResponse.Body)
-	rsp = &Response{}
-	e = dec.Decode(rsp)
+	b, e := ioutil.ReadAll(httpResponse.Body)
+	if e != nil {
+		return nil, e
+	}
+	rsp = NewResponse(b)
+	e = json.Unmarshal(b, rsp)
 	if e != nil {
 		return nil, e
 	}
