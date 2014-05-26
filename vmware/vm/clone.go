@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/dynport/dgtk/vmware"
-	"log"
 	"time"
+
+	"github.com/dynport/dgtk/vmware"
 )
 
 type Clone struct {
@@ -12,7 +12,7 @@ type Clone struct {
 }
 
 func (action *Clone) Run() error {
-	log.Printf("running with name=%q and snapshot=%q", action.VmName, action.SnapshotName)
+	logger.Printf("running with name=%q and snapshot=%q", action.VmName, action.SnapshotName)
 	vms, e := vmware.AllWithTemplates()
 	if e != nil {
 		return e
@@ -25,6 +25,6 @@ func (action *Clone) Run() error {
 
 	started := time.Now()
 	e = clone.Start()
-	log.Printf("started in %.3f", time.Since(started).Seconds())
+	logger.Printf("started in %.3f", time.Since(started).Seconds())
 	return e
 }

@@ -1,9 +1,6 @@
 package main
 
-import (
-	"github.com/dynport/dgtk/vmware"
-	"log"
-)
+import "github.com/dynport/dgtk/vmware"
 
 type StopAction struct {
 	Name   string `cli:"type=arg required=true"`
@@ -15,13 +12,13 @@ func (action *StopAction) Run() error {
 	if e != nil {
 		return e
 	}
-	log.Printf("stopping vm at %s", vm.Path)
+	logger.Printf("stopping vm at %s", vm.Path)
 	e = vmware.Stop(vm.Path)
 	if e != nil {
 		return e
 	}
 	if action.Delete {
-		log.Printf("deleting vm at %s", vm.Path)
+		logger.Printf("deleting vm at %s", vm.Path)
 		return vmware.DeleteVM(vm.Path)
 	}
 	return nil

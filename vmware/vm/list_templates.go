@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/dynport/dgtk/vmware"
 	"github.com/dynport/gocli"
 )
@@ -20,6 +18,6 @@ func (list *ListTemplates) Run() error {
 	for _, t := range templates {
 		table.Add(t.Id(), t.Path)
 	}
-	log.Println(table)
+	logger.Println(table)
 	return nil
 }

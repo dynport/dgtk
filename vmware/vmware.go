@@ -2,7 +2,6 @@ package vmware
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -28,19 +27,19 @@ func Start(path string, gui bool) error {
 
 func DeleteSnapshot(path string, name string) error {
 	out, e := vmrun("deleteSnapshot", path, name)
-	log.Println(out)
+	logger.Println(out)
 	return e
 }
 
 func RestoreSnapshot(path string, name string) error {
 	out, e := vmrun("revertToSnapshot", path, name)
-	log.Println(out)
+	logger.Println(out)
 	return e
 }
 
 func TakeSnapshot(path string, name string) error {
 	out, e := vmrun("snapshot", path, name)
-	log.Println(out)
+	logger.Println(out)
 	return e
 }
 
@@ -78,7 +77,7 @@ func DeleteVM(path_ string) error {
 		return e
 	}
 	dir := path.Dir(path_)
-	log.Printf("removing dir %q", dir)
+	logger.Printf("removing dir %q", dir)
 	return os.RemoveAll(dir)
 }
 
@@ -104,13 +103,13 @@ func Create(vm *Vm, snapshot string) (*Vm, error) {
 	if e != nil {
 		return nil, e
 	}
-	log.Printf("cloning %q to %q", vm.Id(), dst)
+	logger.Printf("cloning %q to %q", vm.Id(), dst)
 	started := time.Now()
 	vm, e = Clone(vm.Path, dst, &CloneOptions{Snapshot: snapshot, CloneName: id})
 	if e != nil {
 		return nil, e
 	}
-	log.Printf("cloned in %.3f", time.Since(started).Seconds())
+	logger.Printf("cloned in %.3f", time.Since(started).Seconds())
 	return vm, nil
 }
 
@@ -133,7 +132,7 @@ func Clone(src string, dst string, opts *CloneOptions) (*Vm, error) {
 func vmrun(vmrunCmd string, params ...string) (string, error) {
 	args := append([]string{"-T", "fusion", vmrunCmd}, params...)
 	if debug {
-		log.Printf("DEBUG: %v", args)
+		logger.Printf("DEBUG: %v", args)
 	}
 	cmd := exec.Command("/Applications/VMware Fusion.app/Contents/Library/vmrun", args...)
 	out, e := cmd.CombinedOutput()

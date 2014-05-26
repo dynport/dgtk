@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/dynport/dgtk/cli"
 	_ "github.com/dynport/gossh"
 )
@@ -27,6 +25,6 @@ func init() {
 func main() {
 	e := router.RunWithArgs()
 	if e != nil {
-		log.Fatal("ERROR: " + e.Error())
+		logger.Fatal("ERROR: " + e.Error())
 	}
 }

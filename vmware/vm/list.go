@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-	"os"
 	"sort"
 
 	"github.com/dynport/dgtk/vmware"
@@ -11,8 +9,6 @@ import (
 
 type ListAction struct {
 }
-
-var logger = log.New(os.Stderr, "", 0)
 
 func (list *ListAction) Run() error {
 	vms, e := vmware.All()
@@ -55,11 +51,11 @@ func (list *ListAction) Run() error {
 		if s, e := vm.StartedAt(); e == nil {
 			started = s.Format("2006-01-02T15:04:05")
 		} else {
-			log.Print(e.Error())
+			logger.Print(e.Error())
 		}
 		name := tagsMap[vm.Id()+":Name"]
 		table.Add(name, vm.Id(), status, started, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
 	}
-	log.Println(table)
+	logger.Println(table)
 	return nil
 }

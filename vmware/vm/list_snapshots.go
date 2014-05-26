@@ -1,9 +1,6 @@
 package main
 
-import (
-	"github.com/dynport/dgtk/vmware"
-	"log"
-)
+import "github.com/dynport/dgtk/vmware"
 
 type ListSnapshotsAction struct {
 	Name string `cli:"type=arg required=true"`
@@ -19,7 +16,7 @@ func (action *ListSnapshotsAction) Run() error {
 		return e
 	}
 	for _, sn := range snapshots {
-		log.Println(sn.Name)
+		logger.Println(sn.Name)
 	}
 	return nil
 }
