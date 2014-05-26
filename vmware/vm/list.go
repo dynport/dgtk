@@ -30,7 +30,6 @@ func (list *ListAction) Run() error {
 	for _, t := range tags.Tags() {
 		tagsMap[t.Id()] = t.Value
 	}
-	logger.Printf("%#v", tags.Len())
 	table.Add("Id", "Name", "Status", "Started", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
 	for _, vm := range vms {
 		vmx, e := vm.Vmx()
