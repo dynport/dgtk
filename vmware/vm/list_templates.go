@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log"
+
 	"github.com/dynport/dgtk/vmware"
 	"github.com/dynport/gocli"
-	"log"
 )
 
 type ListTemplates struct {
@@ -17,7 +18,7 @@ func (list *ListTemplates) Run() error {
 	table := gocli.NewTable()
 	table.Add("Name", "Path")
 	for _, t := range templates {
-		table.Add(t.Name(), t.Path)
+		table.Add(t.Id(), t.Path)
 	}
 	log.Println(table)
 	return nil

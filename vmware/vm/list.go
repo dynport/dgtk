@@ -1,14 +1,18 @@
 package main
 
 import (
+	"log"
+	"os"
+	"sort"
+
 	"github.com/dynport/dgtk/vmware"
 	"github.com/dynport/gocli"
-	"log"
-	"sort"
 )
 
 type ListAction struct {
 }
+
+var logger = log.New(os.Stderr, "", 0)
 
 func (list *ListAction) Run() error {
 	vms, e := vmware.All()
@@ -21,7 +25,17 @@ func (list *ListAction) Run() error {
 	if e != nil {
 		return e
 	}
-	table.Add("Name", "Status", "Started", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
+	tags := &vmware.Tags{}
+	e = tags.Load()
+	if e != nil {
+		return e
+	}
+	tagsMap := map[string]string{}
+	for _, t := range tags.Tags() {
+		tagsMap[t.Id()] = t.Value
+	}
+	logger.Printf("%#v", tags.Len())
+	table.Add("Id", "Name", "Status", "Started", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
 	for _, vm := range vms {
 		vmx, e := vm.Vmx()
 		if e != nil {
@@ -43,7 +57,8 @@ func (list *ListAction) Run() error {
 		} else {
 			log.Print(e.Error())
 		}
-		table.Add(vm.Name(), status, started, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
+		name := tagsMap[vm.Id()+":Name"]
+		table.Add(name, vm.Id(), status, started, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
 	}
 	log.Println(table)
 	return nil

@@ -1,14 +1,18 @@
 package main
 
 import (
+	"log"
+
 	"github.com/dynport/dgtk/cli"
 	_ "github.com/dynport/gossh"
-	"log"
 )
 
 var router = cli.NewRouter()
 
 func init() {
+	router.Register("tags/create", &TagsCreate{}, "Create Tag")
+	router.Register("tags/delete", &TagsDelete{}, "Delete Tag")
+	router.Register("tags/list", &TagsList{}, "List Tags")
 	router.Register("vms/clone", &Clone{}, "Clone VM")
 	router.Register("vms/delete", &Delete{}, "Delete VM")
 	router.Register("vms/list", &ListAction{}, "List VMs")

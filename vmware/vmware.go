@@ -104,7 +104,7 @@ func Create(vm *Vm, snapshot string) (*Vm, error) {
 	if e != nil {
 		return nil, e
 	}
-	log.Printf("cloning %q to %q", vm.Name(), dst)
+	log.Printf("cloning %q to %q", vm.Id(), dst)
 	started := time.Now()
 	vm, e = Clone(vm.Path, dst, &CloneOptions{Snapshot: snapshot, CloneName: id})
 	if e != nil {

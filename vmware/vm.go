@@ -44,7 +44,7 @@ func (vm *Vm) dir() string {
 	return path.Dir(vm.Path)
 }
 
-func (vm *Vm) Name() string {
+func (vm *Vm) Id() string {
 	return strings.TrimSuffix(path.Base(path.Dir(vm.Path)), ".vmwarevm")
 }
 
@@ -132,7 +132,7 @@ func (list Vms) FindFirst(name string) *Vm {
 
 func (list Vms) Search(name string) (vms Vms) {
 	for _, vm := range list {
-		if vm.Name() == name {
+		if vm.Id() == name {
 			vms = append(vms, vm)
 		}
 	}

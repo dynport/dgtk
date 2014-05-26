@@ -6,6 +6,19 @@ import (
 	"os"
 )
 
+func UpdateTag(tag *Tag) error {
+	tags := Tags{}
+	e := tags.Load()
+	if e != nil {
+		return e
+	}
+	e = tags.Update(tag)
+	if e != nil {
+		return e
+	}
+	return tags.Store()
+}
+
 type Tag struct {
 	VmId  string
 	Key   string
@@ -14,6 +27,10 @@ type Tag struct {
 
 type Tags struct {
 	tags []*Tag
+}
+
+func (tags *Tags) Tags() []*Tag {
+	return tags.tags
 }
 
 func (list Tags) Len() int {
@@ -26,10 +43,6 @@ func (list Tags) Swap(a, b int) {
 
 func (list Tags) Less(a, b int) bool {
 	return list.tags[a].Id() < list.tags[b].Id()
-}
-
-func (tag *Tag) Id() string {
-	return fmt.Sprintf("%s\t%s", tag.VmId, tag.Key)
 }
 
 func (list *Tags) Update(tag *Tag) error {
@@ -52,9 +65,27 @@ func (list *Tags) Update(tag *Tag) error {
 	return nil
 }
 
-func (list *Tags) Load() error {
-	f, e := os.Open(os.ExpandEnv("$HOME/.vmware.tags"))
+func (tag *Tag) Id() string {
+	return fmt.Sprintf("%s:%s", tag.VmId, tag.Key)
+}
+
+var tagsPath = os.ExpandEnv("$HOME/.vmware.tags")
+
+func (list *Tags) Store() error {
+	f, e := os.Create(tagsPath)
 	if e != nil {
+		return e
+	}
+	defer f.Close()
+	return json.NewEncoder(f).Encode(list.tags)
+}
+
+func (list *Tags) Load() error {
+	f, e := os.Open(tagsPath)
+	if e != nil {
+		if os.IsNotExist(e) {
+			return nil
+		}
 		return e
 	}
 	defer f.Close()
