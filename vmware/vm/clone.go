@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/dynport/dgtk/vmware"
@@ -9,10 +10,15 @@ import (
 type Clone struct {
 	VmName       string `cli:"type=arg required=true"`
 	SnapshotName string `cli:"type=arg"`
+	Name         string `cli:"opt --name"`
 }
 
 func (action *Clone) Run() error {
-	logger.Printf("running with name=%q and snapshot=%q", action.VmName, action.SnapshotName)
+	out := fmt.Sprintf("cloning vm %q", action.VmName)
+	if action.SnapshotName != "" {
+		out += fmt.Sprintf(" and snapshot=%q", action.SnapshotName)
+	}
+	logger.Printf(out)
 	vms, e := vmware.AllWithTemplates()
 	if e != nil {
 		return e
@@ -22,9 +28,15 @@ func (action *Clone) Run() error {
 	if e != nil {
 		return e
 	}
-
 	started := time.Now()
 	e = clone.Start()
 	logger.Printf("started in %.3f", time.Since(started).Seconds())
-	return e
+	if e != nil {
+		return e
+	}
+
+	if action.Name != "" {
+		return vmware.UpdateTag(&vmware.Tag{VmId: clone.Id(), Key: "Name", Value: action.Name})
+	}
+	return nil
 }
