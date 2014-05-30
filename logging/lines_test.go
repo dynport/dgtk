@@ -1,8 +1,9 @@
 package logging
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
+	"strings"
 	"testing"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -33,6 +34,15 @@ func TestLineTags(t *testing.T) {
 
 		tags = parseTags(HAPROXY_LINE)
 		So(len(tags), ShouldEqual, 0)
+	})
+
+	Convey("line with multiple forwardings", t, func() {
+		raw := `2013-11-20T16:00:00.364664+00:00 1fb6092433dc nginx: 192.168.0.6 176.199.77.195, 10.22.61.117, 2.22.61.87 host=www.1414.de`
+		line := &NginxLine{}
+		So(line.Parse(raw), ShouldBeNil)
+		So(line.Host, ShouldEqual, "1fb6092433dc")
+		So(strings.Join(line.XForwardedFor, " "), ShouldEqual, "192.168.0.6 176.199.77.195 10.22.61.117 2.22.61.87")
+
 	})
 
 	Convey("parseTagValue", t, func() {

@@ -210,7 +210,7 @@ func (line *NginxLine) Parse(raw string) error {
 		return fmt.Errorf("tag %q not supported", line.Tag)
 	}
 	forwarded := false
-	for _, field := range line.fields {
+	for i, field := range line.fields {
 		parts := strings.SplitN(field, "=", 2)
 		if len(parts) == 2 {
 			key := parts[0]
@@ -239,12 +239,15 @@ func (line *NginxLine) Parse(raw string) error {
 			case "unicorn_time":
 				line.UnicornTime, _ = strconv.ParseFloat(value, 64)
 			}
-		} else if field == "nginx:" {
+		} else if i == 2 && strings.HasPrefix(field, "nginx") {
 			forwarded = true
 		} else if forwarded {
-			line.XForwardedFor = append(line.XForwardedFor, field)
-		} else if strings.HasPrefix(field, "host=") {
-			forwarded = false
+			if strings.HasPrefix(field, "host=") || field == "-" {
+				forwarded = false
+			} else {
+				line.XForwardedFor = append(line.XForwardedFor, strings.TrimSuffix(field, ","))
+			}
+
 		}
 	}
 	quotes := quotesRegexp.FindAllStringSubmatch(raw, -1)
