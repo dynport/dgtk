@@ -193,6 +193,7 @@ type NginxLine struct {
 	Action        string
 	Revision      string
 	UUID          string
+	Etag          string
 }
 
 var quotesRegexp = regexp.MustCompile(`(ua|uri|ref)="(.*?)"`)
@@ -224,7 +225,9 @@ func (line *NginxLine) Parse(raw string) error {
 			case "method":
 				line.Method = value
 			case "uuid":
-				line.UUID = value
+				line.UUID = filterDash(value)
+			case "etag":
+				line.Etag = filterDash(value)
 			case "status":
 				line.Status = value
 			case "host":
@@ -252,11 +255,18 @@ func (line *NginxLine) Parse(raw string) error {
 		case "uri":
 			line.Uri = quote[2]
 		case "ref":
-			line.Referer = quote[2]
+			line.Referer = filterDash(quote[2])
 		default:
 		}
 	}
 	return nil
+}
+
+func filterDash(raw string) string {
+	if raw == "-" {
+		return ""
+	}
+	return raw
 }
 
 type HAProxyLine struct {
