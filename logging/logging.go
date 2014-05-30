@@ -86,19 +86,23 @@ func (rl *RemoteLog) Open() (reader io.ReadCloser, e error) {
 	} else {
 		cmd = exec.Command("bash", "-c", c)
 	}
+	dbg.Printf("using cmd %q", cmd)
 	reader, e = cmd.StdoutPipe()
 	if e != nil {
 		return nil, e
 	}
+	dbg.Print("starting command %q", c)
 	e = cmd.Start()
 	if e != nil {
 		return nil, e
 	}
+	dbg.Print("command started")
 	if rl.Compress {
 		reader, e = gzip.NewReader(reader)
 		if e != nil {
 			return nil, e
 		}
 	}
+	dbg.Print("returning reader")
 	return reader, nil
 }
