@@ -104,6 +104,38 @@ type Commit struct {
 	Parents   []*Tree        `json:"parents"`
 }
 
+type Repository struct {
+	Id          int    `json:"id"`
+	Owner       *User  `json:"owner"`
+	Name        string `json:"name"`        // "Hello-World",
+	FullName    string `json:"full_name"`   // "octocat/Hello-World",
+	Description string `json:"description"` // "This your first repo!",
+	Private     bool   `json:"private"`     // false,
+	Fork        bool   `json:"fork"`        // false,
+	Url         string `json:"url"`         // "https://api.github.com/repos/octocat/Hello-World",
+	HtmlUrl     string `json:"html_url"`    // "https://github.com/octocat/Hello-World",
+	CloneUrl    string `json:"clone_url"`   // "https://github.com/octocat/Hello-World.git",
+	GitUrl      string `json:"git_url"`     // "git://github.com/octocat/Hello-World.git",
+	SshUrl      string `json:"ssh_url"`     // "git@github.com:octocat/Hello-World.git",
+	SvnUrl      string `json:"svn_url"`     // "https://svn.github.com/octocat/Hello-World",
+	MirrorUrl   string `json:"mirror_url"`  // "git://git.example.com/octocat/Hello-World",
+	Homepage    string `json:"homepage"`    // "https://github.com",
+	//Language        string `json:"language"`          // null,
+	ForksCount      int             `json:"forks_count"`          // 9,
+	StargazersCount int             `json:"stargazers_count"`     // 80,
+	WatchersCount   int             `json:"watchers_count"`       // 80,
+	Size            int             `json:"size"`                 // 108,
+	DefaultBranch   string          `json:"default_branch"`       // "master",
+	OpenIssuesCount int             `json:"open_issues_count"`    // 0,
+	HasIssues       bool            `json:"has_issues"`           // true,
+	HasWiki         bool            `json:"has_wiki"`             // true,
+	HasDownloads    bool            `json:"has_downloads"`        // true,
+	PushedAt        string          `json:"pushed_at,omitempty"`  // "2011-01-26T19:06:43Z",
+	CreatedAt       string          `json:"created_at,omitempty"` // "2011-01-26T19:01:12Z",
+	UpdatedAt       string          `json:"updated_at,omitempty"` // "2011-01-26T19:14:43Z",
+	Permissions     map[string]bool `json:"permissions"`
+}
+
 type User struct {
 	Login             string `json:"login"`               // "octocat",
 	Id                int64  `json:"id"`                  // 1,
@@ -122,4 +154,17 @@ type User struct {
 	ReceivedEventsUrl string `json:"received_events_url"` // "https://api.github.com/users/octocat/received_events",
 	Type              string `json:"type"`                // "User",
 	SiteAdmin         bool   `json:"site_admin"`          // false
+	Name              string `json:"name"`                // "monalisa octocat",
+	Company           string `json:"company"`             // "GitHub",
+	Blog              string `json:"blog"`                // "https://github.com/blog",
+	Location          string `json:"location"`            // "San Francisco",
+	Email             string `json:"email"`               // "octocat@github.com",
+	Hireable          bool   `json:"hireable"`            // false,
+	Bio               string `json:"bio"`                 // "There once was...",
+	PublicRepos       int    `json:"public_repos"`        // 2,
+	PublicGists       int    `json:"public_gists"`        // 1,
+	Followers         int    `json:"followers"`           // 20,
+	Following         int    `json:"following"`           // 0,
+	CreatedAt         string `json:"created_at"`          // "2008-01-14T04:33:35Z",
+	UpdatedAt         string `json:"updated_at"`          // "2008-01-14T04:33:35Z"
 }

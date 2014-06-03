@@ -8,11 +8,13 @@ import (
 )
 
 func New(token string) (*Client, error) {
-	client := &http.Client{}
-	client.Transport = &auth{token: token}
-	httpClient := &Client{}
-	httpClient.Client = client
-	return httpClient, nil
+	return &Client{Client: NewHttpClient(token)}, nil
+}
+
+func NewHttpClient(token string) *http.Client {
+	return &http.Client{
+		Transport: &auth{token: token},
+	}
 }
 
 type Client struct {
