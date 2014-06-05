@@ -403,10 +403,17 @@ func (index *Index) Search(req *Request) (rsp *Response, e error) {
 	if e != nil {
 		return nil, e
 	}
+	if httpResponse.Status[0] != '2' {
+		return nil, fmt.Errorf("expected staus 2xx, git %s", httpResponse.Status, string(b))
+	}
 	rsp = NewResponse(b)
 	e = json.Unmarshal(b, rsp)
 	if e != nil {
 		return nil, e
+	}
+	if rsp.Shards != nil && len(rsp.Shards.Failures) > 0 {
+		b, _ := json.Marshal(rsp.Shards.Failures)
+		return nil, fmt.Errorf("%s", string(b))
 	}
 	return rsp, nil
 }
