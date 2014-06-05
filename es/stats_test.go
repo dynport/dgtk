@@ -2,6 +2,7 @@ package es
 
 import (
 	"encoding/json"
+	"sort"
 	"strings"
 	"testing"
 	. "github.com/smartystreets/goconvey/convey"
@@ -16,7 +17,10 @@ func TestParseStats(t *testing.T) {
 		e := json.Unmarshal(b, stats)
 		So(e, ShouldBeNil)
 
-		So(strings.Join(stats.IndexNames(), ","), ShouldEqual, "logs,test")
+		names := stats.IndexNames()
+		sort.Strings(names)
+
+		So(strings.Join(names, ","), ShouldEqual, "logs,test")
 
 		So(stats, ShouldNotBeNil)
 		So(stats.Shards.Total, ShouldEqual, 20)

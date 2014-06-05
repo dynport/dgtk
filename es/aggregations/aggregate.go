@@ -4,7 +4,7 @@ import "fmt"
 
 type Aggregate struct {
 	Name       string
-	Stats      *Stats
+	Stats      *StatsAggregate
 	Value      *Value
 	Percentile *Percentile
 	Buckets    Buckets
@@ -18,7 +18,7 @@ func (agg *Aggregate) Load(m map[string]interface{}) error {
 	switch a := raw.(type) {
 	case Buckets:
 		agg.Buckets = a
-	case *Stats:
+	case *StatsAggregate:
 		agg.Stats = a
 	case *Value:
 		agg.Value = a

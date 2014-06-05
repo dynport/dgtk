@@ -7,7 +7,7 @@ type Request struct {
 	Query        *Query `json:"query,omitempty"`
 	Size         int    `json:"size"`
 	Facets       `json:"facets,omitempty"`
-	Aggregations json.Marshaler `json:"aggregations,omitempty"`
+	Aggregations map[string]json.Marshaler `json:"aggs,omitempty"`
 	*Sort        `json:"sort,omitempty"`
 }
 

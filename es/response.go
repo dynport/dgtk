@@ -15,8 +15,22 @@ type Response struct {
 	Facets       ResponseFacets            `json:"facets"`
 	Hits         Hits                      `json:"hits"`
 	Aggregations aggregations.Aggregations `json:"aggregations"`
+	Shards       *ShardsResponse           `json:"_shards,omitempty"`
+	Raw          []byte                    `json:"-"`
+}
 
-	Raw []byte `json:"-"`
+type ShardsResponse struct {
+	Total      int        `json:"total"`
+	Successful int        `json:"successful"`
+	Failed     int        `json:"failed"`
+	Failures   []*Failure `json:"failures"`
+}
+
+type Failure struct {
+	Index  string `json:"index"`
+	Shard  int    `json:"shard"`
+	Status int    `json:"status"`
+	Reason string `json:"reason"`
 }
 
 type ResponseFacets map[string]*ResponseFacet

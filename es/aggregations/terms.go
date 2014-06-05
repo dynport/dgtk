@@ -3,23 +3,26 @@ package aggregations
 import "encoding/json"
 
 type Terms struct {
-	Name         string         `json:"name"`
-	Field        string         `json:"field"`
-	Aggregations json.Marshaler `json:"aggregations,omitempty"`
+	Field        string                    `json:"field"`
+	Order        map[string]string         `json:"sort,omitempty"`
+	Aggregations map[string]json.Marshaler `json:"aggs,omitempty"`
+	Size         int                       `json:"size"`
 }
 
 func (a *Terms) MarshalJSON() ([]byte, error) {
 	h := hash{
-		"terms": hash{
-			"field": a.Field,
-		},
+		"field": a.Field,
 	}
+	if a.Order != nil {
+		h["order"] = a.Order
+	}
+	h["size"] = a.Size
+	//if a.Size != 0 {
+	//	h["size"] = strconv.Itoa(a.Size)
+	//}
+	out := hash{"terms": h}
 	if a.Aggregations != nil {
-		h["aggregations"] = a
+		out["aggs"] = a.Aggregations
 	}
-
-	return json.Marshal(hash{
-		a.Name: h,
-	},
-	)
+	return json.Marshal(out)
 }
