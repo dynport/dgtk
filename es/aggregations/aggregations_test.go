@@ -22,9 +22,6 @@ func TestMarshalling(t *testing.T) {
 	})
 }
 
-func TestUnmarshalRequest(t *testing.T) {
-}
-
 func TestMarshallAggregations(t *testing.T) {
 	Convey("Marshal Aggs", t, func() {
 		b := mustReadFixture(t, "response_with_aggregations.json")
