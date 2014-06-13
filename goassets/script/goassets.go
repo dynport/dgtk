@@ -22,11 +22,11 @@ var logger = log.New(os.Stderr, "", 0)
 func main() {
 	var targetFile = flag.String("file", "assets.go", "path of asset file")
 	var pkgName = flag.String("pkg", "", "Package name (default: name of directory)")
-	flag.Parse()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s <AssetPaths>...\n", "goassets.go")
 		flag.PrintDefaults()
 	}
+	flag.Parse()
 	a := &action{targetFile: *targetFile, assetPaths: flag.Args(), pkgName: *pkgName}
 	if len(a.assetPaths) < 1 {
 		flag.Usage()
