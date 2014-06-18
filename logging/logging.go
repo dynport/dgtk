@@ -9,6 +9,7 @@ import (
 
 type RemoteLog struct {
 	Host          string
+	User          string
 	Pattern       string
 	Tail          bool
 	Time          time.Time
@@ -81,8 +82,11 @@ func (rl *RemoteLog) CatCmd() string {
 func (rl *RemoteLog) Open() (reader io.ReadCloser, e error) {
 	c := rl.Command()
 	var cmd *exec.Cmd
+	if rl.User == "" {
+		rl.User = "root"
+	}
 	if rl.Host != "" {
-		cmd = exec.Command("ssh", "-t", "-l", "root", rl.Host, c)
+		cmd = exec.Command("ssh", "-t", "-l", rl.User, rl.Host, c)
 	} else {
 		cmd = exec.Command("bash", "-c", c)
 	}
