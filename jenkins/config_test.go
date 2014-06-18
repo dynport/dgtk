@@ -2,13 +2,12 @@ package jenkins
 
 import (
 	"encoding/xml"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSerializeConfig(t *testing.T) {
 	Convey("Serialize Config", t, func() {
-		So(1, ShouldEqual, 1)
 		Convey("Serialize SCM", func() {
 			scm := &Scm{
 				Class:  "hudson.plugins.git.GitSCM",
@@ -21,5 +20,18 @@ func TestSerializeConfig(t *testing.T) {
 			}
 			So(string(b), ShouldContainSubstring, `class="hudson.plugins.git.GitSCM`)
 		})
-	})
+
+		Convey("Serialize Config", func() {
+			config := &Config{}
+			config.Builders = []interface{}{
+				ShellTask{Command: "whoami"},
+			}
+			b, e := xml.MarshalIndent(config, "", "  ")
+			So(e, ShouldBeNil)
+			So(b, ShouldNotBeNil)
+
+			t.Logf("%s", string(b))
+		})
+	},
+	)
 }
