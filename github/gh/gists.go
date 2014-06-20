@@ -194,11 +194,3 @@ func (b *BrowseGists) Run() error {
 
 	return openUrl("https://gist.github.com/" + githubUsername)
 }
-
-func init() {
-	router.Register("gists/open", &OpenGist{}, "Open a Gist")
-	router.Register("gists/list", &ListGists{}, "List Gists")
-	router.Register("gists/create", &CreateGist{}, "Create a new")
-	router.Register("gists/delete", &DeleteGist{}, "Create a new")
-	router.Register("gists/browse", &BrowseGists{}, "Browse Gists")
-}

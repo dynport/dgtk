@@ -23,6 +23,26 @@ func (c *Commits) Run() error {
 	return openUrl(theUrl + "/commits/master")
 }
 
+func githubRepo() (string, error) {
+	out, e := exec.Command("git", "remote", "-v").CombinedOutput()
+	if e != nil {
+		if strings.Contains(string(out), "Not a git repository") {
+			return "", nil
+		}
+		return "", fmt.Errorf("%s: %s:", e, string(out))
+	}
+	for scanner := bufio.NewScanner(bytes.NewReader(out)); ; scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) > 1 && strings.HasPrefix(fields[1], "git@github.com:") {
+			repo := fields[1]
+			parts := strings.Split(repo, ":")
+			return strings.TrimSuffix(parts[1], ".git"), nil
+		}
+	}
+	return "", e
+
+}
+
 func githubUrl() (string, error) {
 	out, e := exec.Command("git", "remote", "-v").CombinedOutput()
 	if e != nil {
@@ -84,8 +104,15 @@ func main() {
 	log.SetFlags(0)
 	router.Register("browse", &Browse{}, "Browse github repository")
 	router.Register("commits", &Commits{}, "List github commits")
-	router.Register("pulls", &GithubPulls{}, "List github pull requests")
+	router.Register("gists/browse", &BrowseGists{}, "Browse Gists")
+	router.Register("gists/create", &CreateGist{}, "Create a new")
+	router.Register("gists/delete", &DeleteGist{}, "Create a new")
+	router.Register("gists/list", &ListGists{}, "List Gists")
+	router.Register("gists/open", &OpenGist{}, "Open a Gist")
+	router.Register("issues/list", &issuesList{}, "List github issues")
+	router.Register("issues/browse", &issuesBrowse{}, "List github issues")
 	router.Register("notifications", &GithubNotifications{}, "Browse github notifications")
+	router.Register("pulls", &GithubPulls{}, "List github pull requests")
 	e := router.RunWithArgs()
 	switch e {
 	case nil, cli.ErrorHelpRequested, cli.ErrorNoRoute:
