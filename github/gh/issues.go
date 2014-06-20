@@ -32,7 +32,7 @@ func (r *issuesList) Run() error {
 	}
 	t := gocli.NewTable()
 	for _, i := range issues {
-		orga, repo, e := i.Repo()
+		orga, issueRepo, e := i.Repo()
 		if e != nil {
 			return e
 		}
@@ -40,10 +40,29 @@ func (r *issuesList) Run() error {
 		for _, l := range i.Labels {
 			labels = append(labels, l.Name)
 		}
-		t.Add(i.Number, orga+"/"+repo, i.State, i.CreatedAt, i.Title, strings.Join(labels, ","))
+		parts := []interface{}{i.Number}
+		if repo == "" {
+			parts = append(parts, orga+"/"+issueRepo)
+		}
+		assignee := ""
+		if i.Assignee != nil {
+			assignee = i.Assignee.Login
+		}
+		parts = append(parts, truncate(i.CreatedAt, 16, false), i.State, assignee, truncate(i.Title, 48, true), strings.Join(labels, ","))
+		t.Add(parts...)
 	}
 	fmt.Println(t)
 	return nil
+}
+
+func truncate(s string, l int, dots bool) string {
+	if len(s) > l {
+		if l > 6 && dots {
+			return s[0:l-3] + "..."
+		}
+		return s[0:l]
+	}
+	return s
 }
 
 func loadIssues(repo string) ([]*Issue, error) {
@@ -90,7 +109,7 @@ type Issue struct {
 	Title       string       `json:"title,omitempty"`    // "Found a bug",
 	Body        string       `json:"body,omitempty"`     // "I'm having a problem with this.",
 	User        *User        `json:"user,omitempty"`
-	Assignee    *User        `json:"asignee,omitempty"`
+	Assignee    *User        `json:"assignee,omitempty"`
 	Labels      []*Label     `json:"labels,omitempty"`
 	Milestone   *Milestone   `json:"milestone,omitempty"`
 	Commens     int          `json:"comments,omitempty"`
