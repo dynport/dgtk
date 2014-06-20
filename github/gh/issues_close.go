@@ -23,8 +23,8 @@ func (r *issueClose) Run() error {
 	for _, id := range r.Ids {
 		logger.Printf("closing issue %d", id)
 		u := urlRoot + "/repos/" + repo + "/issues/" + strconv.Itoa(id)
-		issue := &Issue{State: "closed"}
-		b, e := json.Marshal(issue)
+		ci := &CreateIssue{State: "closed"}
+		b, e := json.Marshal(ci)
 		if e != nil {
 			return e
 		}
@@ -40,7 +40,7 @@ func (r *issueClose) Run() error {
 		if rsp.Status[0] != '2' {
 			return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
 		}
-		issue = &Issue{}
+		issue := &Issue{}
 		e = json.Unmarshal(b, issue)
 		if e != nil {
 			return e

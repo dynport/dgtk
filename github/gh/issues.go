@@ -98,6 +98,7 @@ type CreateIssue struct {
 	Body      string   `json:"body,omitempty"`
 	Assignee  string   `json:"assignee,omitempty"`
 	Milestone int      `json:"milestone,omitempty"`
+	State     string   `json:"state,omitempty"`
 	Labels    []string `json:"labels,omitempty"`
 }
 
