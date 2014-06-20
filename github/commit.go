@@ -1,10 +1,9 @@
 package github
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/url"
 	"time"
 )
@@ -53,15 +52,17 @@ func (a *ListCommits) Execute(client *Client) ([]*Commit, error) {
 	if e != nil {
 		return nil, e
 	}
-	if rsp.Status[0] != '2' {
-		return nil, fmt.Errorf("expected status 2xx, got %s", rsp.Status)
-	}
 	defer rsp.Body.Close()
+	b, e := ioutil.ReadAll(rsp.Body)
+	if e != nil {
+		return nil, e
+	}
+	if rsp.Status[0] != '2' {
+		return nil, fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
+	}
 
 	commits := []*Commit{}
-	buf := &bytes.Buffer{}
-	tee := io.TeeReader(rsp.Body, buf)
-	e = json.NewDecoder(tee).Decode(&commits)
+	e = json.Unmarshal(b, &commits)
 	return commits, e
 }
 
