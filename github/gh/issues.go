@@ -36,7 +36,11 @@ func (r *issuesList) Run() error {
 		if e != nil {
 			return e
 		}
-		t.Add(i.Number, orga+"/"+repo, i.State, i.CreatedAt, i.Title)
+		labels := []string{}
+		for _, l := range i.Labels {
+			labels = append(labels, l.Name)
+		}
+		t.Add(i.Number, orga+"/"+repo, i.State, i.CreatedAt, i.Title, strings.Join(labels, ","))
 	}
 	fmt.Println(t)
 	return nil
@@ -69,6 +73,14 @@ func loadIssues(repo string) ([]*Issue, error) {
 }
 
 // https://developer.github.com/v3/issues/#create-an-issue
+
+type CreateIssue struct {
+	Title     string   `json:"title,omitempty"`
+	Body      string   `json:"body,omitempty"`
+	Assignee  string   `json:"assignee,omitempty"`
+	Milestone int      `json:"milestone,omitempty"`
+	Labels    []string `json:"labels,omitempty"`
+}
 
 type Issue struct {
 	Url         string       `json:"url,omitempty"`      // "https://api.github.com/repos/octocat/Hello-World/issues/1347",

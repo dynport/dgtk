@@ -11,6 +11,7 @@ import (
 )
 
 type issuesCreate struct {
+	Labels string `cli:"opt --labels"`
 }
 
 func (r *issuesCreate) Run() error {
@@ -23,13 +24,19 @@ func (r *issuesCreate) Run() error {
 	}
 	logger.Printf("creating issues for %q", repo)
 	scanner := bufio.NewScanner(os.Stdin)
-	lines := []string{}
-	i := 0
+	ci := &CreateIssue{}
+	if len(r.Labels) > 0 {
+		ci.Labels = strings.Split(r.Labels, ",")
+	}
+	if len(r.Labels) > 0 {
+		fmt.Printf("Labels: %q\n", r.Labels)
+	}
 	fmt.Printf("Title: ")
-	var title string
+	i := 0
+	lines := []string{}
 	for scanner.Scan() {
 		if i == 0 {
-			title = scanner.Text()
+			ci.Title = scanner.Text()
 			fmt.Println(strings.Repeat("-", 100))
 			fmt.Println("Body (send with ctrl+d):")
 		} else {
@@ -41,9 +48,9 @@ func (r *issuesCreate) Run() error {
 	if e != nil {
 		return e
 	}
+	ci.Body = strings.Join(lines, "\n")
 	logger.Printf("finished scanning %d lines", len(lines))
-	issue := &Issue{Title: title, Body: strings.Join(lines, "\n")}
-	b, e := json.Marshal(issue)
+	b, e := json.Marshal(ci)
 	if e != nil {
 		return e
 	}
@@ -62,7 +69,7 @@ func (r *issuesCreate) Run() error {
 	if rsp.Status[0] != '2' {
 		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
 	}
-	issue = &Issue{}
+	issue := &Issue{}
 	e = json.Unmarshal(b, issue)
 	if e != nil {
 		return e
