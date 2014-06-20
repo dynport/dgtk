@@ -71,23 +71,21 @@ func loadIssues(repo string) ([]*Issue, error) {
 // https://developer.github.com/v3/issues/#create-an-issue
 
 type Issue struct {
-	Url      string   `json:"url"`      // "https://api.github.com/repos/octocat/Hello-World/issues/1347",
-	HtmlUrl  string   `json:"html_url"` // "https://github.com/octocat/Hello-World/issues/1347",
-	Number   int      `json:"number"`   // 1347,
-	State    string   `json:"state"`    // "open",
-	Title    string   `json:"title"`    // "Found a bug",
-	Body     string   `json:"body"`     // "I'm having a problem with this.",
-	User     *User    `json:"user"`
-	Assignee *User    `json:"asignee"`
-	Labels   []*Label `json:"labels"`
-
-	Milestone   *Milestone   `json:"milestone"`
-	Commens     int          `json:"comments"`
-	PullRequest *PullRequest `json:"pull_request"`
-
-	ClosedAt  string `json:"closed_at,omitempty"`  // null,
-	CreatedAt string `json:"created_at,omitempty"` // "2011-04-22T13:33:48Z",
-	UpdatedAt string `json:"updated_at,omitempty"` // "2011-04-22T13:33:48Z"
+	Url         string       `json:"url,omitempty"`      // "https://api.github.com/repos/octocat/Hello-World/issues/1347",
+	HtmlUrl     string       `json:"html_url,omitempty"` // "https://github.com/octocat/Hello-World/issues/1347",
+	Number      int          `json:"number,omitempty"`   // 1347,
+	State       string       `json:"state,omitempty"`    // "open",
+	Title       string       `json:"title,omitempty"`    // "Found a bug",
+	Body        string       `json:"body,omitempty"`     // "I'm having a problem with this.",
+	User        *User        `json:"user,omitempty"`
+	Assignee    *User        `json:"asignee,omitempty"`
+	Labels      []*Label     `json:"labels,omitempty"`
+	Milestone   *Milestone   `json:"milestone,omitempty"`
+	Commens     int          `json:"comments,omitempty"`
+	PullRequest *PullRequest `json:"pull_request,omitempty"`
+	ClosedAt    string       `json:"closed_at,omitempty"`  // null,
+	CreatedAt   string       `json:"created_at,omitempty"` // "2011-04-22T13:33:48Z",
+	UpdatedAt   string       `json:"updated_at,omitempty"` // "2011-04-22T13:33:48Z"
 }
 
 var reposPreifx = "https://api.github.com/repos/"

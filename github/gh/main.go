@@ -111,6 +111,7 @@ func main() {
 	router.Register("gists/open", &OpenGist{}, "Open a Gist")
 	router.Register("issues/list", &issuesList{}, "List github issues")
 	router.Register("issues/browse", &issuesBrowse{}, "List github issues")
+	router.Register("issues/create", &issuesCreate{}, "List github issues")
 	router.Register("notifications", &GithubNotifications{}, "Browse github notifications")
 	router.Register("pulls", &GithubPulls{}, "List github pull requests")
 	e := router.RunWithArgs()
