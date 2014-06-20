@@ -49,7 +49,6 @@ func (r *issuesCreate) Run() error {
 		return e
 	}
 	ci.Body = strings.Join(lines, "\n")
-	logger.Printf("finished scanning %d lines", len(lines))
 	b, e := json.Marshal(ci)
 	if e != nil {
 		return e
