@@ -112,6 +112,7 @@ func main() {
 	router.Register("issues/list", &issuesList{}, "List github issues")
 	router.Register("issues/browse", &issuesBrowse{}, "List github issues")
 	router.Register("issues/create", &issuesCreate{}, "List github issues")
+	router.Register("issues/tag", &issueTag{}, "Tag issue")
 	router.Register("issues/close", &issueClose{}, "Close github issues")
 	router.Register("issues/assign", &issueAssign{}, "Assign gitbub issue")
 	router.Register("notifications", &GithubNotifications{}, "Browse github notifications")
