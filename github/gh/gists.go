@@ -21,6 +21,9 @@ import (
 var logger = log.New(os.Stderr, "", 0)
 
 func githubToken() (token string, e error) {
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		return token, nil
+	}
 	return readGitConfig("github.token")
 }
 
@@ -45,7 +48,9 @@ func authenticatedRequest(method string, url string, r io.Reader) (*http.Respons
 	if e != nil {
 		return nil, e
 	}
+	dbg.Printf("using token %q", token)
 	req.SetBasicAuth(string(token), "x-oauth-basic")
+	dbg.Printf("sending request %q", req.URL)
 	return http.DefaultClient.Do(req)
 }
 
