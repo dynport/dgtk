@@ -72,7 +72,17 @@ func (o *Browse) Run() error {
 	return openUrl(theUrl)
 }
 
+func openGithubUrl(suffix string) error {
+	u, e := githubUrl()
+	if e != nil {
+		return e
+	}
+	u += "/" + strings.TrimPrefix(suffix, "/")
+	return openUrl(u)
+}
+
 func openUrl(theUrl string) error {
+	logger.Printf("opening %q", theUrl)
 	c := exec.Command("open", theUrl)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
@@ -112,6 +122,7 @@ func main() {
 	router.Register("issues/list", &issuesList{}, "List github issues")
 	router.Register("issues/browse", &issuesBrowse{}, "List github issues")
 	router.Register("issues/create", &issuesCreate{}, "List github issues")
+	router.Register("issues/open", &issueOpen{}, "Open github issues")
 	router.Register("issues/tag", &issueTag{}, "Tag issue")
 	router.Register("issues/close", &issueClose{}, "Close github issues")
 	router.Register("issues/assign", &issueAssign{}, "Assign gitbub issue")

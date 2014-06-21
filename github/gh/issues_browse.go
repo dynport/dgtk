@@ -9,6 +9,5 @@ func (r *issuesBrowse) Run() error {
 		return e
 	}
 	u += "/issues"
-	logger.Printf("opening %q", u)
 	return openUrl(u)
 }
