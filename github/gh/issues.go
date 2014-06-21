@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/dynport/dgtk/github"
 )
 
 func truncate(s string, l int, dots bool) string {
@@ -16,6 +20,89 @@ func truncate(s string, l int, dots bool) string {
 		return s[0:l]
 	}
 	return s
+}
+
+const (
+	stateClosed = "closed"
+	stateOpen   = "open"
+	stateAll    = "all"
+
+	sortCreated  = "created"
+	sortUpdated  = "updated"
+	sortComments = "comments"
+
+	assigneeNonde = "none"
+	assigneeAny   = "*"
+
+	sortDesc = "desc"
+	sortAsc  = "asc"
+)
+
+type ListIssues struct {
+	Repo      string // orga/repo
+	Milestone int
+	State     string
+	Assignee  string
+	Creator   string
+	Mentioned string
+	Labels    []string
+	Sort      string
+	Direction string
+	Since     time.Time
+}
+
+type values map[string]string
+
+func (a *ListIssues) Execute(client *github.Client) ([]*Issue, error) {
+	values := values{
+		"state":     a.State,
+		"assignee":  a.Assignee,
+		"creator":   a.Creator,
+		"mentioned": a.Mentioned,
+		"sort":      a.Sort,
+		"direction": a.Direction,
+	}
+	if len(a.Labels) > 0 {
+		values["labels"] = strings.Join(a.Labels, ",")
+	}
+	if !a.Since.IsZero() {
+		values["since"] = a.Since.UTC().Format("2006-01-02T15:04:05Z")
+	}
+
+	v := url.Values{}
+	for k, kv := range values {
+		if kv != "" {
+			v.Set(k, kv)
+
+		}
+	}
+	path := "/issues"
+	if a.Repo != "" {
+		path = "/repos/" + a.Repo + "/issues"
+	}
+	if len(v) > 0 {
+		path += "?" + v.Encode()
+	}
+	issues := []*Issue{}
+	e := loadAuthenticated(client, path, &issues)
+	return issues, e
+}
+
+func loadAuthenticated(client *github.Client, path string, i interface{}) error {
+	dbg.Printf("loading %q", path)
+	rsp, e := client.Get(urlRoot + path)
+	if e != nil {
+		return e
+	}
+	b, e := ioutil.ReadAll(rsp.Body)
+	if e != nil {
+		return e
+	}
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
+	}
+	e = json.Unmarshal(b, i)
+	return e
 }
 
 func loadIssue(id int) (*Issue, error) {

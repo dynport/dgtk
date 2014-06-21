@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dynport/dgtk/github"
 	"github.com/dynport/gocli"
 )
 
@@ -37,6 +38,14 @@ func readGitConfig(name string) (string, error) {
 		return "", fmt.Errorf("no github config defined for %q", name)
 	}
 	return config, nil
+}
+
+func client() (*github.Client, error) {
+	token, e := githubToken()
+	if e != nil {
+		return nil, e
+	}
+	return github.New(token)
 }
 
 func authenticatedRequest(method string, url string, r io.Reader) (*http.Response, error) {
