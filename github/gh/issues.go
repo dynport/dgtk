@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +16,31 @@ func truncate(s string, l int, dots bool) string {
 		return s[0:l]
 	}
 	return s
+}
+
+func loadIssue(id int) (*Issue, error) {
+	repo, e := githubRepo()
+	if e != nil {
+		return nil, e
+	}
+	if repo == "" {
+		return nil, fmt.Errorf("unable to get github repo from current path")
+	}
+	u := urlRoot + "/repos/" + repo + "/issues/" + strconv.Itoa(id)
+	rsp, e := authenticatedRequest("GET", u, nil)
+	if e != nil {
+		return nil, e
+	}
+	b, e := ioutil.ReadAll(rsp.Body)
+	if e != nil {
+		return nil, e
+	}
+	if rsp.Status[0] != '2' {
+		return nil, fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
+	}
+	issue := &Issue{}
+	e = json.Unmarshal(b, issue)
+	return issue, e
 }
 
 func loadIssues(repo string) ([]*Issue, error) {

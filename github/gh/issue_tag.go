@@ -39,14 +39,11 @@ func (r *issueTag) Run() error {
 		return e
 	}
 
-	labels := []string{}
-	for _, l := range issue.Labels {
-		if l.Name == r.Label {
-			return fmt.Errorf("issue already tagged with label %q")
-		}
-		labels = append(labels, l.Name)
+	labels, e := addLabel(issue, r.Label)
+	if e != nil {
+		return e
 	}
-	labels = append(labels, r.Label)
+
 	ci := &CreateIssue{
 		Labels: labels,
 	}
@@ -65,4 +62,15 @@ func (r *issueTag) Run() error {
 	}
 	logger.Printf("tagged issue %d with label %q", r.Number, r.Label)
 	return nil
+}
+
+func addLabel(issue *Issue, label string) ([]string, error) {
+	labels := []string{}
+	for _, l := range issue.Labels {
+		if l.Name == label {
+			return nil, fmt.Errorf("issue already tagged with label %q")
+		}
+		labels = append(labels, l.Name)
+	}
+	return append(labels, label), nil
 }
