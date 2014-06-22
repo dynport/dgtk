@@ -1,6 +1,8 @@
 package es
 
 import (
+	"log"
+	"os"
 	"time"
 )
 
@@ -42,6 +44,8 @@ func (indexer *Indexer) resetTimer() bool {
 	return indexer.timer.Reset(indexer.IndexEvery)
 }
 
+var logger = log.New(os.Stderr, "", 0)
+
 func (indexer *Indexer) Start() chan *Doc {
 	if indexer.BatchSize == 0 {
 		indexer.BatchSize = 100
@@ -56,12 +60,18 @@ func (indexer *Indexer) Start() chan *Doc {
 		for {
 			select {
 			case <-indexer.timer.C:
-				indexer.indexBatch()
+				e := indexer.indexBatch()
+				if e != nil {
+					logger.Printf("ERROR=%q", e)
+				}
 				indexer.resetTimer()
 			case doc, ok := <-indexer.docsChannel:
 				if !ok {
 					indexer.timer.Stop()
-					indexer.indexBatch()
+					e := indexer.indexBatch()
+					if e != nil {
+						logger.Printf("ERROR=%q", e)
+					}
 					return
 				}
 				if doc.Index == "" {
