@@ -96,7 +96,7 @@ func (rl *RemoteLog) Open() (reader io.ReadCloser, e error) {
 	if e != nil {
 		return nil, e
 	}
-	dbg.Print("starting command %q", c)
+	dbg.Printf("starting command %q", c)
 	e = cmd.Start()
 	if e != nil {
 		return nil, e
