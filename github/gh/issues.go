@@ -90,18 +90,22 @@ func (a *ListIssues) Execute(client *github.Client) ([]*Issue, error) {
 
 func loadAuthenticated(client *github.Client, path string, i interface{}) error {
 	dbg.Printf("loading %q", path)
+	started := time.Now()
 	rsp, e := client.Get(urlRoot + path)
 	if e != nil {
 		return e
 	}
+	dbg.Printf("response after %.06f", time.Since(started).Seconds())
 	b, e := ioutil.ReadAll(rsp.Body)
 	if e != nil {
 		return e
 	}
+	dbg.Printf("read after %.06f", time.Since(started).Seconds())
 	if rsp.Status[0] != '2' {
 		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
 	}
 	e = json.Unmarshal(b, i)
+	dbg.Printf("finished after %.06f", time.Since(started).Seconds())
 	return e
 }
 
