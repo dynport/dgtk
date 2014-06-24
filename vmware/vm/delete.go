@@ -14,7 +14,7 @@ func (action *Delete) Run() error {
 		logger.Printf("vm is running, stopping")
 		e = vm.Stop()
 		if e != nil {
-			return e
+			logger.Printf("ERROR=%q", e)
 		}
 	}
 	return vm.Delete()
