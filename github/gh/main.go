@@ -31,7 +31,8 @@ func githubRepo() (string, error) {
 		}
 		return "", fmt.Errorf("%s: %s:", e, string(out))
 	}
-	for scanner := bufio.NewScanner(bytes.NewReader(out)); ; scanner.Scan() {
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) > 1 && strings.HasPrefix(fields[1], "git@github.com:") {
 			repo := fields[1]
