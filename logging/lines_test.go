@@ -3,6 +3,7 @@ package logging
 import (
 	"strings"
 	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,6 +43,7 @@ func TestLineTags(t *testing.T) {
 		So(line.Parse(raw), ShouldBeNil)
 		So(line.Host, ShouldEqual, "1fb6092433dc")
 		So(strings.Join(line.XForwardedFor, " "), ShouldEqual, "192.168.0.6 176.199.77.195 10.22.61.117 2.22.61.87")
+		So(line.Message, ShouldEqual, "192.168.0.6 176.199.77.195, 10.22.61.117, 2.22.61.87 host=www.1414.de")
 
 	})
 
@@ -59,18 +61,19 @@ func TestLineTags(t *testing.T) {
 
 func TestParseTag(t *testing.T) {
 	Convey("parseTags", t, func() {
-		So(1, ShouldEqual, 1)
 		tags := map[string]SyslogLine{
-			"metrix":            {Tag: "metrix"},
-			"metrix.info":       {Tag: "metrix", Severity: "info"},
-			"metrix.info[1234]": {Tag: "metrix", Severity: "info", Pid: 1234},
-			"metrix.info[]:":    {Tag: "metrix", Severity: "info", Pid: 0},
+			"metrix":               {Tag: "metrix"},
+			"metrix.info":          {Tag: "metrix", Severity: "info"},
+			"metrix.info[1234]":    {Tag: "metrix", Severity: "info", Pid: 1234},
+			"metrix.info[]:":       {Tag: "metrix", Severity: "info", Pid: 0},
+			"mongod.27017.warning": {Port: "27017", Tag: "mongod", Severity: "warning", Pid: 0},
 		}
 		for raw, line := range tags {
-			tag, severity, pid := parseTag(raw)
+			tag, port, severity, pid := parseTag(raw)
 			So(tag, ShouldEqual, line.Tag)
 			So(severity, ShouldEqual, line.Severity)
 			So(pid, ShouldEqual, line.Pid)
+			So(port, ShouldEqual, line.Port)
 		}
 	})
 }
@@ -92,6 +95,7 @@ func TestParseLineWithSeverity(t *testing.T) {
 		line := &SyslogLine{}
 		So(line.Parse(LINE_WITH_SEVERITY), ShouldBeNil)
 		So(line.Tag, ShouldEqual, "metrix")
+		So(line.Port, ShouldEqual, "")
 		So(line.Severity, ShouldEqual, "notice")
 	})
 }

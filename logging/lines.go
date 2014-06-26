@@ -9,12 +9,15 @@ import (
 )
 
 type SyslogLine struct {
-	Raw        string
-	Time       time.Time
-	Host       string
-	Tag        string
-	Severity   string
-	Pid        int
+	Raw      string
+	Time     time.Time
+	Host     string
+	Tag      string
+	Severity string
+	Pid      int
+	Port     string
+	Message  string
+
 	fields     []string
 	parsed     bool
 	tags       map[string]interface{}
@@ -117,27 +120,34 @@ func (line *SyslogLine) Parse(raw string) (e error) {
 			}
 		}
 		line.Host = line.fields[1]
-		line.Tag, line.Severity, line.Pid = parseTag(line.fields[2])
+		line.Tag, line.Port, line.Severity, line.Pid = parseTag(line.fields[2])
+		if len(line.fields) > 3 {
+			line.Message = strings.Join(line.fields[3:], " ")
+		}
 	}
 	line.parsed = true
 	return nil
 }
 
-func parseTag(raw string) (tag, severity string, pid int) {
+func parseTag(raw string) (tag, port, severity string, pid int) {
 	tagAndSeverity, pid := splitTagAndPid(raw)
-	tag, severity = splitTagAndSeverity(tagAndSeverity)
-	return tag, severity, pid
+	tag, port, severity = splitTagAndSeverity(tagAndSeverity)
+	return tag, port, severity, pid
 }
 
-func splitTagAndSeverity(raw string) (tag, severity string) {
+func splitTagAndSeverity(raw string) (tag, port, severity string) {
 	tag = raw
 	parts := strings.Split(raw, ".")
-	if len(parts) == 2 {
+	if len(parts) == 3 {
+		// seems to be mongodb
+		tag, port, severity = parts[0], parts[1], parts[2]
+
+	} else if len(parts) == 2 {
 		tag, severity = parts[0], parts[1]
 	} else {
 		tag = raw
 	}
-	return tag, severity
+	return tag, port, severity
 }
 
 func splitTagAndPid(raw string) (tag string, pid int) {
