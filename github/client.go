@@ -8,6 +8,9 @@ import (
 )
 
 func New(token string) (*Client, error) {
+	if token == "" {
+		return nil, fmt.Errorf("token must be provided")
+	}
 	return &Client{Client: NewHttpClient(token)}, nil
 }
 
