@@ -3,11 +3,11 @@ package aggregations
 import "fmt"
 
 type Aggregate struct {
-	Name       string
-	Stats      *StatsAggregate
-	Value      *Value
-	Percentile *Percentile
-	Buckets    Buckets
+	Name       string          `json:"name,omitempty"`
+	Stats      *StatsAggregate `json:"stats,omitempty"`
+	Value      *Value          `json:"value,omitempty"`
+	Percentile *Percentile     `json:"percentile,omitempty"`
+	Buckets    Buckets         `json:"buckets,omitempty"`
 }
 
 func (agg *Aggregate) Load(m map[string]interface{}) error {
