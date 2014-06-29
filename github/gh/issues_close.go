@@ -9,8 +9,8 @@ import (
 )
 
 type issueClose struct {
-	Id  int    `cli:"arg required"`
-	Tag string `cli:"opt --tag"`
+	Id    int    `cli:"arg required"`
+	Label string `cli:"opt --label"`
 }
 
 func (r *issueClose) Run() error {
@@ -31,8 +31,8 @@ func (r *issueClose) Run() error {
 	ci := &CreateIssue{State: "closed"}
 
 	logger.Printf("closing issue %d", r.Id)
-	if r.Tag != "" {
-		ci.Labels, e = addLabel(issue, r.Tag)
+	if r.Label != "" {
+		ci.Labels, e = addLabel(issue, r.Label)
 		if e != nil {
 			return e
 		}

@@ -8,12 +8,12 @@ import (
 	"strconv"
 )
 
-type issueTag struct {
+type issueLabel struct {
 	Number int    `cli:"arg required"`
 	Label  string `cli:"arg required"`
 }
 
-func (r *issueTag) Run() error {
+func (r *issueLabel) Run() error {
 	repo, e := githubRepo()
 	if e != nil {
 		return e
@@ -60,7 +60,7 @@ func (r *issueTag) Run() error {
 	if rsp.Status[0] != '2' {
 		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
 	}
-	logger.Printf("tagged issue %d with label %q", r.Number, r.Label)
+	logger.Printf("labeled issue %d with label %q", r.Number, r.Label)
 	return nil
 }
 
@@ -68,7 +68,7 @@ func addLabel(issue *Issue, label string) ([]string, error) {
 	labels := []string{}
 	for _, l := range issue.Labels {
 		if l.Name == label {
-			return nil, fmt.Errorf("issue already tagged with label %q")
+			return nil, fmt.Errorf("issue already labeled with label %q")
 		}
 		labels = append(labels, l.Name)
 	}
