@@ -1,3 +1,2 @@
 build:
 	go get ./...
-	gh issues list
