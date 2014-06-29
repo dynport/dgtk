@@ -1,16 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"strconv"
+
+	"github.com/dynport/dgtk/github"
 )
 
 type issueClose struct {
-	Id    int    `cli:"arg required"`
-	Label string `cli:"opt --label"`
+	Number int    `cli:"arg required"`
+	Label  string `cli:"opt --label"`
 }
 
 func (r *issueClose) Run() error {
@@ -22,15 +20,17 @@ func (r *issueClose) Run() error {
 		return fmt.Errorf("unable to get github repo from current path")
 	}
 
-	issue, e := loadIssue(r.Id)
+	c, e := client()
 	if e != nil {
 		return e
 	}
+	issue, e := loadIssue(c, r.Number)
+	if e != nil {
+		return e
+	}
+	ci := &github.CreateIssue{State: "closed", Number: r.Number, Repo: repo}
 
-	u := urlRoot + "/repos/" + repo + "/issues/" + strconv.Itoa(r.Id)
-	ci := &CreateIssue{State: "closed"}
-
-	logger.Printf("closing issue %d", r.Id)
+	logger.Printf("closing issue %d", r.Number)
 	if r.Label != "" {
 		ci.Labels, e = addLabel(issue, r.Label)
 		if e != nil {
@@ -38,21 +38,9 @@ func (r *issueClose) Run() error {
 		}
 		logger.Printf("also assigning labels %q", ci.Labels)
 	}
-	b, e := json.Marshal(ci)
+	issue, e = ci.Update(c)
 	if e != nil {
 		return e
-	}
-	rsp, e := authenticatedRequest("PATCH", u, bytes.NewReader(b))
-	if e != nil {
-		return e
-	}
-	defer rsp.Body.Close()
-	b, e = ioutil.ReadAll(rsp.Body)
-	if e != nil {
-		return e
-	}
-	if rsp.Status[0] != '2' {
-		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
 	}
 	return nil
 }

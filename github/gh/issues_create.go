@@ -2,12 +2,12 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/json"
+
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/dynport/dgtk/github"
 )
 
 type issuesCreate struct {
@@ -24,7 +24,7 @@ func (r *issuesCreate) Run() error {
 	}
 	logger.Printf("creating issues for %q", repo)
 	scanner := bufio.NewScanner(os.Stdin)
-	ci := &CreateIssue{}
+	ci := &github.CreateIssue{Repo: repo}
 	if len(r.Labels) > 0 {
 		ci.Labels = strings.Split(r.Labels, ",")
 	}
@@ -49,27 +49,12 @@ func (r *issuesCreate) Run() error {
 		return e
 	}
 	ci.Body = strings.Join(lines, "\n")
-	b, e := json.Marshal(ci)
-	if e != nil {
-		return e
-	}
 
-	dbg.Printf("postung to url %q")
-	u := urlRoot + "/repos/" + repo + "/issues"
-	rsp, e := authenticatedRequest("POST", u, bytes.NewReader(b))
+	c, e := client()
 	if e != nil {
 		return e
 	}
-	defer rsp.Body.Close()
-	b, e = ioutil.ReadAll(rsp.Body)
-	if e != nil {
-		return e
-	}
-	if rsp.Status[0] != '2' {
-		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
-	}
-	issue := &Issue{}
-	e = json.Unmarshal(b, issue)
+	issue, e := ci.Create(c)
 	if e != nil {
 		return e
 	}

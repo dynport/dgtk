@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dynport/dgtk/github"
 	"github.com/dynport/gocli"
 )
 
@@ -25,20 +26,17 @@ func (r *issuesList) Run() error {
 	if e != nil {
 		return e
 	}
-	a := &ListIssues{Assignee: r.Assignee, Creator: r.Creator, Mentioned: r.Mentioned, Sort: r.Sort, Repo: repo}
+	a := &github.ListIssues{Assignee: r.Assignee, Creator: r.Creator, Mentioned: r.Mentioned, Sort: r.Sort, Repo: repo, Milestone: r.Milestone}
 	if r.Labels != "" {
 		a.Labels = strings.Split(r.Labels, ",")
 	}
-	if r.Milestone > 0 {
-		a.Milestone = r.Milestone
-	}
 	if r.Asc {
-		a.Direction = sortAsc
+		a.Direction = github.IssueSortAsc
 	}
 	if r.All {
-		a.State = stateAll
+		a.State = github.IssueStateAll
 	} else if r.Closed {
-		a.State = stateClosed
+		a.State = github.IssueStateClosed
 	}
 
 	cl, e := client()

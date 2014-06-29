@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"strconv"
+
+	"github.com/dynport/dgtk/github"
 )
 
 type issueLabel struct {
@@ -18,53 +16,34 @@ func (r *issueLabel) Run() error {
 	if e != nil {
 		return e
 	}
-	if repo == "" {
-		return fmt.Errorf("unable to get github repo from current path")
-	}
-	u := urlRoot + "/repos/" + repo + "/issues/" + strconv.Itoa(r.Number)
-	rsp, e := authenticatedRequest("GET", u, nil)
+	c, e := client()
 	if e != nil {
 		return e
 	}
-	b, e := ioutil.ReadAll(rsp.Body)
+	issue, e := (&github.LoadIssue{Repo: repo, Number: r.Number}).Execute(c)
 	if e != nil {
 		return e
 	}
-	if rsp.Status[0] != '2' {
-		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
-	}
-	issue := &Issue{}
-	e = json.Unmarshal(b, issue)
-	if e != nil {
-		return e
-	}
-
 	labels, e := addLabel(issue, r.Label)
 	if e != nil {
 		return e
 	}
 
-	ci := &CreateIssue{
+	ci := &github.CreateIssue{
+		Repo:   repo,
+		Number: r.Number,
 		Labels: labels,
 	}
 
-	b, e = json.Marshal(ci)
+	issue, e = ci.Update(c)
 	if e != nil {
 		return e
-	}
-	rsp, e = authenticatedRequest("PATCH", u, bytes.NewReader(b))
-	if e != nil {
-		return e
-	}
-	defer rsp.Body.Close()
-	if rsp.Status[0] != '2' {
-		return fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
 	}
 	logger.Printf("labeled issue %d with label %q", r.Number, r.Label)
 	return nil
 }
 
-func addLabel(issue *Issue, label string) ([]string, error) {
+func addLabel(issue *github.Issue, label string) ([]string, error) {
 	labels := []string{}
 	for _, l := range issue.Labels {
 		if l.Name == label {

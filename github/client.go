@@ -1,7 +1,9 @@
 package github
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -20,8 +22,27 @@ func NewHttpClient(token string) *http.Client {
 	}
 }
 
+const apiRoot = "https://api.github.com"
+
 type Client struct {
 	*http.Client
+}
+
+func (client *Client) loadRequest(req *http.Request, i interface{}) error {
+	dbg.Printf("requesting %s with url %s", req.Method, req.URL.String())
+	rsp, e := client.Do(req)
+	if e != nil {
+		return e
+	}
+	b, e := ioutil.ReadAll(rsp.Body)
+	if e != nil {
+		return e
+	}
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("expected status 2xx, got %s. body=%s", rsp.Status, string(b))
+	}
+
+	return json.Unmarshal(b, i)
 }
 
 type auth struct {
