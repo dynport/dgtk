@@ -15,10 +15,9 @@ func (a Aggregations) UnmarshalJSON(b []byte) error {
 		return e
 	}
 	if a == nil {
-		return fmt.Errorf("a is null")
+		return fmt.Errorf("Aggregations must be set before unmarshalling")
 	}
-	e = a.load(i)
-	return e
+	return a.load(i)
 }
 
 // load initialized the Aggregations map from a generic map
