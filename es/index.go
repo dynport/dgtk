@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/dynport/dgtk/es/aggregations"
 )
 
 const (
@@ -375,7 +377,25 @@ func (index *Index) DeleteByQuery(query string) (b []byte, e error) {
 	return rsp.Body, nil
 }
 
-func (index *Index) Search(req *Request) (rsp *Response, e error) {
+func (index *Index) SearchRaw(req *Request) (*ResponseRaw, error) {
+	rsp := &ResponseRaw{Response: &Response{}}
+	rsp.Aggregations = aggregations.Aggregations{}
+	e := index.loadSearch(req, rsp)
+	return rsp, e
+}
+
+func (index *Index) Search(req *Request) (*Response, error) {
+	rsp := &Response{}
+	rsp.Aggregations = aggregations.Aggregations{}
+	e := index.loadSearch(req, rsp)
+	return rsp, e
+}
+
+type Sharder interface {
+	ShardsResponse() *ShardsResponse
+}
+
+func (index *Index) loadSearch(req *Request, rsp Sharder) error {
 	u := index.TypeUrl()
 	if !strings.HasSuffix(u, "/") {
 		u += "/"
@@ -383,39 +403,40 @@ func (index *Index) Search(req *Request) (rsp *Response, e error) {
 	u += "/_search"
 	httpRequest, e := http.NewRequest("POST", u, nil)
 	if e != nil {
-		return nil, e
+		return e
 	}
 	if req != nil {
 		writer := &bytes.Buffer{}
 		js := json.NewEncoder(writer)
 		e = js.Encode(req)
 		if e != nil {
-			return nil, e
+			return e
 		}
 		httpRequest.Body = ioutil.NopCloser(writer)
 	}
 	httpResponse, e := http.DefaultClient.Do(httpRequest)
 	if e != nil {
-		return nil, e
+		return e
 	}
 	defer httpResponse.Body.Close()
 	b, e := ioutil.ReadAll(httpResponse.Body)
 	if e != nil {
-		return nil, e
+		return e
 	}
+	dbg.Printf("resonse: %s", string(b))
 	if httpResponse.Status[0] != '2' {
-		return nil, fmt.Errorf("expected staus 2xx, git %s", httpResponse.Status, string(b))
+		return fmt.Errorf("expected staus 2xx, git %s", httpResponse.Status, string(b))
 	}
-	rsp = NewResponse(b)
 	e = json.Unmarshal(b, rsp)
 	if e != nil {
-		return nil, e
+		return e
 	}
-	if rsp.Shards != nil && len(rsp.Shards.Failures) > 0 {
-		b, _ := json.Marshal(rsp.Shards.Failures)
-		return nil, fmt.Errorf("%s", string(b))
+	shards := rsp.ShardsResponse()
+	if shards != nil && len(shards.Failures) > 0 {
+		b, _ := json.Marshal(shards.Failures)
+		return fmt.Errorf("%s", string(b))
 	}
-	return rsp, nil
+	return nil
 }
 
 func (index *Index) Post(u string, i interface{}) (*HttpResponse, error) {

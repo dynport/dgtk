@@ -9,14 +9,23 @@ func NewResponse(raw []byte) *Response {
 	}
 }
 
+type ResponseRaw struct {
+	*Response
+	Hits *HitsRaw `json:"hits"`
+}
+
 type Response struct {
 	Took         int                       `json:"took"`
 	TimedOut     bool                      `json:"timed_out"`
 	Facets       ResponseFacets            `json:"facets"`
 	Hits         Hits                      `json:"hits"`
-	Aggregations aggregations.Aggregations `json:"aggregations"`
 	Shards       *ShardsResponse           `json:"_shards,omitempty"`
 	Raw          []byte                    `json:"-"`
+	Aggregations aggregations.Aggregations `json:"aggregations,omitempty"`
+}
+
+func (r *Response) ShardsResponse() *ShardsResponse {
+	return r.Shards
 }
 
 type ShardsResponse struct {
