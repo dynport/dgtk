@@ -2,8 +2,9 @@ package es
 
 import (
 	"encoding/json"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCreateIndex(t *testing.T) {
@@ -53,8 +54,9 @@ func TestCreateIndex(t *testing.T) {
 
 		for query, host := range queryHost {
 			req = &Request{Size: 10}
-			req.Query = &Query{}
-			req.Query.QueryString = &QueryString{Query: query}
+			q := &Query{}
+			q.QueryString = &QueryString{Query: query}
+			req.Query = q
 
 			res, e = index.Search(req)
 			So(e, ShouldBeNil)

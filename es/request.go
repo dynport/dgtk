@@ -3,9 +3,9 @@ package es
 import "encoding/json"
 
 type Request struct {
-	Index        string `json:"-"`
-	Query        *Query `json:"query,omitempty"`
-	Size         int    `json:"size"`
+	Index        string      `json:"-"`
+	Query        interface{} `json:"query,omitempty"`
+	Size         int         `json:"size"`
 	Facets       `json:"facets,omitempty"`
 	Aggregations map[string]json.Marshaler `json:"aggs,omitempty"`
 	*Sort        `json:"sort,omitempty"`
