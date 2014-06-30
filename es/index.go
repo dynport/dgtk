@@ -413,8 +413,7 @@ func (index *Index) loadSearch(req interface{}, rsp Sharder) error {
 	}
 	if req != nil {
 		writer := &bytes.Buffer{}
-		js := json.NewEncoder(writer)
-		e = js.Encode(req)
+		e := json.NewEncoder(writer).Encode(req)
 		if e != nil {
 			return e
 		}
