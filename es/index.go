@@ -383,14 +383,14 @@ func (index *Index) DeleteByQuery(query string) (b []byte, e error) {
 	return rsp.Body, nil
 }
 
-func (index *Index) SearchRaw(req *Request) (*ResponseRaw, error) {
+func (index *Index) SearchRaw(req interface{}) (*ResponseRaw, error) {
 	rsp := &ResponseRaw{Response: &Response{}}
 	rsp.Aggregations = aggregations.Aggregations{}
 	e := index.loadSearch(req, rsp)
 	return rsp, e
 }
 
-func (index *Index) Search(req *Request) (*Response, error) {
+func (index *Index) Search(req interface{}) (*Response, error) {
 	rsp := &Response{}
 	rsp.Aggregations = aggregations.Aggregations{}
 	e := index.loadSearch(req, rsp)
@@ -401,7 +401,7 @@ type Sharder interface {
 	ShardsResponse() *ShardsResponse
 }
 
-func (index *Index) loadSearch(req *Request, rsp Sharder) error {
+func (index *Index) loadSearch(req interface{}, rsp Sharder) error {
 	u := index.TypeUrl()
 	if !strings.HasSuffix(u, "/") {
 		u += "/"
