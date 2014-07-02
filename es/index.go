@@ -313,7 +313,9 @@ func (index *Index) GlobalMapping() (m *Mapping, e error) {
 }
 
 func (index *Index) Stats() (*Stats, error) {
-	rsp, e := http.Get(index.IndexUrl() + "/_stats")
+	u := index.IndexUrl() + "/_stats"
+	dbg.Printf("requesting %q", u)
+	rsp, e := http.Get(u)
 	if e != nil {
 		return nil, e
 	}
