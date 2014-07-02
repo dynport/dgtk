@@ -46,6 +46,8 @@ func (indexer *Indexer) resetTimer() bool {
 
 var logger = log.New(os.Stderr, "", 0)
 
+// TODO change handling to e.g. Add command with implizit opening of channel
+// to not expose the channel to the public
 func (indexer *Indexer) Start() chan *Doc {
 	if indexer.BatchSize == 0 {
 		indexer.BatchSize = 100
