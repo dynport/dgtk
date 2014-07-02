@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+func NewProgressWriter(w io.Writer) *ProgressWriter {
+	return &ProgressWriter{Writer: w}
+}
+
 type ProgressWriter struct {
 	Writer  io.Writer
 	last    string
