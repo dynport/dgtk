@@ -33,6 +33,7 @@ func (w *ProgressWriter) Write(b []byte) (int, error) {
 func (w *ProgressWriter) Close() error {
 	if w.written > 0 && w.Writer != nil {
 		_, e := fmt.Fprint(w.Writer, "\n")
+		w.Writer = nil
 		return e
 	}
 	return nil
