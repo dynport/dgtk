@@ -99,18 +99,25 @@ func handleDescription(tagMap map[string]string) (desc string) {
 	return ""
 }
 
-var longOptionRE = regexp.MustCompile("^[a-zA-Z][a-zA-Z-]+$")
+var longOptionRE = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-]+$")
 
 func handleLongIdentifier(tagMap map[string]string) (long string, e error) {
 	if value, found := tagMap["long"]; found {
-		switch {
-		case len(value) <= 1:
-			return "", fmt.Errorf("long options must have at least two characters")
-		case longOptionRE.MatchString(value):
-			return value, nil
-		default:
-			return "", fmt.Errorf("long options must only have characters from [A-Za-z-]")
+		e := validateLongOption(value)
+		if e != nil {
+			return "", e
 		}
+		return value, nil
 	}
 	return "", nil
+}
+
+func validateLongOption(value string) error {
+	switch {
+	case len(value) <= 1:
+		return fmt.Errorf("long options must have at least two characters")
+	case !longOptionRE.MatchString(value):
+		return fmt.Errorf("long options must only have characters from " + longOptionRE.String())
+	}
+	return nil
 }
