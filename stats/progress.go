@@ -26,6 +26,10 @@ func (s *progress) Total() int {
 	return s.total
 }
 
+func (s *progress) Perc() float64 {
+	return 100.0 * float64(s.Count()) / float64(s.Total())
+}
+
 func (s *progress) ToGo() time.Duration {
 	pending := float64(s.total - s.count)
 	return time.Duration(pending/s.PerSecond()) * time.Second
