@@ -1,0 +1,9 @@
+language: go
+
+go: 
+  - 1.3
+
+services:
+  - elasticsearch
+
+script: go get -v -e -t ./... && go test -v ./...
