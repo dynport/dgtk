@@ -10,7 +10,6 @@ import (
 func TestCreateIndex(t *testing.T) {
 	Convey("Create index", t, func() {
 		index.DeleteIndex()
-		So(1, ShouldEqual, 1)
 		b, e := json.Marshal(KeywordIndex())
 		So(e, ShouldBeNil)
 		So(len(b), ShouldNotEqual, 0)

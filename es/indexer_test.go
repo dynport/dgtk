@@ -3,6 +3,7 @@ package es
 import (
 	"testing"
 	"time"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -25,8 +26,10 @@ func waitFor(checkEvery time.Duration, maxWait time.Duration, check func() bool)
 func TestIndexer(t *testing.T) {
 	Convey("Indexer", t, func() {
 		index.DeleteIndex()
+		_, e := index.CreateIndex(KeywordIndex())
+		So(e, ShouldBeNil)
 		index.Refresh()
-		indexer := &Indexer{Index: index, IndexEvery: 100 * time.Millisecond, BatchSize: 4}
+		indexer := &Indexer{Index: index, IndexEvery: 1 * time.Second, BatchSize: 4}
 		So(indexer, ShouldNotBeNil)
 		ch := indexer.Start()
 		ch <- &Doc{Source: Source{"Raw": "Line 1"}}
@@ -40,7 +43,7 @@ func TestIndexer(t *testing.T) {
 		So(rsp.Hits.Total, ShouldEqual, 0)
 		So(indexer.Stats.Runs, ShouldEqual, 0)
 
-		check := waitFor(10*time.Millisecond, 500*time.Millisecond, func() bool {
+		check := waitFor(10*time.Millisecond, 2*time.Second, func() bool {
 			return (indexer.Stats.Runs == 1) && (indexer.Stats.IndexedDocs == 3)
 		})
 		So(check, ShouldBeTrue)
