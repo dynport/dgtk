@@ -47,10 +47,13 @@ func Fields(line string) []string {
 	for _, f := range fields {
 		if strings.Contains(f, sep) {
 			cnt := strings.Count(f, sep)
-			if cnt != 1 {
-				panic("cnt != 1 not supported (yet)")
-			}
 			replaced := strings.Replace(f, sep, "", -1)
+			if cnt == 2 {
+				out = append(out, replaced)
+				continue
+			} else if cnt != 1 {
+				panic("cnt != 1 or 2 not supported (yet)")
+			}
 			switch inQuotes {
 			case true:
 				out = append(out, current+" "+replaced)
@@ -69,43 +72,25 @@ func Fields(line string) []string {
 }
 
 func parseTags(raw string) map[string]interface{} {
-	fields := strings.Fields(raw)
-	inQuotes := false
-	currentKey := ""
-	valueParts := []string{}
 	t := map[string]interface{}{}
-	for _, field := range fields {
-		if inQuotes {
-			valueParts = append(valueParts, field)
-			if strings.Contains(field, `"`) {
-				inQuotes = false
-				v := strings.Join(valueParts, " ")
-				t[currentKey] = removeQuotes(v)
-			}
-		} else {
-			kv := strings.SplitN(field, "=", 2)
-			if len(kv) == 2 && validKeyRegexp.MatchString(kv[0]) {
-				currentKey = kv[0]
-				value := kv[1]
-				if strings.Contains(value, `"`) && !strings.HasSuffix(value, `"`) {
-					valueParts = []string{value}
-					inQuotes = true
-				} else if value != "-" {
-					m := callsRegexp.FindStringSubmatch(value)
-					if len(m) == 3 {
-						totalTime, e := strconv.ParseFloat(m[1], 64)
-						if e == nil {
-							calls, e := strconv.ParseInt(m[2], 10, 64)
-							if e == nil {
-								t[currentKey+"_time"] = totalTime
-								t[currentKey+"_calls"] = calls
-							}
-						}
-					} else {
-						t[currentKey] = parseTagValue(value)
-						currentKey = ""
+	for _, field := range Fields(raw) {
+		kv := strings.SplitN(field, "=", 2)
+		if len(kv) == 2 && validKeyRegexp.MatchString(kv[0]) {
+			currentKey := kv[0]
+			value := kv[1]
+			m := callsRegexp.FindStringSubmatch(value)
+			if len(m) == 3 {
+				totalTime, e := strconv.ParseFloat(m[1], 64)
+				if e == nil {
+					calls, e := strconv.ParseInt(m[2], 10, 64)
+					if e == nil {
+						t[currentKey+"_time"] = totalTime
+						t[currentKey+"_calls"] = calls
 					}
 				}
+			} else {
+				t[currentKey] = parseTagValue(value)
+				currentKey = ""
 			}
 		}
 	}
