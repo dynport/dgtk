@@ -38,6 +38,36 @@ func removeQuotes(raw string) string {
 	return raw
 }
 
+func Fields(line string) []string {
+	fields := strings.Fields(line)
+	inQuotes := false
+	sep := `"`
+	current := ""
+	out := []string{}
+	for _, f := range fields {
+		if strings.Contains(f, sep) {
+			cnt := strings.Count(f, sep)
+			if cnt != 1 {
+				panic("cnt != 1 not supported (yet)")
+			}
+			replaced := strings.Replace(f, sep, "", -1)
+			switch inQuotes {
+			case true:
+				out = append(out, current+" "+replaced)
+				inQuotes = false
+			case false:
+				current = replaced
+				inQuotes = true
+			}
+		} else if inQuotes {
+			current = current + " " + f
+		} else {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 func parseTags(raw string) map[string]interface{} {
 	fields := strings.Fields(raw)
 	inQuotes := false

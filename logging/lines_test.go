@@ -18,6 +18,28 @@ const (
 	LINE_WITH_KEY_VALUE_PAIRS = `2013-12-09T14:19:14.575268+01:00 some.host nginx.notice[]: some.ip - host=phraseapp.com method=GET status=200 length=11928 pid=24969 rev=db7b58fa06cc uuid=56be52ae-7cd7-4a9e-b7ce-4a55074976ad action=translations#index etag=179d6a6dccacc3116cf3beb49187ff3d rack=2.120354 redis=0.000666/1 db=1.001724/240 solr=0.147277/23 db_cache=0.131241/473 total=2.235 upstream_time=2.235 ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36" uri="/projects/phraseapp-demo-some-id/locales/de/translations" ref="https://phraseapp.com/en/account/login"`
 )
 
+func TestFields(t *testing.T) {
+	Convey("Fields", t, func() {
+		line := `this is a test`
+
+		fields := Fields(line)
+		So(len(fields), ShouldEqual, 4)
+		So(fields[1], ShouldEqual, "is")
+
+		line = `this "is a test" with extras`
+		fields = Fields(line)
+		So(len(fields), ShouldEqual, 4)
+		So(fields[1], ShouldEqual, "is a test")
+		So(fields[2], ShouldEqual, "with")
+
+		line = `this is us="user agent" test`
+		fields = Fields(line)
+		So(len(fields), ShouldEqual, 4)
+		So(fields[0], ShouldEqual, "this")
+		So(fields[2], ShouldEqual, `us=user agent`)
+	})
+}
+
 func TestLineTags(t *testing.T) {
 	line := &SyslogLine{}
 	Convey("Line Tags", t, func() {
