@@ -17,9 +17,11 @@ func New(token string) (*Client, error) {
 }
 
 func NewHttpClient(token string) *http.Client {
-	return &http.Client{
-		Transport: &auth{token: token},
+	cl := &http.Client{}
+	if token != "" {
+		cl.Transport = &auth{token: token}
 	}
+	return cl
 }
 
 const apiRoot = "https://api.github.com"
