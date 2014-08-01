@@ -146,6 +146,10 @@ type Index struct {
 	Logger    Logger
 }
 
+func (idx *Index) Indexer() *Indexer {
+	return &Indexer{Index: idx}
+}
+
 func (index *Index) IndexExists() (exists bool, e error) {
 	if index.Index == "" {
 		return false, fmt.Errorf("no index set")
