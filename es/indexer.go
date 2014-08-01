@@ -85,7 +85,10 @@ func (indexer *Indexer) Start() chan *Doc {
 				indexer.docsBatch = append(indexer.docsBatch, doc)
 				if len(indexer.docsBatch) >= indexer.BatchSize {
 					indexer.timer.Stop()
-					indexer.indexBatch()
+					e := indexer.indexBatch()
+					if e != nil {
+						logger.Printf("ERROR: %s", e)
+					}
 					indexer.resetTimer()
 				}
 			}
