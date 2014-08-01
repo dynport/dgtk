@@ -1,8 +1,6 @@
 package jenkins
 
-import (
-	"encoding/xml"
-)
+import "encoding/xml"
 
 type Config struct {
 	XMLName                          xml.Name      `xml:"project"`
