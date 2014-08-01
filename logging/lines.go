@@ -9,14 +9,14 @@ import (
 )
 
 type SyslogLine struct {
-	Raw      string
-	Time     time.Time
-	Host     string
-	Tag      string
-	Severity string
-	Pid      int
-	Port     string
-	Message  string
+	Raw      string    `json:"raw,omitempty"`
+	Time     time.Time `json:"time,omitempty"`
+	Host     string    `json:"host,omitempty"`
+	Tag      string    `json:"tag,omitempty"`
+	Severity string    `json:"severity,omitempty"`
+	Pid      int       `json:"pid,omitempty"`
+	Port     string    `json:"port,omitempty"`
+	Message  string    `json:"message,omitempty"`
 
 	fields     []string
 	parsed     bool
@@ -205,20 +205,20 @@ func (line *UnicornLine) Parse(raw string) error {
 
 type NginxLine struct {
 	*SyslogLine
-	XForwardedFor []string
-	Method        string
-	Status        string
-	Length        int
-	TotalTime     float64
-	UnicornTime   float64
-	HttpHost      string
-	UserAgentName string
-	Uri           string
-	Referer       string
-	Action        string
-	Revision      string
-	UUID          string
-	Etag          string
+	XForwardedFor []string `json:"x_forwarded_for,omitempty"`
+	Method        string   `json:"method,omitempty"`
+	Status        string   `json:"status,omitempty"`
+	Length        int      `json:"length,omitempty"`
+	TotalTime     float64  `json:"total_time,omitempty"`
+	UnicornTime   float64  `json:"unicorn_time,omitempty"`
+	HttpHost      string   `json:"http_host,omitempty"`
+	UserAgentName string   `json:"user_agent_name,omitempty"`
+	Uri           string   `json:"uri,omitempty"`
+	Referer       string   `json:"referer,omitempty"`
+	Action        string   `json:"action,omitempty"`
+	Revision      string   `json:"revision,omitempty"`
+	UUID          string   `json:"uuid,omitempty"`
+	Etag          string   `json:"etag,omitempty"`
 }
 
 var quotesRegexp = regexp.MustCompile(`(ua|uri|ref)="(.*?)"`)
