@@ -246,7 +246,11 @@ func (line *NginxLine) Parse(raw string) error {
 			case "action":
 				line.Action = value
 			case "nginx":
-				forwarded = true
+				if !strings.Contains(line.Raw, "forwarded=") {
+					forwarded = true
+				}
+			case "forwarded":
+				line.XForwardedFor = []string{parts[1]}
 			case "method":
 				line.Method = value
 			case "uuid":
@@ -265,7 +269,9 @@ func (line *NginxLine) Parse(raw string) error {
 				line.UnicornTime, _ = strconv.ParseFloat(value, 64)
 			}
 		} else if i == 2 && strings.HasPrefix(field, "nginx") {
-			forwarded = true
+			if !strings.Contains(line.Raw, "forwarded=") {
+				forwarded = true
+			}
 		} else if forwarded {
 			if strings.HasPrefix(field, "host=") || field == "-" {
 				forwarded = false
