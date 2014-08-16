@@ -9,15 +9,16 @@ import (
 )
 
 type issuesList struct {
-	All       bool   `cli:"opt --all"`
-	Closed    bool   `cli:"opt --closed"`
-	Assignee  string `cli:"opt --assignee"`
-	Creator   string `cli:"opt --creator"`
-	Mentioned string `cli:"opt --mentioned"`
-	Asc       bool   `cli:"opt --asc"`
-	Sort      string `cli:"opt --sort"`
-	Labels    string `cli:"opt --labels"`
-	Milestone int    `cli:"opt --milestone"`
+	Query     []string `cli:"arg"`
+	All       bool     `cli:"opt --all"`
+	Closed    bool     `cli:"opt --closed"`
+	Assignee  string   `cli:"opt --assignee"`
+	Creator   string   `cli:"opt --creator"`
+	Mentioned string   `cli:"opt --mentioned"`
+	Asc       bool     `cli:"opt --asc"`
+	Sort      string   `cli:"opt --sort"`
+	Labels    string   `cli:"opt --labels"`
+	Milestone int      `cli:"opt --milestone"`
 }
 
 func (r *issuesList) Run() error {
@@ -54,6 +55,17 @@ func (r *issuesList) Run() error {
 	}
 	t := gocli.NewTable()
 	for _, i := range issues {
+		matches := func() bool {
+			for _, q := range r.Query {
+				if !strings.Contains(i.Title, q) {
+					return false
+				}
+			}
+			return true
+		}()
+		if !matches {
+			continue
+		}
 		orga, issueRepo, e := i.Repo()
 		if e != nil {
 			return e
