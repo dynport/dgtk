@@ -405,6 +405,7 @@ func (index *Index) Search(req interface{}) (*Response, error) {
 
 type Sharder interface {
 	ShardsResponse() *ShardsResponse
+	SetRaw([]byte)
 }
 
 func (index *Index) loadSearch(req interface{}, rsp Sharder) error {
@@ -434,6 +435,7 @@ func (index *Index) loadSearch(req interface{}, rsp Sharder) error {
 	if e != nil {
 		return e
 	}
+	rsp.SetRaw(b)
 	dbg.Printf("resonse: %s", string(b))
 	if httpResponse.Status[0] != '2' {
 		return fmt.Errorf("expected staus 2xx, git %s", httpResponse.Status, string(b))

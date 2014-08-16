@@ -24,6 +24,10 @@ type Response struct {
 	Aggregations aggregations.Aggregations `json:"aggregations,omitempty"`
 }
 
+func (s *Response) SetRaw(b []byte) {
+	s.Raw = b
+}
+
 func (r *Response) ShardsResponse() *ShardsResponse {
 	return r.Shards
 }
