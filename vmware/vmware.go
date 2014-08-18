@@ -203,6 +203,7 @@ func List() (vms Vms, e error) {
 	if e != nil {
 		return nil, e
 	}
+	dbg.Printf("%s", out)
 	lines := strings.Split(out, "\n")
 	if len(lines) > 1 {
 		for _, line := range lines[1:] {

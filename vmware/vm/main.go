@@ -10,6 +10,7 @@ var router = cli.NewRouter()
 func init() {
 	router.Register("tags/create", &TagsCreate{}, "Create Tag")
 	router.Register("tags/delete", &TagsDelete{}, "Delete Tag")
+	router.Register("tags/cleanup", &tagsCleanup{}, "Cleanup Tags")
 	router.Register("tags/list", &TagsList{}, "List Tags")
 	router.Register("vms/clone", &Clone{}, "Clone VM")
 	router.Register("vms/delete", &Delete{}, "Delete VM")

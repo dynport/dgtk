@@ -21,13 +21,13 @@ func (list *ListAction) Run() error {
 	if e != nil {
 		return e
 	}
-	tags := &vmware.Tags{}
-	e = tags.Load()
+	tags, e := vmware.LoadTags()
 	if e != nil {
 		return e
 	}
+
 	tagsMap := map[string]string{}
-	for _, t := range tags.Tags() {
+	for _, t := range tags {
 		tagsMap[t.Id()] = t.Value
 	}
 	table.Add("Id", "Name", "Status", "Started", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")

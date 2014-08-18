@@ -7,16 +7,12 @@ import (
 )
 
 func UpdateTag(tag *Tag) error {
-	tags := Tags{}
-	e := tags.Load()
+	tags, e := LoadTags()
+	tags, e = tags.Update(tag)
 	if e != nil {
 		return e
 	}
-	e = tags.Update(tag)
-	if e != nil {
-		return e
-	}
-	return tags.Store()
+	return StoreTags(tags)
 }
 
 type Tag struct {
@@ -25,30 +21,34 @@ type Tag struct {
 	Value string
 }
 
-type Tags struct {
-	tags []*Tag
+func LoadTags() (Tags, error) {
+	f, e := os.Open(tagsPath)
+	if e != nil {
+		return nil, e
+	}
+	defer f.Close()
+	var tags Tags
+	return tags, json.NewDecoder(f).Decode(&tags)
 }
 
-func (tags *Tags) Tags() []*Tag {
-	return tags.tags
-}
+type Tags []*Tag
 
 func (list Tags) Len() int {
-	return len(list.tags)
+	return len(list)
 }
 
 func (list Tags) Swap(a, b int) {
-	list.tags[a], list.tags[b] = list.tags[b], list.tags[a]
+	list[a], list[b] = list[b], list[a]
 }
 
 func (list Tags) Less(a, b int) bool {
-	return list.tags[a].Id() < list.tags[b].Id()
+	return list[a].Id() < list[b].Id()
 }
 
-func (list *Tags) Update(tag *Tag) error {
-	newTags := []*Tag{}
+func (list Tags) Update(tag *Tag) (Tags, error) {
+	newTags := Tags{}
 	handled := false
-	for _, t := range list.tags {
+	for _, t := range list {
 		if t.VmId == tag.VmId && t.Key == tag.Key {
 			handled = true
 			if tag.Value != "" {
@@ -61,8 +61,7 @@ func (list *Tags) Update(tag *Tag) error {
 	if !handled {
 		newTags = append(newTags, tag)
 	}
-	list.tags = newTags
-	return nil
+	return newTags, nil
 }
 
 func (tag *Tag) Id() string {
@@ -71,25 +70,11 @@ func (tag *Tag) Id() string {
 
 var tagsPath = os.ExpandEnv("$HOME/.vmware.tags")
 
-func (list *Tags) Store() error {
+func StoreTags(tags Tags) error {
 	f, e := os.Create(tagsPath)
 	if e != nil {
 		return e
 	}
 	defer f.Close()
-	return json.NewEncoder(f).Encode(list.tags)
-}
-
-func (list *Tags) Load() error {
-	f, e := os.Open(tagsPath)
-	if e != nil {
-		if os.IsNotExist(e) {
-			return nil
-		}
-		return e
-	}
-	defer f.Close()
-	list.tags = []*Tag{}
-	e = json.NewDecoder(f).Decode(&list.tags)
-	return e
+	return json.NewEncoder(f).Encode(tags)
 }
