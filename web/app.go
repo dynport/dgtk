@@ -8,14 +8,14 @@ import (
 	"os"
 )
 
-func NewTemplate(layout Layout) *Template {
-	return &Template{
+func New(layout Layout) *App {
+	return &App{
 		Funcs:  template.FuncMap{},
 		Layout: layout,
 	}
 }
 
-type Template struct {
+type App struct {
 	Layout       Layout
 	DefaultTitle string
 	Funcs        template.FuncMap
@@ -23,7 +23,7 @@ type Template struct {
 
 var logger = log.New(os.Stderr, "", 0)
 
-func (t *Template) Handler(action Action) func(w http.ResponseWriter, r *http.Request) {
+func (t *App) Handler(action Action) func(w http.ResponseWriter, r *http.Request) {
 	if t.Layout == nil {
 		return t.ActionHandler(action)
 	} else {
@@ -31,7 +31,7 @@ func (t *Template) Handler(action Action) func(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (t *Template) ActionHandler(action Action) func(w http.ResponseWriter, r *http.Request) {
+func (t *App) ActionHandler(action Action) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		action, ok := clone(action).(Action)
 		if !ok {
@@ -55,7 +55,7 @@ func renderAction(r *http.Request, action Action, funcs template.FuncMap) ([]byt
 	return render(b, funcs, action)
 }
 
-func (t *Template) HandleAction(w http.ResponseWriter, r *http.Request, action Action) {
+func (t *App) HandleAction(w http.ResponseWriter, r *http.Request, action Action) {
 	b, e := renderAction(r, action, t.Funcs)
 	if e != nil {
 		t.Render500(w, e)
@@ -65,6 +65,6 @@ func (t *Template) HandleAction(w http.ResponseWriter, r *http.Request, action A
 }
 
 // allow registering error pages
-func (t *Template) Render500(w http.ResponseWriter, e error) {
+func (t *App) Render500(w http.ResponseWriter, e error) {
 	http.Error(w, e.Error(), 500)
 }
