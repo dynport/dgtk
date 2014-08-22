@@ -46,6 +46,15 @@ func (vm *Vm) Ip() (string, error) {
 	return "", nil
 }
 
+func (vm *Vm) Name() string {
+	for _, t := range vm.Tags {
+		if t.Key == "Name" {
+			return t.Value
+		}
+	}
+	return ""
+}
+
 func (vm *Vm) Running() bool {
 	files, e := filepath.Glob(vm.dir() + "/*.vmem")
 	if e != nil {
