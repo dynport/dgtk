@@ -11,6 +11,7 @@ import (
 
 type Vm struct {
 	Path string
+	Tags Tags
 
 	// cached values
 	started time.Time
