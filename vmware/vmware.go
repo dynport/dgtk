@@ -176,9 +176,23 @@ func FindVms(locations []string) (vms Vms, e error) {
 			raw = append(raw, tmp...)
 		}
 	}
+
+	tags, e := LoadTags()
+	if e != nil {
+		return nil, e
+	}
+	tagsMap := map[string]Tags{}
+
+	for _, tag := range tags {
+		if tagsMap[tag.VmId] == nil {
+			tagsMap[tag.VmId] = Tags{}
+		}
+		tagsMap[tag.VmId] = append(tagsMap[tag.VmId], tag)
+	}
 	m := map[string]bool{}
 	for _, a := range raw {
 		if _, ok := m[a.Path]; !ok {
+			a.Tags = tagsMap[a.Id()]
 			vms = append(vms, a)
 			m[a.Path] = true
 
