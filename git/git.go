@@ -34,23 +34,14 @@ func (repo *Repository) Fetch() error {
 
 const githubPrefix = "git@github.com:"
 
-func (repo *Repository) cachePath() string {
-	name := repo.Name()
-	if strings.HasPrefix(repo.Origin, githubPrefix) {
-		name = strings.TrimPrefix(repo.Origin, githubPrefix)
-		return repo.cacheDir() + "/github.com/" + name
-	}
-	return repo.cacheDir() + "/" + repo.Name()
-}
-
 func (repo *Repository) clone() error {
-	logger.Printf("cloning %s into %s", repo.Origin, repo.cachePath())
-	cmd := exec.Command("git", "clone", "--bare", repo.Origin, repo.cachePath())
+	logger.Printf("cloning %s into %s", repo.Origin, repo.localPath())
+	cmd := exec.Command("git", "clone", "--bare", repo.Origin, repo.localPath())
 	if b, e := cmd.CombinedOutput(); e != nil {
 		logger.Printf("ERROR: %s", strings.TrimSpace(string(b)))
 		return e
 	}
-	cmd = exec.Command("git", "--git-dir="+repo.cachePath(), "config", "remote.origin.fetch", "refs/heads/*:refs/heads/*")
+	cmd = exec.Command("git", "--git-dir="+repo.localPath(), "config", "remote.origin.fetch", "refs/heads/*:refs/heads/*")
 	if b, e := cmd.CombinedOutput(); e != nil {
 		logger.Printf("ERROR: %s", strings.TrimSpace(string(b)))
 		return e
@@ -64,18 +55,18 @@ func (repo *Repository) Init() error {
 		return e
 	}
 
-	if !fileExists(repo.cachePath()) {
+	if !fileExists(repo.localPath()) {
 		if e := repo.clone(); e != nil {
 			return e
 		}
 	} else {
-		logger.Printf("already cloned %s to %s", repo.Origin, repo.cachePath())
+		logger.Printf("already cloned %s to %s", repo.Origin, repo.localPath())
 	}
 	return nil
 }
 
 func (repo *Repository) createGitCommand(gitCommand ...string) *exec.Cmd {
-	return exec.Command("git", append([]string{"--git-dir=" + repo.cachePath()}, gitCommand...)...)
+	return exec.Command("git", append([]string{"--git-dir=" + repo.localPath()}, gitCommand...)...)
 }
 
 func (repo *Repository) executeGitCommand(gitCommand ...string) (b []byte, e error) {
@@ -208,14 +199,24 @@ func (repo *Repository) DateOf(revision, file string) (time.Time, error) {
 	return time.Unix(int64(d), 0), nil
 }
 
+func (repo *Repository) localPath() string {
+	if repo.LocalPath == "" {
+		name := repo.Name()
+		if strings.HasPrefix(repo.Origin, githubPrefix) {
+			name = strings.TrimPrefix(repo.Origin, githubPrefix)
+			repo.LocalPath = repo.cacheDir() + "/github.com/" + name
+		} else {
+			repo.LocalPath = repo.cacheDir() + "/" + repo.Name()
+		}
+	}
+	return repo.LocalPath
+}
+
 func (repo *Repository) Commits(options *CommitOptions) (commits []*Commit, e error) {
 	if options == nil {
 		options = &CommitOptions{Limit: 10}
 	}
-	path := repo.LocalPath
-	if path == "" {
-		path = repo.cachePath()
-	}
+
 	parts := []string{"log", "-n", strconv.Itoa(options.Limit), "--pretty=format:%H\t%at\t%s"}
 	if options.Pattern != "" {
 		parts = append(parts, options.Pattern)
