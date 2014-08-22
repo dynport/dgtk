@@ -17,6 +17,19 @@ type Vm struct {
 	started time.Time
 }
 
+func (vm *Vm) Matches(q string) bool {
+	values := []string{vm.Id()}
+	for _, tag := range vm.Tags {
+		values = append(values, tag.Value)
+	}
+	for _, v := range values {
+		if strings.Contains(v, q) {
+			return true
+		}
+	}
+	return false
+}
+
 func (vm *Vm) Ip() (string, error) {
 	leases, e := AllLeases()
 	if e != nil {
@@ -132,10 +145,11 @@ func (list Vms) FindFirst(name string) *Vm {
 }
 
 func (list Vms) Search(name string) (vms Vms) {
+	out := Vms{}
 	for _, vm := range list {
-		if vm.Id() == name {
-			vms = append(vms, vm)
+		if vm.Matches(name) {
+			out = append(out, vm)
 		}
 	}
-	return vms
+	return out
 }
