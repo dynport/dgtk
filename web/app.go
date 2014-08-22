@@ -35,7 +35,7 @@ func (t *App) ActionHandler(action Action) func(w http.ResponseWriter, r *http.R
 	return func(w http.ResponseWriter, r *http.Request) {
 		action, ok := clone(action).(Action)
 		if !ok {
-			t.Render500(w, fmt.Errorf("type of action must be web.Action, was %T", action))
+			t.HandleError(w, fmt.Errorf("type of action must be web.Action, was %T", action))
 			return
 		} else {
 			t.HandleAction(w, r, action)
@@ -58,13 +58,19 @@ func renderAction(r *http.Request, action Action, funcs template.FuncMap) ([]byt
 func (t *App) HandleAction(w http.ResponseWriter, r *http.Request, action Action) {
 	b, e := renderAction(r, action, t.Funcs)
 	if e != nil {
-		t.Render500(w, e)
+		t.HandleError(w, e)
 	} else {
 		w.Write(b)
 	}
 }
 
 // allow registering error pages
-func (t *App) Render500(w http.ResponseWriter, e error) {
-	http.Error(w, e.Error(), 500)
+func (t *App) HandleError(w http.ResponseWriter, e error) {
+	status := 500
+	if s, ok := e.(interface {
+		Status() int
+	}); ok {
+		status = s.Status()
+	}
+	http.Error(w, e.Error(), status)
 }

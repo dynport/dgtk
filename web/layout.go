@@ -47,7 +47,7 @@ func (t *App) LayoutHandler(layout Layout, action Action) func(w http.ResponseWr
 			return nil
 		}()
 		if e != nil {
-			t.Render500(w, e)
+			t.HandleError(w, e)
 		}
 	}
 }
