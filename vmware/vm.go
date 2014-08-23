@@ -56,6 +56,10 @@ func (vm *Vm) Name() string {
 }
 
 func (vm *Vm) Running() bool {
+	ip, e := vm.Ip()
+	if e != nil || ip == "" {
+		return false
+	}
 	files, e := filepath.Glob(vm.dir() + "/*.vmem")
 	if e != nil {
 		return false
