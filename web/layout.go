@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type Layout interface {
@@ -11,8 +13,8 @@ type Layout interface {
 	Template() ([]byte, error)
 }
 
-func (t *App) LayoutHandler(layout Layout, action Action) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (t *App) LayoutHandler(layout Layout, action Action) func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		e := func() error {
 			action, ok := clone(action).(Action)
 			if !ok {
@@ -23,7 +25,7 @@ func (t *App) LayoutHandler(layout Layout, action Action) func(w http.ResponseWr
 				return fmt.Errorf("unable to cast %T into Layout", layout)
 			}
 
-			b, e := renderAction(r, action, t.Funcs)
+			b, e := renderAction(r, action, params, t.Funcs)
 			if e != nil {
 				return e
 			}
