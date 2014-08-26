@@ -276,14 +276,13 @@ const TPL = `package {{ .Pkg }}
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 	"strings"
+	"time"
 )
 
 var builtAt time.Time
@@ -427,14 +426,14 @@ func (a *assetFile) Read(p []byte) (n int, e error) {
 	return a.Reader.Read(p)
 }
 
+var DevPath string
+
 func init() {
 	builtAt = time.Now()
-	env_name := fmt.Sprintf("GOASSETS_PATH")
-	path := os.Getenv(env_name)
-	if path != "" {
-		stat, e := os.Stat(path)
+	if DevPath != "" {
+		stat, e := os.Stat(DevPath)
 		if e == nil && stat.IsDir() {
-			assets = &assetOsFS{root: path}
+			assets = &assetOsFS{root: DevPath}
 			return
 		}
 	}
