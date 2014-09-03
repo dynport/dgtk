@@ -2,9 +2,10 @@ package cli
 
 import (
 	"fmt"
-	"github.com/dynport/dgtk/tagparse"
 	"reflect"
 	"strings"
+
+	"github.com/dynport/dgtk/tagparse"
 )
 
 type action struct {
@@ -140,19 +141,22 @@ func (a *action) handleField(field reflect.StructField, value reflect.Value) (e 
 
 func (a *action) parseArgs(params []string) (e error) {
 	argIdx := 0
+	ignoreOptions := false
 	for idx := 0; idx < len(params); idx++ {
 		value := params[idx]
 		switch {
-		case strings.Contains(value, " "): // Must be an arg!
+		case !ignoreOptions && strings.Contains(value, " "): // Must be an arg!
 			if argIdx, e = a.handleArgs(value, argIdx); e != nil {
 				return e
 			}
-		case strings.HasPrefix(value, "--"):
+		case !ignoreOptions && value == "--":
+			ignoreOptions = true
+		case !ignoreOptions && strings.HasPrefix(value, "--"):
 			idx, e = a.handleParams(value[2:], params, idx)
 			if e != nil {
 				return e
 			}
-		case strings.HasPrefix(value, "-"):
+		case !ignoreOptions && strings.HasPrefix(value, "-"):
 			idx, e = a.handleParams(value[1:], params, idx)
 			if e != nil {
 				return e
