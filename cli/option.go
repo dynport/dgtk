@@ -49,7 +49,10 @@ func (o *option) description() string {
 	desc += o.shortDescription(" ")
 	desc += fmt.Sprintf("%-*s", 30-len(desc), " ") + o.desc
 	if o.value != "" {
-		desc += " (default: " + o.value + ")"
+		if o.desc != "" {
+			desc += " "
+		}
+		desc += "(default: " + o.value + ")"
 	}
 	return desc
 }
