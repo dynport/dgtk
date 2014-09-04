@@ -152,12 +152,12 @@ func (a *action) parseArgs(params []string) (e error) {
 		case !ignoreOptions && value == "--":
 			ignoreOptions = true
 		case !ignoreOptions && strings.HasPrefix(value, "--"):
-			idx, e = a.handleParams(value[2:], params, idx)
+			idx, e = a.handleParams(value[2:], false, params, idx)
 			if e != nil {
 				return e
 			}
 		case !ignoreOptions && strings.HasPrefix(value, "-"):
-			idx, e = a.handleParams(value[1:], params, idx)
+			idx, e = a.handleParams(value[1:], true, params, idx)
 			if e != nil {
 				return e
 			}
@@ -178,7 +178,17 @@ func (a *action) handleArgs(value string, index int) (int, error) {
 	return -1, fmt.Errorf("too many arguments given")
 }
 
-func (a *action) handleParams(paramName string, args []string, idx int) (int, error) {
+func (a *action) handleParams(paramName string, short bool, args []string, idx int) (int, error) {
+	var value string
+	if !short {
+		parts := strings.SplitN(paramName, "=", 2)
+		if len(parts) == 2 {
+			fmt.Printf("--> %s = %s\n", parts[0], parts[1])
+			paramName = parts[0]
+			value = parts[1]
+		}
+	}
+
 	// Keep that on top, as this is some special sort of handling. Required to make help appear in usage description,
 	// but not be injected to deep.
 	if paramName == "h" || paramName == "help" {
@@ -195,11 +205,14 @@ func (a *action) handleParams(paramName string, args []string, idx int) (int, er
 			option.value = "true"
 		}
 	} else {
-		if idx+1 > len(args) {
-			return -1, fmt.Errorf("missing value for option %q!", option.field)
+		if value == "" {
+			if idx+1 > len(args) {
+				return -1, fmt.Errorf("missing value for option %q!", option.field)
+			}
+			value = args[idx+1]
+			idx += 1
 		}
-		option.value = args[idx+1]
-		idx += 1
+		option.value = value
 	}
 	return idx, nil
 }
