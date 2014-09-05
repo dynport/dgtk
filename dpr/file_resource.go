@@ -85,7 +85,6 @@ func (r *FileResource) Open() (io.Reader, int64, error) {
 	if e != nil {
 		return nil, 0, e
 	}
-	defer f.Close()
 	stat, e := f.Stat()
 	if e != nil {
 		return nil, 0, e
