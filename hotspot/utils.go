@@ -34,7 +34,6 @@ func newBrowser() (*browser.Browser, error) {
 	if e != nil {
 		return nil, e
 	}
-	b.Logger = logger
 	return b, nil
 
 }
