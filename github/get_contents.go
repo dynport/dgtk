@@ -36,13 +36,15 @@ func (action *GetContents) Execute(client *Client) ([]*Content, error) {
 	if e != nil {
 		return nil, e
 	}
-	contents := []*Content{}
 
-	e = json.Unmarshal(b, &contents)
-	if e != nil {
-		return nil, e
+	// this is a brilliant api
+	var c *Content
+	e = json.Unmarshal(b, &c)
+	if e == nil {
+		return []*Content{c}, nil
 	}
-	return contents, nil
+	var cs []*Content
+	return cs, json.Unmarshal(b, &cs)
 }
 
 type Content struct {
