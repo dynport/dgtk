@@ -1,8 +1,10 @@
 package cli
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
+	"strings"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTagMapValidation(t *testing.T) {
@@ -26,7 +28,7 @@ func TestTagMapValidation(t *testing.T) {
 				So(result, ShouldNotBeNil)
 			})
 			Convey("And the result should contain an error", func() {
-				So(result.Error(), ShouldEqual, `unknown tag "foo"`)
+				So(strings.HasPrefix(result.Error(), "unknown tag"), ShouldBeTrue)
 			})
 		})
 	})

@@ -1,7 +1,4 @@
-.PHONY: build check clean default deps test vet
-
-ASSET_DIRS  := $(shell find . -type f -name .goassets)
-ASSET_FILES := $(addsuffix assets.go,$(dir $(ASSET_DIRS)))
+.PHONY: build check default deps test vet
 
 ALL_DEPS    := $(shell go list ./... | xargs go list -f '{{join .Deps "\n"}}' | grep -e "$github.com\|code.google.com\|launchpad.net" | sort | uniq | grep -v "github.com/dynport/dgtk")
 EXTRA_DEPS  := github.com/dynport/dgtk/goassets github.com/smartystreets/goconvey github.com/stretchr/testify/assert github.com/jacobsa/oglematchers
@@ -9,26 +6,18 @@ IGN_DEPS    :=
 DEPS        := $(filter-out $(IGN_DEPS),$(ALL_DEPS))
 
 ALL_PKGS    := $(shell go list ./...)
-IGN_PKGS    := 
+IGN_PKGS    := github.com/dynport/dgtk/goassets/script/tpl
 PACKAGES    := $(filter-out $(IGN_PKGS),$(ALL_PKGS))
-IGN_TEST_PKGS := github.com/dynport/dgtk/es
+IGN_TEST_PKGS := github.com/dynport/dgtk/es github.com/dynport/dgtk/es/aggregations
 TEST_PKGS   := $(filter-out $(IGN_TEST_PKGS),$(PACKAGES))
 
 default: build
 
-build: $(ASSET_FILES)
+build:
 	@go install $(PACKAGES)
 
 check:
 	@which go > /dev/null || echo "go not installed"
-	@which goassets > /dev/null || echo "go assets missing, call 'go get github.com/dynport/dgtk/goassets'"
-
-clean:
-	@rm -f $(ASSET_FILES)
-
-%/assets.go:
-	@rm -f $@
-	@cd $* && goassets assets
 
 deps:
 	@for package in $(EXTRA_DEPS) $(DEPS); do \
