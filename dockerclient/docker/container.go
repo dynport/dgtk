@@ -79,7 +79,7 @@ func (container *Container) String() string {
 type ContainerInfo struct {
 	Id              string `json:"ID"`
 	Image           string
-	created         time.Time `json:"Created"`
+	CreatedAt       time.Time `json:"Created"`
 	SysInitPath     string
 	ResolvConfPath  string
 	Volumes         map[string]string
@@ -89,10 +89,6 @@ type ContainerInfo struct {
 	ContainerConfig ContainerConfig `json:"Config"`
 	NetworkConfig   NetworkSettings `json:"NetworkSettings"`
 	HostConfig      HostConfig      `json:"HostConfig"`
-}
-
-func (self *ContainerInfo) CreatedAt() time.Time {
-	return self.created
 }
 
 // https://github.com/dotcloud/docker/blob/master/container.go#L60-81

@@ -47,7 +47,7 @@ func addLabel(issue *github.Issue, label string) ([]string, error) {
 	labels := []string{}
 	for _, l := range issue.Labels {
 		if l.Name == label {
-			return nil, fmt.Errorf("issue already labeled with label %q")
+			return nil, fmt.Errorf("issue already labeled with %q", label)
 		}
 		labels = append(labels, l.Name)
 	}

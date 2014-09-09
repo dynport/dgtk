@@ -438,7 +438,7 @@ func (index *Index) loadSearch(req interface{}, rsp Sharder) error {
 	rsp.SetRaw(b)
 	dbg.Printf("resonse: %s", string(b))
 	if httpResponse.Status[0] != '2' {
-		return fmt.Errorf("expected staus 2xx, git %s", httpResponse.Status, string(b))
+		return fmt.Errorf("expected staus 2xx, git %s", httpResponse.Status)
 	}
 	e = json.Unmarshal(b, rsp)
 	if e != nil {

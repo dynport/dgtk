@@ -49,7 +49,7 @@ func githubUrl() (string, error) {
 	if e != nil {
 		return "", e
 	}
-	for scanner := bufio.NewScanner(bytes.NewReader(out)); ; scanner.Scan() {
+	for scanner := bufio.NewScanner(bytes.NewReader(out)); scanner.Scan(); {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) > 1 && strings.HasPrefix(fields[1], "git@github.com:") {
 			repo := fields[1]

@@ -276,7 +276,6 @@ func (act *backupRDSSnapshot) waitForDBInstance(f func([]*rds.DBInstance) bool) 
 		log.Printf("sleeping for 5 more seconds")
 		time.Sleep(5 * time.Second)
 	}
-	return nil, fmt.Errorf("shouldn't have got here!")
 }
 
 func instanceAvailable(instances []*rds.DBInstance) bool {

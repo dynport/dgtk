@@ -91,7 +91,7 @@ func (rl *RemoteLog) Open() (reader io.ReadCloser, e error) {
 	} else {
 		cmd = exec.Command("bash", "-c", c)
 	}
-	dbg.Printf("using cmd %q", cmd)
+	dbg.Printf("using cmd %q", cmd.Path)
 	reader, e = cmd.StdoutPipe()
 	if e != nil {
 		return nil, e
