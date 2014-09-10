@@ -13,6 +13,7 @@ func init() {
 	router.Register("tags/cleanup", &tagsCleanup{}, "Cleanup Tags")
 	router.Register("tags/list", &TagsList{}, "List Tags")
 	router.Register("vms/clone", &Clone{}, "Clone VM")
+	router.Register("vms/modify", &vmModify{}, "Modify VM")
 	router.Register("vms/delete", &Delete{}, "Delete VM")
 	router.Register("vms/list", &ListAction{}, "List VMs")
 	router.Register("vms/start", &StartAction{}, "Start VM")
