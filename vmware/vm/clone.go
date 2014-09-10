@@ -11,6 +11,8 @@ type Clone struct {
 	VmName       string `cli:"type=arg required=true"`
 	SnapshotName string `cli:"type=arg"`
 	Name         string `cli:"opt --name"`
+	Memory       int    `cli:"opt --memory default=1024"`
+	Cpus         int    `cli:"opt --cpus default=1"`
 }
 
 func (action *Clone) Run() error {
@@ -25,6 +27,16 @@ func (action *Clone) Run() error {
 	}
 	vm := vms.FindFirst(action.VmName)
 	clone, e := vmware.Create(vm, action.SnapshotName)
+	if e != nil {
+		return e
+	}
+	logger.Printf("using %d cpus", action.Cpus)
+	e = clone.ModifyCpu(action.Cpus)
+	if e != nil {
+		return e
+	}
+	logger.Printf("using %d memory", action.Memory)
+	e = clone.ModifyMemory(action.Memory)
 	if e != nil {
 		return e
 	}
