@@ -30,7 +30,7 @@ func (list *ListAction) Run() error {
 	for _, t := range tags {
 		tagsMap[t.Id()] = t.Value
 	}
-	table.Add("Id", "Name", "Status", "Started", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
+	table.Add("Id", "Name", "Status", "Started", "Cpus", "Memory", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
 	for _, vm := range vms {
 		vmx, e := vm.Vmx()
 		if e != nil {
@@ -53,7 +53,7 @@ func (list *ListAction) Run() error {
 			logger.Print(e.Error())
 		}
 		name := tagsMap[vm.Id()+":Name"]
-		table.Add(name, vm.Id(), status, started, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
+		table.Add(name, vm.Id(), status, started, vmx.Cpus, vmx.Memory, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
 	}
 	logger.Println(table)
 	return nil
