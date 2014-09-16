@@ -202,7 +202,7 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address, port, filename strin
 	case "mysql":
 		cmd = exec.Command("mysqldump", "--host="+address, "--port="+port, "--user="+act.user(), "--password="+act.Password, act.Database)
 	case "postgres":
-		cmd = exec.Command("pg_dump", "--host="+address, "--port", port, "--username="+act.user(), act.Database)
+		cmd = exec.Command("pg_dump", "--host="+address, "--port="+port, "--username="+act.user(), act.Database)
 		cmd.Env = append(cmd.Env, "PGPASSWORD="+act.Password)
 	default:
 		return fmt.Errorf("engine %q not supported yet", engine)
