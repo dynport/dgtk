@@ -39,7 +39,7 @@ func (r *vmModify) Run() error {
 		}
 		e = vm.ModifyMemory(mem)
 		return e
-		modified = true
+		// modified = true
 	}
 	if !modified {
 		return fmt.Errorf("either Memory or Cpus must be set to modify vm")
