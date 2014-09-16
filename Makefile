@@ -1,7 +1,7 @@
 .PHONY: build check default deps test vet
 
 ALL_DEPS    := $(shell go list ./... | xargs go list -f '{{join .Deps "\n"}}' | grep -e "$github.com\|code.google.com\|launchpad.net" | sort | uniq | grep -v "github.com/dynport/dgtk")
-EXTRA_DEPS  := github.com/dynport/dgtk/goassets github.com/smartystreets/goconvey github.com/stretchr/testify/assert github.com/jacobsa/oglematchers
+EXTRA_DEPS  := github.com/dynport/dgtk/goassets github.com/smartystreets/goconvey github.com/stretchr/testify/assert github.com/jacobsa/oglematchers labix.org/v2/mgo/bson
 IGN_DEPS    := 
 DEPS        := $(filter-out $(IGN_DEPS),$(ALL_DEPS))
 
