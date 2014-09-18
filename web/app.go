@@ -113,5 +113,6 @@ func (t *App) HandleError(w http.ResponseWriter, e error) {
 	}); ok {
 		status = s.Status()
 	}
+	logger.Printf("ERROR: %q", e)
 	http.Error(w, e.Error(), status)
 }
