@@ -21,6 +21,15 @@ type App struct {
 	Layout       Layout
 	DefaultTitle string
 	Funcs        template.FuncMap
+
+	urlFuncs map[string]UrlFunc
+}
+
+func (a *App) Url(name string, params ...interface{}) string {
+	if a.urlFuncs == nil {
+		panic("urlFuncs not set")
+	}
+	return a.urlFuncs[name](params...)
 }
 
 var logger = log.New(os.Stderr, "", 0)
