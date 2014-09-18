@@ -32,11 +32,7 @@ func DefaultHandler(h func(w http.ResponseWriter, r *http.Request, params httpro
 }
 
 func (t *App) Handler(action Action) func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	if t.Layout == nil {
-		return t.ActionHandler(action)
-	} else {
-		return t.LayoutHandler(t.Layout, action)
-	}
+	return t.LayoutHandler(t.Layout, action)
 }
 
 func (t *App) ActionHandler(action Action) func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
