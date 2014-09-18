@@ -11,10 +11,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const dbUrl = "postgres://tobias@localhost/gosql_test?sslmode=disable"
+
 func testDb(t *testing.T) (db *sql.DB) {
 	var e error
 	e = func() error {
-		db, e = sql.Open("postgres", "postgres://tobias@localhost/gosql_test?sslmode=disable")
+		db, e = sql.Open("postgres", dbUrl)
 		if e != nil {
 			t.Fatal(e)
 		}
