@@ -33,7 +33,7 @@ func (t *userShow) Load(r *http.Request, params httprouter.Params) error {
 }
 
 func (t *userShow) Template() ([]byte, error) {
-	return []byte("User {{ .Id }} => named_route={{ named }}"), nil
+	return []byte("User {{ .Id }} => named_route={{ namedPath }}"), nil
 }
 
 func TestRouter(t *testing.T) {
@@ -52,9 +52,9 @@ func TestRouter(t *testing.T) {
 		So(e, ShouldBeNil)
 		So(r2, ShouldNotBeNil)
 
-		So(app.Funcs["userShow"], ShouldNotBeNil)
-		So(app.Funcs["named"], ShouldNotBeNil)
-		f, ok := app.Funcs["userShow"].(UrlFunc)
+		So(app.Funcs["userShowPath"], ShouldNotBeNil)
+		So(app.Funcs["namedPath"], ShouldNotBeNil)
+		f, ok := app.Funcs["userShowPath"].(UrlFunc)
 		So(f, ShouldNotBeNil)
 		So(ok, ShouldEqual, true)
 		So(f(123), ShouldEqual, "/user/123/show")

@@ -103,7 +103,7 @@ func (r Router) Router(app *App) (router *httprouter.Router, e error) {
 		if _, ok := app.Funcs[n]; ok {
 			return nil, fmt.Errorf("helper %q defined twice", n)
 		}
-		app.Funcs[n] = f
+		app.Funcs[n+"Path"] = f
 		app.urlFuncs[n] = f
 	}
 	return router, e
