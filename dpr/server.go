@@ -28,8 +28,6 @@ func (s *Server) Run() error {
 func (server *Server) newResource(r *http.Request) Resource {
 	if server.awsConfigured() {
 		client := s3.NewFromEnv()
-		client.UseSsl = true
-		client.CustomEndpointHost = "s3-eu-west-1.amazonaws.com"
 		return &S3Resource{Request: r, Bucket: server.Bucket, Client: client}
 	} else {
 		return NewFileResource(server.DataRoot, r)
