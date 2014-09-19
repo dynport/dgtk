@@ -98,7 +98,9 @@ func (indexer *Indexer) Start() chan *Doc {
 }
 
 func (indexer *Indexer) Close() error {
-	close(indexer.docsChannel)
+	if indexer.docsChannel != nil {
+		close(indexer.docsChannel)
+	}
 	return indexer.indexBatch()
 }
 
