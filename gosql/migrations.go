@@ -54,18 +54,19 @@ func (list migrations) ExecuteUntil(tx Dbi, step int) (int, error) {
 	return cnt, nil
 }
 
-func (m *Migrator) migrations(tx Dbi) (migrations, error) {
+func (migrator *Migrator) migrations(tx Dbi) (migrations, error) {
 	out := []*Migration{}
 
 	_, e := setupMigrations(tx)
 	if e != nil {
 		return nil, e
 	}
-	for idx, i := range m.steps {
+	for idx, i := range migrator.steps {
 		m, e := newMigration(idx+1, i)
 		if e != nil {
 			return nil, e
 		}
+		m.Logger = migrator.Logger
 		var cs string
 		if e = tx.QueryRow("SELECT md5 FROM migrations where idx = $1", m.Idx).Scan(&cs); e != nil {
 			if e != sql.ErrNoRows {
@@ -85,25 +86,12 @@ func (m *Migrator) migrations(tx Dbi) (migrations, error) {
 }
 
 func (list *Migrator) Execute(tx Dbi) error {
-	_, e := setupMigrations(tx)
+	migs, e := list.migrations(tx)
 	if e != nil {
 		return e
 	}
-
-	return func() error {
-		for idx, i := range list.steps {
-			m, e := newMigration(idx+1, i)
-			if e != nil {
-				return e
-			}
-			m.Logger = list.Logger
-			_, e = m.Execute(tx)
-			if e != nil {
-				return e
-			}
-		}
-		return nil
-	}()
+	_, e = migs.Execute(tx)
+	return e
 }
 
 func newMigration(idx int, statement interface{}) (*Migration, error) {
