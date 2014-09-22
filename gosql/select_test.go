@@ -57,6 +57,7 @@ func TestSelect(t *testing.T) {
 	}
 
 	Convey("Select struct", t, func() {
+		defer cleanup()
 		tx := prepareTx(t, "CREATE TABLE users (id integer, name varchar)", "INSERT INTO users (id, name) VALUES (1, 'hans'), (11, 'marek')")
 		u := &user{}
 		e := SelectStruct(tx, "SELECT id, name FROM users ORDER BY id", u)
@@ -74,13 +75,7 @@ func TestSelect(t *testing.T) {
 
 	Convey("SelectInt", t, func() {
 		defer cleanup()
-		tx := testTx(t)
-		_, e := tx.Exec("CREATE TABLE ints (id INTEGER)")
-		So(e, ShouldBeNil)
-
-		_, e = tx.Exec("INSERT INTO ints VALUES (77), (88)")
-		So(e, ShouldBeNil)
-
+		tx := prepareTx(t, "CREATE TABLE ints (id INTEGER)", "INSERT INTO ints VALUES (77), (88)")
 		cnt, e := SelectInt(tx, "SELECT id FROM ints ORDER BY id")
 		So(e, ShouldBeNil)
 		So(cnt, ShouldEqual, 77)
@@ -106,18 +101,7 @@ func TestSelect(t *testing.T) {
 	})
 
 	Convey("ScanMap", t, func() {
-		db := testDb(t)
-		tx, e := db.Begin()
-		So(e, ShouldBeNil)
-		defer tx.Rollback()
-
-		_, e = tx.Exec("CREATE TABLE users (id SERIAL NOT NULL, name VARCHAR NOT NULL)")
-		So(e, ShouldBeNil)
-
-		for _, n := range []string{"Marek Mintal", "Hans Meyer"} {
-			_, e = tx.Exec("INSERT INTO users (name) VALUES ($1)", n)
-			So(e, ShouldBeNil)
-		}
+		tx := prepareTx(t, "CREATE TABLE users (id SERIAL NOT NULL, name VARCHAR NOT NULL)", "INSERT INTO users (name) VALUES ('Marek Mintal'), ('Hans Meyer')")
 
 		m := map[string]interface{}{}
 		rows, e := tx.Query("SELECT * from users ORDER BY id")
