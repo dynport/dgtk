@@ -3,21 +3,40 @@ package browser
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
 )
 
+const UserAgentChrome = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
+
 func New() (*Browser, error) {
-	t := &http.Transport{}
-	client := &http.Client{Transport: t}
+	client := &http.Client{}
+	t := &transport{client: client}
+	client.Transport = t
 	var e error
 	client.Jar, e = cookiejar.New(nil)
 	if e != nil {
 		return nil, e
 	}
-	return &Browser{Client: client}, nil
+	return &Browser{Client: client, transport: t}, nil
+}
+
+type transport struct {
+	client    *http.Client
+	userAgent string
+}
+
+func (t *transport) RoundTrip(r *http.Request) (*http.Response, error) {
+	if t.userAgent != "" {
+		r.Header.Set("User-Agent", t.userAgent)
+	}
+	r.Header.Set("Accept", "*/*")
+	r.Header.Set("Host", r.URL.Host)
+	log.Printf("using headers %#v", r.Header)
+	return http.DefaultClient.Do(r)
 }
 
 type Logger interface {
@@ -28,8 +47,13 @@ type Browser struct {
 	Logger
 	*http.Client
 	*http.Response
+	transport *transport
 
 	cachedBody []byte
+}
+
+func (b *Browser) UserAgent(ua string) {
+	b.transport.userAgent = ua
 }
 
 func (b *Browser) Body() ([]byte, error) {
