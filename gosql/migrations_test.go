@@ -31,6 +31,9 @@ func testDb(t *testing.T) (db *sql.DB) {
 }
 
 func TestMigrations(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	Convey("Migrations", t, func() {
 		db := testDb(t)
 		tx, e := db.Begin()

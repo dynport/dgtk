@@ -50,6 +50,9 @@ func prepareTx(t *testing.T, stmts ...string) *sql.Tx {
 }
 
 func TestSelect(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 
 	type user struct {
 		Id   int    `sql:"id"`
