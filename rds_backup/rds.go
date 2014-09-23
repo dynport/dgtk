@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -196,14 +197,22 @@ func (act *backupRDSSnapshot) selectLatestSnapshot() (*rds.DBSnapshot, error) {
 	return snapshots[max.i], nil
 }
 
+func deferredClose(c io.Closer, e *error) {
+	if err := c.Close(); err != nil && *e == nil {
+		*e = err
+	}
+}
+
 func (act *backupRDSSnapshot) dumpDatabase(engine, address, port, filename string) (e error) {
 	var cmd *exec.Cmd
+	compressed := false
 	switch engine {
 	case "mysql":
-		cmd = exec.Command("mysqldump", "--host="+address, "--port="+port, "--user="+act.user(), "--password="+act.Password, act.Database)
+		cmd = exec.Command("mysqldump", "--host="+address, "--port="+port, "--user="+act.user(), "--password="+act.Password, "--compress", act.Database)
 	case "postgres":
-		cmd = exec.Command("pg_dump", "--host="+address, "--port="+port, "--username="+act.user(), act.Database)
+		cmd = exec.Command("pg_dump", "--host="+address, "--port="+port, "--username="+act.user(), "--compress=6", act.Database)
 		cmd.Env = append(cmd.Env, "PGPASSWORD="+act.Password)
+		compressed = true
 	default:
 		return fmt.Errorf("engine %q not supported yet", engine)
 	}
@@ -212,12 +221,16 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address, port, filename strin
 	if e != nil {
 		return e
 	}
-	defer fh.Close()
+	defer deferredClose(fh, &e)
 
-	gzw := gzip.NewWriter(fh)
-	defer gzw.Close()
+	if compressed {
+		cmd.Stdout = fh
+	} else {
+		gzw := gzip.NewWriter(fh)
+		defer deferredClose(gzw, &e)
+		cmd.Stdout = gzw
+	}
 
-	cmd.Stdout = gzw
 	cmd.Stderr = os.Stdout
 
 	return cmd.Run()
