@@ -234,7 +234,7 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, fil
 	tmpName := filename + ".tmp"
 	fh, e := os.OpenFile(tmpName, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0644)
 	if e != nil {
-		return e
+		return fmt.Errorf("ERROR opening file %q: %s", tmpName, e)
 	}
 	defer deferredClose(fh, &e)
 
@@ -251,7 +251,11 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, fil
 	if e != nil {
 		return e
 	}
-	return os.Rename(tmpName, filename)
+	e = os.Rename(tmpName, filename)
+	if e != nil {
+		return fmt.Errorf("ERROR renaming file %q to %q: %s", tmpName, filename, e)
+	}
+	return nil
 }
 
 func (act *backupRDSSnapshot) restoreDBInstance(snapshot *rds.DBSnapshot) (instance *rds.DBInstance, e error) {
