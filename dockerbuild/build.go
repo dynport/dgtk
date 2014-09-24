@@ -75,6 +75,15 @@ func (b *Build) connectToDockerHost() (e error) {
 	return e
 }
 
+func (b *Build) BuildAndPush() (string, error) {
+	imageId, e := b.Build()
+	if e != nil {
+		return imageId, e
+	}
+	// build has connected so we can assume b.client is set
+	return imageId, b.client.PushImage(b.Tag)
+}
+
 func (b *Build) Build() (string, error) {
 	f, e := b.buildArchive()
 	if e != nil {
