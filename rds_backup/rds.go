@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/dynport/gocli"
@@ -101,12 +103,6 @@ func (act *backupRDSSnapshot) Run() (e error) {
 	}
 	logger.Printf("last snapshot %q from %s", snapshot.DBSnapshotIdentifier, snapshot.SnapshotCreateTime)
 
-	// Determine target path and stop if dump already available (prior to creating the instance).
-	var filename string
-	if filename, e = act.createTargetPath(snapshot); e != nil {
-		return e
-	}
-
 	// Restore snapshot into new instance.
 	var instance *rds.DBInstance
 	if instance, e = act.restoreDBInstance(snapshot); e != nil {
@@ -121,7 +117,24 @@ func (act *backupRDSSnapshot) Run() (e error) {
 		}
 	}()
 
-	return act.dumpDatabase(instance.Engine, instance.Endpoint.Address, instance.Endpoint.Port, filename)
+	var filename string
+	if filename, e = act.createTargetPath(snapshot); e != nil {
+		return e
+	}
+
+	return func() error {
+		var e error
+		for i := 0; i < 3; i++ {
+			// Determine target path and stop if dump already available (prior to creating the instance).
+			e = act.dumpDatabase(instance.Engine, instance.Endpoint.Address, instance.Endpoint.Port, filename)
+			if e != nil {
+				logger.Printf("ERROR: step=%d %s", i+1, e)
+			} else {
+				return nil
+			}
+		}
+		return e
+	}()
 }
 
 func (act *backupRDSSnapshot) createTargetPath(snapshot *rds.DBSnapshot) (path string, e error) {
@@ -206,21 +219,24 @@ func deferredClose(c io.Closer, e *error) {
 	}
 }
 
-func (act *backupRDSSnapshot) dumpDatabase(engine, address, port, filename string) (e error) {
+func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, filename string) (e error) {
+	defer benchmark("dump database to " + filename)()
 	var cmd *exec.Cmd
 	compressed := false
+	portS := strconv.Itoa(port)
 	switch engine {
 	case "mysql":
-		cmd = exec.Command("mysqldump", "--host="+address, "--port="+port, "--user="+act.user(), "--password="+act.Password, "--compress", act.Database)
+		cmd = exec.Command("mysqldump", "--host="+address, "--port="+portS, "--user="+act.user(), "--password="+act.Password, "--compress", act.Database)
 	case "postgres":
-		cmd = exec.Command("pg_dump", "--host="+address, "--port="+port, "--username="+act.user(), "--compress=6", act.Database)
+		cmd = exec.Command("pg_dump", "--host="+address, "--port="+portS, "--username="+act.user(), "--compress=6", act.Database)
 		cmd.Env = append(cmd.Env, "PGPASSWORD="+act.Password)
 		compressed = true
 	default:
 		return fmt.Errorf("engine %q not supported yet", engine)
 	}
 
-	fh, e := os.Create(filename)
+	tmpName := filename + ".tmp"
+	fh, e := os.OpenFile(tmpName, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0644)
 	if e != nil {
 		return e
 	}
@@ -235,11 +251,15 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address, port, filename strin
 	}
 
 	cmd.Stderr = os.Stdout
-
-	return cmd.Run()
+	e = cmd.Run()
+	if e != nil {
+		return e
+	}
+	return os.Rename(tmpName, filename)
 }
 
 func (act *backupRDSSnapshot) restoreDBInstance(snapshot *rds.DBSnapshot) (instance *rds.DBInstance, e error) {
+	defer benchmark("restoreDBInstance")()
 	_, e = (&rds.RestoreDBSnapshot{
 		DBInstanceIdentifier: act.dbInstanceId(),
 		DBSnapshotIdentifier: snapshot.DBSnapshotIdentifier,
@@ -261,7 +281,7 @@ func (act *backupRDSSnapshot) restoreDBInstance(snapshot *rds.DBSnapshot) (insta
 		return nil, e
 	}
 
-	if instance, e = act.waitForDBInstance(instanceAvailable); e != nil {
+	if instance, e = act.waitForDBInstance(instancePortAvailable); e != nil {
 		return nil, e
 	}
 
@@ -286,7 +306,7 @@ func (act *backupRDSSnapshot) waitForDBInstance(f func([]*rds.DBInstance) bool) 
 			if len(instances) == 1 {
 				return instances[0], nil
 			}
-			return nil, nil
+			return nil, nil // instances is empty when waiting for termination
 		}
 
 		logger.Printf("sleeping for 5 more seconds")
@@ -298,11 +318,25 @@ func instanceAvailable(instances []*rds.DBInstance) bool {
 	return len(instances) == 1 && instances[0].DBInstanceStatus == "available"
 }
 
+func instancePortAvailable(instances []*rds.DBInstance) bool {
+	if len(instances) != 1 {
+		return false
+	}
+	ins := instances[0]
+	l, e := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ins.Endpoint.Address, ins.Endpoint.Port), 1*time.Second)
+	if e != nil {
+		return false
+	}
+	defer l.Close()
+	return true
+}
+
 func instanceGone(instances []*rds.DBInstance) bool {
 	return len(instances) == 0
 }
 
 func (act *backupRDSSnapshot) deleteDBInstance() (e error) {
+	defer benchmark("deleteDBInstance")()
 	_, e = (&rds.DeleteDBInstance{
 		DBInstanceIdentifier: act.dbInstanceId(),
 		SkipFinalSnapshot:    true,
