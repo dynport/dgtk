@@ -34,6 +34,8 @@ type Build struct {
 
 	Revision        string
 	dockerfileAdded bool
+
+	client *dockerclient.DockerHost
 }
 
 type progress struct {
@@ -56,15 +58,21 @@ func (p *progress) Write(b []byte) (int, error) {
 	return i, nil
 }
 
-func (b *Build) connectToDockerHost() (*dockerclient.DockerHost, error) {
+func (b *Build) connectToDockerHost() (e error) {
+	if b.client != nil {
+		return nil
+	}
+
 	if b.DockerHostUser == "" {
 		port := b.DockerPort
 		if port == 0 {
 			port = 4243
 		}
-		return dockerclient.New(b.DockerHost, port), nil
+		b.client = dockerclient.New(b.DockerHost, port)
+		return nil
 	}
-	return dockerclient.NewViaTunnel(b.DockerHost, b.DockerHostUser, b.DockerHostPassword)
+	b.client, e = dockerclient.NewViaTunnel(b.DockerHost, b.DockerHostUser, b.DockerHostPassword)
+	return e
 }
 
 func (b *Build) Build() (string, error) {
@@ -75,8 +83,7 @@ func (b *Build) Build() (string, error) {
 	defer func() { os.Remove(f.Name()) }()
 	log.Printf("wrote file %s", f.Name())
 
-	client, e := b.connectToDockerHost()
-	if e != nil {
+	if e := b.connectToDockerHost(); e != nil {
 		return "", e
 	}
 
@@ -91,7 +98,7 @@ func (b *Build) Build() (string, error) {
 	progress := newProgress(stat.Size())
 
 	r := io.TeeReader(f, progress)
-	imageId, e := client.Build(r, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
+	imageId, e := b.client.Build(r, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
 	if e != nil {
 		return imageId, e
 	}
