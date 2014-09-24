@@ -37,7 +37,7 @@ func main() {
 	b := &build{Host: *host, Dir: *dir, DeployTo: *deploy, Bucket: *bucket, verbose: *verbose}
 	e := b.Run()
 	if e != nil {
-		logger.Fatal("ERROR: %s", e)
+		logger.Fatalf("ERROR: %s", e)
 	}
 }
 
