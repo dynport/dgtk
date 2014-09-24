@@ -62,6 +62,7 @@ type backupRDSSnapshot struct {
 	Password     string `cli:"opt -p --pwd desc='password used for connection'"`
 	TargetDir    string `cli:"opt -d --dir default=. desc='path to save dumps to'"`
 	InstanceType string `cli:"opt -t --instance-type default=db.t1.micro desc='db instance type'"`
+	Uncompressed bool   `cli:"opt --uncompressed desc='run dump uncompressed'"`
 
 	Database string `cli:"arg required desc='the database to backup'"`
 }
@@ -139,7 +140,11 @@ func (act *backupRDSSnapshot) createTargetPath(snapshot *rds.DBSnapshot) (path s
 		return "", e
 	}
 
-	path = filepath.Join(path, fmt.Sprintf("%s.%s.sql.gz", act.Database, snapshot.SnapshotCreateTime.Format("20060102T1504")))
+	suffix := ".sql"
+	if !act.Uncompressed {
+		suffix += ".gz"
+	}
+	path = filepath.Join(path, fmt.Sprintf("%s.%s.%s", act.Database, snapshot.SnapshotCreateTime.Format("20060102T1504"), suffix))
 	// make sure file does not exist yet.
 	_, e = os.Stat(path)
 	switch {
@@ -222,9 +227,19 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, fil
 	portS := strconv.Itoa(port)
 	switch engine {
 	case "mysql":
-		cmd = exec.Command("mysqldump", "--host="+address, "--port="+portS, "--user="+act.user(), "--password="+act.Password, "--compress", act.Database)
+		args := []string{"--host=" + address, "--port=" + portS, "--user=" + act.user(), "--password=" + act.Password}
+		if !act.Uncompressed {
+			args = append(args, "--compress")
+		}
+		args = append(args, act.Database)
+		cmd = exec.Command("mysqldump", args...)
 	case "postgres":
-		cmd = exec.Command("pg_dump", "--host="+address, "--port="+portS, "--username="+act.user(), "--compress=6", act.Database)
+		args := []string{"--host=" + address, "--port=" + portS, "--username=" + act.user()}
+		if !act.Uncompressed {
+			args = append(args, "--compress=6")
+		}
+		args = append(args, act.Database)
+		cmd = exec.Command("pg_dump", args...)
 		cmd.Env = append(cmd.Env, "PGPASSWORD="+act.Password)
 		compressed = true
 	default:
@@ -238,7 +253,7 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, fil
 	}
 	defer deferredClose(fh, &e)
 
-	if compressed {
+	if compressed || act.Uncompressed {
 		cmd.Stdout = fh
 	} else {
 		gzw := gzip.NewWriter(fh)
