@@ -27,9 +27,9 @@ func SelectStructs(db Dbi, q string, i interface{}) error {
 	return UnmarshalRows(rows, i)
 }
 
-func SelectInt(db Dbi, q string) (int, error) {
+func SelectInt(db Dbi, q string, vars ...interface{}) (int, error) {
 	var i int
-	return i, db.QueryRow(q).Scan(&i)
+	return i, db.QueryRow(q, vars...).Scan(&i)
 }
 
 func SelectString(db Dbi, q string) (string, error) {
