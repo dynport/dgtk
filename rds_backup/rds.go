@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
+
 	"net"
 	"net/http"
 	"os"
@@ -22,17 +21,6 @@ import (
 var (
 	rdsClient *rds.Client = rds.NewFromEnv()
 )
-
-var logger = log.New(os.Stderr, "", 0)
-
-func debugStream() io.Writer {
-	if os.Getenv("DEBUG") == "true" {
-		return os.Stderr
-	}
-	return ioutil.Discard
-}
-
-var dbg = log.New(debugStream(), "[DEBUG] ", log.Lshortfile)
 
 type RDSBase struct {
 	InstanceId string `cli:"arg required desc='RDS instance ID to fetch snapshots for'"`
