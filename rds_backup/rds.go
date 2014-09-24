@@ -132,19 +132,17 @@ func (act *backupRDSSnapshot) Run() (e error) {
 		return e
 	}
 
-	return func() error {
-		var e error
-		for i := 0; i < 3; i++ {
-			// Determine target path and stop if dump already available (prior to creating the instance).
-			e = act.dumpDatabase(instance.Engine, instance.Endpoint.Address, instance.Endpoint.Port, filename)
-			if e != nil {
-				logger.Printf("ERROR: step=%d %s", i+1, e)
-			} else {
-				return nil
-			}
+	for i := 0; i < 3; i++ {
+		// Determine target path and stop if dump already available (prior to creating the instance).
+		logger.Printf("dumping database, try %d", i+1)
+		e = act.dumpDatabase(instance.Engine, instance.Endpoint.Address, instance.Endpoint.Port, filename)
+		if e != nil {
+			logger.Printf("ERROR dumping database: step=%d %s", i+1, e)
+		} else {
+			return nil
 		}
-		return e
-	}()
+	}
+	return e
 }
 
 func (act *backupRDSSnapshot) createTargetPath(snapshot *rds.DBSnapshot) (path string, e error) {
