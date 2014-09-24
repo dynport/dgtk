@@ -139,7 +139,7 @@ func (act *backupRDSSnapshot) createTargetPath(snapshot *rds.DBSnapshot) (path s
 		return "", e
 	}
 
-	path = filepath.Join(path, fmt.Sprintf("%s.%s.gz", act.Database, snapshot.SnapshotCreateTime.Format("20060102T1504")))
+	path = filepath.Join(path, fmt.Sprintf("%s.%s.sql.gz", act.Database, snapshot.SnapshotCreateTime.Format("20060102T1504")))
 	// make sure file does not exist yet.
 	_, e = os.Stat(path)
 	switch {
