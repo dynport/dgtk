@@ -4,12 +4,13 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
-	"github.com/dynport/dgtk/dockerclient/docker"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"time"
+
+	"github.com/dynport/dgtk/dockerclient/docker"
 )
 
 var (
@@ -174,14 +175,14 @@ func (dh *DockerHost) PushImage(name string) error {
 	if name == "" {
 		return fmt.Errorf("no image name given")
 	}
-	registry, _, _ := splitImageName(name)
+	registry, image, tag := splitImageName(name)
 	if registry == "" {
 		return fmt.Errorf("no registry given")
 	}
 
 	buf := &bytes.Buffer{}
 	buf.WriteString(FAKE_AUTH)
-	url := dh.url() + "/images/" + name + "/push?registry=" + registry
+	url := dh.url() + "/images/" + registry + "/" + image + "/push?tag=" + tag
 
 	rsp, e := dh.postWithBuffer(url, buf)
 	if e != nil {
