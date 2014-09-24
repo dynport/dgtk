@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -23,6 +24,15 @@ var (
 )
 
 var logger = log.New(os.Stderr, "", 0)
+
+func debugStream() io.Writer {
+	if os.Getenv("DEBUG") == "true" {
+		return os.Stderr
+	}
+	return ioutil.Discard
+}
+
+var dbg = log.New(debugStream(), "[DEBUG] ", log.Lshortfile)
 
 type RDSBase struct {
 	InstanceId string `cli:"arg required desc='RDS instance ID to fetch snapshots for'"`
@@ -309,7 +319,7 @@ func (act *backupRDSSnapshot) waitForDBInstance(f func([]*rds.DBInstance) bool) 
 			return nil, nil // instances is empty when waiting for termination
 		}
 
-		logger.Printf("sleeping for 5 more seconds")
+		dbg.Printf("sleeping for 5 more seconds")
 		time.Sleep(5 * time.Second)
 	}
 }
