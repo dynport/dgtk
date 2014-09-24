@@ -20,6 +20,8 @@ var (
 	rdsClient *rds.Client = rds.NewFromEnv()
 )
 
+var logger = log.New(os.Stderr, "", 0)
+
 type RDSBase struct {
 	InstanceId string `cli:"arg required desc='RDS instance ID to fetch snapshots for'"`
 }
@@ -34,7 +36,7 @@ func (act *listRDSSnapshots) Run() (e error) {
 		return e
 	}
 	snapshots := resp.DescribeDBSnapshotsResult.Snapshots
-	log.Printf("found %d snapshots", len(snapshots))
+	logger.Printf("found %d snapshots", len(snapshots))
 
 	table := gocli.NewTable()
 	for i := range snapshots {
@@ -84,7 +86,7 @@ func (act *backupRDSSnapshot) Run() (e error) {
 		return e
 	}
 	defer func() { // Delete temporary DB security group.
-		log.Printf("deleting db security group")
+		logger.Printf("deleting db security group")
 		err := act.deleteDbSG()
 		if e == nil {
 			e = err
@@ -96,7 +98,7 @@ func (act *backupRDSSnapshot) Run() (e error) {
 	if e != nil {
 		return e
 	}
-	log.Printf("last snapshot %q from %s", snapshot.DBSnapshotIdentifier, snapshot.SnapshotCreateTime)
+	logger.Printf("last snapshot %q from %s", snapshot.DBSnapshotIdentifier, snapshot.SnapshotCreateTime)
 
 	// Determine target path and stop if dump already available (prior to creating the instance).
 	var filename string
@@ -107,11 +109,11 @@ func (act *backupRDSSnapshot) Run() (e error) {
 	// Restore snapshot into new instance.
 	var instance *rds.DBInstance
 	if instance, e = act.restoreDBInstance(snapshot); e != nil {
-		log.Printf("failed to restore db instance: %s", e)
+		logger.Printf("failed to restore db instance: %s", e)
 		return e
 	}
 	defer func() {
-		log.Printf("deleting db instance")
+		logger.Printf("deleting db instance")
 		err := act.deleteDBInstance()
 		if e == nil {
 			e = err
@@ -150,7 +152,7 @@ func (act *backupRDSSnapshot) createDbSG() (e error) {
 	if e != nil {
 		return e
 	}
-	log.Printf("created db security group %s", sgname)
+	logger.Printf("created db security group %s", sgname)
 
 	public, e := publicIP()
 	if e != nil {
@@ -164,7 +166,7 @@ func (act *backupRDSSnapshot) createDbSG() (e error) {
 	if e != nil {
 		return e
 	}
-	log.Printf("authorized %q on db security group %s", public, act.dbSGName())
+	logger.Printf("authorized %q on db security group %s", public, act.dbSGName())
 	return nil
 }
 
@@ -262,7 +264,7 @@ func (act *backupRDSSnapshot) restoreDBInstance(snapshot *rds.DBSnapshot) (insta
 		return nil, e
 	}
 
-	log.Printf("Created instance: %q in status %q reachable via %s", instance.DBInstanceIdentifier, instance.DBInstanceStatus, instance.Endpoint.Address)
+	logger.Printf("Created instance: %q in status %q reachable via %s", instance.DBInstanceIdentifier, instance.DBInstanceStatus, instance.Endpoint.Address)
 	return instance, nil
 }
 
@@ -286,7 +288,7 @@ func (act *backupRDSSnapshot) waitForDBInstance(f func([]*rds.DBInstance) bool) 
 			return nil, nil
 		}
 
-		log.Printf("sleeping for 5 more seconds")
+		logger.Printf("sleeping for 5 more seconds")
 		time.Sleep(5 * time.Second)
 	}
 }
