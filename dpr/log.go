@@ -1,4 +1,4 @@
-package main
+package dpr
 
 import (
 	"log"

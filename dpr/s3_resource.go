@@ -1,4 +1,4 @@
-package main
+package dpr
 
 import (
 	"bytes"
@@ -126,5 +126,7 @@ func (resource *S3Resource) Store() error {
 }
 
 func (resource *S3Resource) key() string {
-	return strings.TrimPrefix(resource.Request.URL.String(), "/")
+	path := resource.Request.URL.String()
+	path = strings.Replace(path, "/library/", "/", -1)
+	return strings.TrimPrefix(path, "/")
 }

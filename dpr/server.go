@@ -1,4 +1,4 @@
-package main
+package dpr
 
 import (
 	"encoding/json"
@@ -14,11 +14,9 @@ import (
 )
 
 type Server struct {
-	DataRoot           string
-	Address            string
-	AwsAccessKeyId     string
-	AwsSecretAccessKey string
-	Bucket             string
+	DataRoot string
+	Address  string
+	Bucket   string
 }
 
 func (s *Server) Run() error {
@@ -26,16 +24,12 @@ func (s *Server) Run() error {
 }
 
 func (server *Server) newResource(r *http.Request) Resource {
-	if server.awsConfigured() {
+	if server.Bucket != "" {
 		client := s3.NewFromEnv()
 		return &S3Resource{Request: r, Bucket: server.Bucket, Client: client}
 	} else {
 		return NewFileResource(server.DataRoot, r)
 	}
-}
-
-func (server *Server) awsConfigured() bool {
-	return server.AwsAccessKeyId != "" && server.AwsSecretAccessKey != "" && server.Bucket != ""
 }
 
 var ancestryCache = map[string]string{}
