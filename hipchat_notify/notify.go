@@ -1,6 +1,9 @@
 package main
 
-import "os/exec"
+import (
+	"os"
+	"os/exec"
+)
 
 type sendNotification struct {
 	HipchatClient
@@ -11,6 +14,8 @@ type sendNotification struct {
 
 func (act *sendNotification) Run() (e error) {
 	cmd := exec.Command(act.Command[0], act.Command[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	e = cmd.Run()
 	switch e {
 	case nil:
