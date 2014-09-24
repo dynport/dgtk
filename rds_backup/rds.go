@@ -58,9 +58,10 @@ func (act *listRDSSnapshots) Run() (e error) {
 type backupRDSSnapshot struct {
 	RDSBase
 
-	User      string `cli:"opt -u --user desc='user used for connection (database name by default)'"`
-	Password  string `cli:"opt -p --pwd desc='password used for connection'"`
-	TargetDir string `cli:"opt -d --dir default=. desc='path to save dumps to'"`
+	User         string `cli:"opt -u --user desc='user used for connection (database name by default)'"`
+	Password     string `cli:"opt -p --pwd desc='password used for connection'"`
+	TargetDir    string `cli:"opt -d --dir default=. desc='path to save dumps to'"`
+	InstanceType string `cli:"opt -t --instance-type default=db.t2.medium desc='db instance type'"`
 
 	Database string `cli:"arg required desc='the database to backup'"`
 }
@@ -242,7 +243,7 @@ func (act *backupRDSSnapshot) restoreDBInstance(snapshot *rds.DBSnapshot) (insta
 	_, e = (&rds.RestoreDBSnapshot{
 		DBInstanceIdentifier: act.dbInstanceId(),
 		DBSnapshotIdentifier: snapshot.DBSnapshotIdentifier,
-		DBInstanceClass:      "db.t1.micro",
+		DBInstanceClass:      act.InstanceType,
 	}).Execute(rdsClient)
 	if e != nil {
 		return nil, e
