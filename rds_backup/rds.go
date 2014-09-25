@@ -264,6 +264,7 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, fil
 	cmd.Stderr = os.Stdout
 	e = cmd.Run()
 	if e != nil {
+		_ = os.Remove(tmpName)
 		return e
 	}
 	e = os.Rename(tmpName, filename)
