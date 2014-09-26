@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -29,5 +30,23 @@ func TestBuild(t *testing.T) {
 		e = json.Unmarshal(buf.Bytes(), &status)
 		So(e, ShouldBeNil)
 		So(status.Name, ShouldEqual, "github.com/dynport/dgtk/go-build/test-proj")
+		So(len(status.Versions), ShouldNotEqual, 0)
+		So(len(status.Dependencies), ShouldEqual, 1)
+		So(status.Dependencies[0].Name, ShouldEqual, "github.com/dynport/gocli")
+		So(len(status.Dependencies[0].Versions), ShouldNotEqual, 0)
+	})
+
+	Convey("gitChanges", t, func() {
+		dirty := "test-proj/dirty.txt"
+		os.RemoveAll(dirty)
+		changes, e := gitChanges("test-proj")
+		So(e, ShouldBeNil)
+		So(changes, ShouldEqual, false)
+		e = ioutil.WriteFile(dirty, []byte("dirty"), 0644)
+		defer os.RemoveAll(dirty)
+		So(e, ShouldBeNil)
+		changes, e = gitChanges("test-proj")
+		So(e, ShouldBeNil)
+		So(changes, ShouldEqual, true)
 	})
 }

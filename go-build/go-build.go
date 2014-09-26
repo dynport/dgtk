@@ -12,8 +12,11 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 )
+
+var logger = log.New(os.Stderr, "", 0)
 
 func debugStream() io.Writer {
 	if os.Getenv("DEBUG") == "true" {
@@ -44,14 +47,8 @@ func build(dir string) (string, error) {
 	repos := map[string]struct{}{}
 	for _, d := range strings.Fields(buf.String()) {
 		if strings.Contains(d, ".") {
-			parts := strings.Split(d, "/")
-			for i := 0; i < len(parts)-1; i++ {
-				p := os.ExpandEnv("$GOPATH/src/" + strings.Join(parts[0:len(parts)], "/"))
-				dbg.Printf("testing %q", p)
-				if _, e = os.Stat(p + "/.git"); e != nil {
-					continue
-				}
-				repos[p] = struct{}{}
+			if repo := findRepo(os.ExpandEnv("$GOPATH/src/") + d); repo != "" {
+				repos[repo] = struct{}{}
 			}
 		}
 	}
@@ -60,14 +57,38 @@ func build(dir string) (string, error) {
 	if e != nil {
 		return "", e
 	}
-	status := &BuildStatus{Name: strings.TrimSpace(name)}
+	abs, e := filepath.Abs(dir)
+	if e != nil {
+		return "", e
+	}
+
+	repo := findRepo(abs)
+	if repo == "" {
+		return "", fmt.Errorf("not a git repository")
+	}
+
+	versions, e := gitHistory(repo)
+	if e != nil {
+		return "", e
+	}
+	status := &BuildStatus{Name: strings.TrimSpace(name), Versions: versions}
+	status.Changes, e = gitChanges(dir)
+	if e != nil {
+		return "", e
+	}
 	for r := range repos {
-		out, e := executeIn(dir, "git", "--git-dir="+r+"/.git", "log", `--pretty=%h %ai`, "-n", "10")
+		versions, e := gitHistory(r)
 		if e != nil {
 			return "", e
 		}
+		logger.Printf("checking %q", r)
 		name := strings.TrimPrefix(r, os.ExpandEnv("$GOPATH/src/"))
-		status.Dependencies = append(status.Dependencies, &BuildStatus{Name: name, Versions: strings.Split(strings.TrimSpace(string(out)), "\n")})
+		s := &BuildStatus{Name: name, Versions: versions}
+		s.Changes, e = gitChanges(r)
+		if e != nil {
+			return "", e
+		}
+		status.Dependencies = append(status.Dependencies, s)
 	}
 	b, e := json.MarshalIndent(status, "", "  ")
 	if e != nil {
@@ -80,6 +101,18 @@ func build(dir string) (string, error) {
 	return binPath, nil
 }
 
+func findRepo(start string) string {
+	parts := strings.Split(start, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		p := strings.Join(parts[0:len(parts)-i], "/")
+		_, e := os.Stat(p + "/.git")
+		if e == nil {
+			return p
+		}
+	}
+	return ""
+}
+
 func executeIn(dir, cmd string, args ...string) (string, error) {
 	buf := &bytes.Buffer{}
 	c := exec.Command(cmd, args...)
@@ -88,6 +121,14 @@ func executeIn(dir, cmd string, args ...string) (string, error) {
 	c.Dir = dir
 	e := c.Run()
 	return buf.String(), e
+}
+
+func gitHistory(dir string) ([]string, error) {
+	out, e := executeIn(dir, "git", "--git-dir="+dir+"/.git", "log", `--pretty=%h %ai`, "-n", "10")
+	if e != nil {
+		return nil, e
+	}
+	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
 }
 
 func run() error {
@@ -100,5 +141,14 @@ func run() error {
 type BuildStatus struct {
 	Name         string
 	Versions     []string
+	Changes      bool
 	Dependencies []*BuildStatus
+}
+
+func gitChanges(dir string) (bool, error) {
+	out, e := executeIn(dir, "git", "status", "--porcelain", ".")
+	if e != nil {
+		return false, e
+	}
+	return len(strings.TrimSpace(out)) > 0, nil
 }
