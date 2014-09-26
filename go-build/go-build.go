@@ -16,8 +16,6 @@ import (
 	"strings"
 )
 
-var logger = log.New(os.Stderr, "", 0)
-
 func debugStream() io.Writer {
 	if os.Getenv("DEBUG") == "true" {
 		return os.Stderr
@@ -81,7 +79,6 @@ func build(dir string) (string, error) {
 		if e != nil {
 			return "", e
 		}
-		logger.Printf("checking %q", r)
 		name := strings.TrimPrefix(r, os.ExpandEnv("$GOPATH/src/"))
 		s := &BuildStatus{Name: name, Versions: versions}
 		s.Changes, e = gitChanges(r)
