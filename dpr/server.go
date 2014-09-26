@@ -79,7 +79,7 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	log.Println(r.Method + " http://" + r.Host + r.URL.String())
 	res := server.newResource(r)
-	w.Header().Set("X-Docker-Registry-Version", "0.0.1")
+	w.Header().Set("X-Docker-Registry-Version", "0.6.0")
 	w.Header().Add("X-Docker-Endpoints", r.Host)
 	switch r.Method {
 	case "PUT":
