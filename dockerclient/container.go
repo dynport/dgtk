@@ -67,25 +67,24 @@ func (dh *DockerHost) Container(containerId string) (containerInfo *docker.Conta
 
 // For the given image name and the given container configuration, create a container. If the image name deosn't contain
 // a tag "latest" is used by default.
-func (dh *DockerHost) CreateContainer(imageName string, options *docker.ContainerConfig, name string) (containerId string, e error) {
+func (dh *DockerHost) CreateContainer(options *docker.ContainerConfig, name string) (containerId string, e error) {
+	imageId := options.Image
+
 	// Verify image available on host.
-	_, e = dh.ImageHistory(imageName)
+	_, e = dh.ImageHistory(imageId)
 	if e != nil && e.Error() == "resource not found" {
-		if e = dh.PullImage(imageName); e != nil {
+		if e = dh.PullImage(imageId); e != nil {
 			return "", e
 		}
 	}
 
-	if options == nil {
-		options = &docker.ContainerConfig{}
-	}
-	options.Image = imageName
-
 	container := &docker.Container{}
 	u := dh.url() + "/containers/create"
+
 	if name != "" {
-		u += "?" + (url.Values{"name": []string{name}}).Encode()
+		u += "?name=" + name
 	}
+
 	content, _, e := dh.postJSON(u, options, container)
 	if e != nil {
 		return "", fmt.Errorf("failed creating container (%s): %s", e.Error(), content)
