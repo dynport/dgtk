@@ -22,6 +22,6 @@ func run() error {
 		return e
 	}
 	fmt.Println(string(b))
-	_ = gocli.Red("test")
+	_ = gocli.Red("test") // just to add external dependencies
 	return nil
 }
