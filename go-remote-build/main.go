@@ -342,7 +342,7 @@ func (b *build) Run() error {
 			}{
 				Name: name, Sudo: cfg.User != "root",
 			}
-			cmd := renderRecursive("cd /usr/local/bin && {{ if .Sudo }}sudo {{ end }}cat - > {{ .Name }}.tmp && {{ if .Sudo }}sudo {{ end }}chmod 0755 {{ .Name }}.tmp && {{ if .Sudo }}sudo {{ end }}mv {{ .Name }}.tmp {{ .Name }}", s)
+			cmd := renderRecursive("cd /usr/local/bin && cat - | sudo tee {{ .Name }}.tmp > /dev/null && {{ if .Sudo }}sudo {{ end }}chmod 0755 {{ .Name }}.tmp && {{ if .Sudo }}sudo {{ end }}mv {{ .Name }}.tmp {{ .Name }}", s)
 			dbg.Printf("%s", cmd)
 			return ses.Run(cmd)
 		}()
