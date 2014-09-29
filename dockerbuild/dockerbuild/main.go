@@ -38,7 +38,14 @@ func main() {
 		log.Fatal(e.Error())
 	}
 	dockerHost, dockerPort := parseDockerHost(*dockerHost)
-	build := &dockerbuild.Build{Root: root, Tag: *tag, Proxy: *proxy, GitRepository: *repository, DockerHost: dockerHost, DockerPort: dockerPort}
+	build := &dockerbuild.Build{
+		Root:           root,
+		DockerImageTag: *tag,
+		Proxy:          *proxy,
+		GitRepository:  *repository,
+		DockerHost:     dockerHost,
+		DockerPort:     dockerPort,
+	}
 	if build.DockerHost == "" {
 		log.Fatal("-H must be provided")
 	}
