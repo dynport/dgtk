@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"strings"
+
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,7 +15,8 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
+
+	"github.com/dynport/gocloud/aws/s3"
 )
 
 func debugStream() io.Writer {
@@ -24,11 +27,44 @@ func debugStream() io.Writer {
 }
 
 var dbg = log.New(debugStream(), "[DEBUG] ", log.Lshortfile)
+var logger = log.New(os.Stderr, "", 0)
 
 func main() {
 	if e := run(); e != nil {
 		log.Fatal(e)
 	}
+}
+
+func run() error {
+	var dir = flag.String("d", ".", "Path to project")
+	var s3Bucket = flag.String("bucket", "", "S3 Bucket to upload binary to")
+	flag.Parse()
+	p, e := build(*dir)
+	if *s3Bucket != "" {
+		client := s3.NewFromEnv()
+		e := func() error {
+			f, e := os.Open(p)
+			if e != nil {
+				return e
+			}
+			defer f.Close()
+			log.Printf("uploading %q to %q", p, *s3Bucket)
+			client.PutStream("bucket", path.Base(p), f, nil)
+			return nil
+		}()
+		if e != nil {
+			return e
+		}
+	}
+	return e
+}
+
+func splitBucket(bucketWithPrefix string) (string, string) {
+	parts := strings.SplitN(bucketWithPrefix, "/", 2)
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	return bucketWithPrefix, ""
 }
 
 func build(dir string) (string, error) {
@@ -126,13 +162,6 @@ func gitHistory(dir string) ([]string, error) {
 		return nil, e
 	}
 	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
-}
-
-func run() error {
-	var dir = flag.String("d", ".", "Path to project")
-	flag.Parse()
-	_, e := build(*dir)
-	return e
 }
 
 type BuildStatus struct {
