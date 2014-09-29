@@ -7,13 +7,13 @@ import (
 )
 
 type ProgressWriter struct {
-	Total    int
-	Written  int
+	Total    int64
+	Written  int64
 	lastLine string
 }
 
 func (p *ProgressWriter) Write(b []byte) (int, error) {
-	p.Written += len(b)
+	p.Written += int64(len(b))
 	perc := float64(p.Written) / float64(p.Total)
 
 	ballsCount := 64
