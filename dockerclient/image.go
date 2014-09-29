@@ -2,9 +2,11 @@ package dockerclient
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -152,20 +154,14 @@ func (dh *DockerHost) PullImage(name string) error {
 		return e
 	}
 	defer rsp.Body.Close()
-	if !success(rsp) {
-		return fmt.Errorf("failed to fetch image")
+
+	scanner := bufio.NewScanner(rsp.Body)
+	for scanner.Scan() {
+		log.Printf("<-- %s", scanner.Text())
 	}
 
-	messages, e := splitDockerStatusMessages(rsp.Body)
-	if e != nil {
-		return e
-	}
-
-	for i := range messages {
-		if messages[i].Error != "" {
-			return fmt.Errorf("failed to pull image: %s", messages[i].Error)
-		}
-	}
+	// TODO properly handle the returned status messages (see
+	//      splitDockerStatusMessages, which didn't work for the current API).
 
 	return dh.waitForTag(registry+"/"+repository, tag, 10)
 }
@@ -189,8 +185,9 @@ func (dh *DockerHost) PushImage(name string) error {
 		return e
 	}
 	defer rsp.Body.Close()
-	if !success(rsp) {
-		return fmt.Errorf("failed to push image: %s", rsp.Status)
+	scanner := bufio.NewScanner(rsp.Body)
+	for scanner.Scan() {
+		log.Printf("--> %s", scanner.Text())
 	}
 	return nil
 }
