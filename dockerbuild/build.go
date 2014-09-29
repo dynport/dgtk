@@ -16,10 +16,11 @@ import (
 )
 
 type Build struct {
-	GitRepository string
-	Tag           string
-	Proxy         string
-	Root          string
+	Proxy string // http proxy to use for faster builds in local environment
+	Root  string // root directory used for archive (should contain a dockerfile at least)
+
+	GitRepository string // repository to check out into the docker build archive
+	GitRevision   string // revision of the repository to use
 
 	// If this is a ruby project then add the Gemfiles to the archive separately. That way bundler's inefficiency can be
 	// mitigated using docker's caching strategy. Just call copy the Gemfile's somewhere (using the 'ADD' command) and
@@ -31,9 +32,7 @@ type Build struct {
 	DockerPort         int    // Port docker is listening on.
 	DockerHostUser     string // If set an SSH tunnel will be setup and used for communication.
 	DockerHostPassword string // Password of the user, if required for SSH (public key authentication should be preferred).
-
-	Revision        string
-	dockerfileAdded bool
+	DockerImageTag     string // tag used for the resulting image
 
 	client *dockerclient.DockerHost
 }
@@ -81,7 +80,7 @@ func (b *Build) BuildAndPush() (string, error) {
 		return imageId, e
 	}
 	// build has connected so we can assume b.client is set
-	return imageId, b.client.PushImage(b.Tag)
+	return imageId, b.client.PushImage(b.DockerImageTag)
 }
 
 func (b *Build) Build() (string, error) {
@@ -107,7 +106,7 @@ func (b *Build) Build() (string, error) {
 	progress := newProgress(stat.Size())
 
 	r := io.TeeReader(f, progress)
-	imageId, e := b.client.Build(r, &dockerclient.BuildImageOptions{Tag: b.Tag, Callback: callback})
+	imageId, e := b.client.Build(r, &dockerclient.BuildImageOptions{Tag: b.DockerImageTag, Callback: callback})
 	if e != nil {
 		return imageId, e
 	}
@@ -121,9 +120,11 @@ func (b *Build) buildArchive() (*os.File, error) {
 		return nil, e
 	}
 	defer f.Close()
+
 	t := tar.NewWriter(f)
 	defer t.Flush()
 	defer t.Close()
+
 	if b.GitRepository != "" {
 		repo := &git.Repository{Origin: b.GitRepository}
 		e := repo.Init()
@@ -134,47 +135,51 @@ func (b *Build) buildArchive() (*os.File, error) {
 		if e != nil {
 			return nil, e
 		}
-		if e := repo.WriteArchiveToTar(b.Revision, t); e != nil {
+		if e := repo.WriteArchiveToTar(b.GitRevision, t); e != nil {
 			return nil, e
 		}
 		if b.RubyProject {
-			if e := repo.WriteFilesToTar(b.Revision, t, "Gemfile", "Gemfile.lock"); e != nil {
+			if e := repo.WriteFilesToTar(b.GitRevision, t, "Gemfile", "Gemfile.lock"); e != nil {
 				return nil, e
 			}
 		}
 	}
-	if e := b.addFilesToArchive(b.Root, t); e != nil {
+	if withDockerFile, e := b.addFilesToArchive(b.Root, t); e != nil {
 		return nil, e
-	}
-	if !b.dockerfileAdded {
+	} else if !withDockerFile {
 		return nil, fmt.Errorf("archive must contain a Dockerfile")
 	}
 	return f, nil
 }
 
-func (build *Build) addFilesToArchive(root string, t *tar.Writer) error {
-	return filepath.Walk(root, func(p string, info os.FileInfo, e error) error {
+func (build *Build) addFilesToArchive(root string, t *tar.Writer) (withDockerFile bool, e error) {
+	return withDockerFile, filepath.Walk(root, func(p string, info os.FileInfo, e error) error {
 		if e == nil && p != root {
 			var e error
 			name := strings.TrimPrefix(p, root+"/")
 			header := &tar.Header{Name: name, ModTime: info.ModTime().UTC()}
-			if info.IsDir() {
+			switch {
+			case info.IsDir():
+				if name == ".git" {
+					return filepath.SkipDir
+				}
 				header.Typeflag = tar.TypeDir
 				header.Mode = 0755
 				e = t.WriteHeader(header)
-			} else {
-				header.Mode = 0644
+			default:
 				b, e := ioutil.ReadFile(p)
 				if e != nil {
 					return e
 				}
+
 				if name == "Dockerfile" {
-					build.dockerfileAdded = true
+					withDockerFile = true
 					if build.Proxy != "" {
-						df := NewDockerfile(b)
-						b = df.MixinProxy(build.Proxy)
+						b = NewDockerfile(b).MixinProxy(build.Proxy)
 					}
 				}
+
+				header.Mode = 0644
 				header.Size = int64(len(b))
 				e = t.WriteHeader(header)
 				if e != nil {
