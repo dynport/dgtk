@@ -49,4 +49,14 @@ func TestBuild(t *testing.T) {
 		So(e, ShouldBeNil)
 		So(changes, ShouldEqual, true)
 	})
+
+	Convey("SplitBucket", t, func() {
+		bucket, key := splitBucket("some-bucket-name")
+		So(bucket, ShouldEqual, "some-bucket-name")
+		So(key, ShouldEqual, "")
+
+		bucket, key = splitBucket("some-bucket-name/some/path")
+		So(bucket, ShouldEqual, "some-bucket-name")
+		So(key, ShouldEqual, "some/path")
+	})
 }
