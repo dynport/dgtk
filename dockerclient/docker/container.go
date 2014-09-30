@@ -83,7 +83,7 @@ type ContainerInfo struct {
 	SysInitPath     string
 	ResolvConfPath  string
 	Volumes         map[string]string
-	VolumesRW       map[string]string
+	VolumesRW       map[string]bool
 	Path            string
 	Args            []string
 	ContainerConfig ContainerConfig `json:"Config"`
