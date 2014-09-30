@@ -1,11 +1,9 @@
 package dockerclient
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/json"
+	"fmt"
 	"io"
-	"log"
+	"strings"
 )
 
 type ProgressDetail struct {
@@ -40,66 +38,38 @@ func (rsp BuildResponse) ImageId() string {
 	return ""
 }
 
-func ScanJson(r io.Reader, f func(b []byte) error) error {
-	scanner := bufio.NewReader(r)
-	buf := &bytes.Buffer{}
-	for {
-		b, e := scanner.ReadBytes('}')
-		if e == io.EOF {
-			break
-		} else if e != nil {
-			return e
-		}
-		e = f(b)
-		if e != nil {
-			return e
-		}
-		buf.Reset()
-	}
-	return nil
+type imageBuildResponseHandler struct {
+	userHandler func(msg *JSONMessage)
+	lastMessage *JSONMessage
 }
 
-func (dh *DockerHost) handleBuildImageJson(r io.Reader, f func(s *JSONMessage)) (rsp BuildResponse, e error) {
-	scanner := bufio.NewReader(r)
-	buf := &bytes.Buffer{}
-	for {
-		b, e := scanner.ReadBytes('}')
-		if e == io.EOF {
-			break
-		} else if e != nil {
-			return nil, e
-		}
-		buf.Write(b)
-		stream := &JSONMessage{}
-		e = json.Unmarshal(buf.Bytes(), stream)
-		if e != nil {
-			if e.Error() == "unexpected end of JSON input" {
-				continue
-			}
-			log.Printf("ERROR: %s => %s", e.Error(), buf.String())
-			return nil, e
-		}
-		if f != nil {
-			f(stream)
-		}
-		rsp = append(rsp, stream)
-		buf.Reset()
+func (ib *imageBuildResponseHandler) Run(r io.Reader) (string, error) {
+	if e := handleJSONStream(r, ib.msgHandler); e != nil {
+		return "", e
 	}
-	return rsp, nil
+	return ib.imageId()
 }
 
-func (dh *DockerHost) handleBuildImagePlain(r io.Reader, f func(s *JSONMessage)) (rsp BuildResponse, e error) {
-	reader := bufio.NewReader(r)
-	for {
-		b, e := reader.ReadString('\n')
-		if e == io.EOF {
-			break
-		} else if e != nil {
-			return nil, e
-		}
-		s := &JSONMessage{Stream: string(b)}
-		rsp = append(rsp, s)
-		f(s)
+func (ib *imageBuildResponseHandler) msgHandler(msg *JSONMessage) {
+	if ib.userHandler != nil {
+		ib.userHandler(msg)
 	}
-	return rsp, nil
+	ib.lastMessage = msg
+}
+
+func (ib *imageBuildResponseHandler) imageId() (string, error) {
+	if ib.lastMessage == nil {
+		return "", fmt.Errorf("failed to build")
+	}
+
+	if ib.lastMessage.Error != nil {
+		return "", fmt.Errorf(ib.lastMessage.Error.Message)
+	}
+
+	prefix := "Successfully built "
+	if strings.HasPrefix(ib.lastMessage.Stream, prefix) {
+		return strings.TrimPrefix(ib.lastMessage.Stream, prefix), nil
+	}
+
+	return "", fmt.Errorf("unexpected message: %+v", ib.lastMessage)
 }

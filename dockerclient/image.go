@@ -2,7 +2,6 @@ package dockerclient
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -29,11 +28,7 @@ func (dh *DockerHost) Images() (images []*docker.Image, e error) {
 // Get the details for image with the given id (either hash or name).
 func (dh *DockerHost) ImageDetails(id string) (imageDetails *docker.ImageDetails, e error) {
 	imageDetails = &docker.ImageDetails{}
-	e = dh.getJSON(dh.url()+"/images/"+id+"/json", imageDetails)
-	if e == ErrorNotFound {
-		return nil, nil
-	}
-	return imageDetails, e
+	return imageDetails, dh.getJSON(dh.url()+"/images/"+id+"/json", imageDetails)
 }
 
 // Get the given image's history.
@@ -87,32 +82,14 @@ func (dh *DockerHost) Build(r io.Reader, opts *BuildImageOptions) (imageId strin
 	if enc := opts.encode(); enc != "" {
 		u += "?" + enc
 	}
-	rsp, e := dh.httpClient.Post(u, "application/tar", r)
+	rsp, e := dh.postWithContentType(u, "application/tar", r)
 	if e != nil {
 		return "", e
 	}
 	defer rsp.Body.Close()
 
-	if !success(rsp) {
-		return "", fmt.Errorf("failed to send command to %q: %s", u, rsp.Status)
-	}
-
-	v, e := dh.ServerVersion()
-	if e != nil {
-		return "", e
-	}
-
-	var buildResponse BuildResponse
-	if v.jsonBuildStream() {
-		buildResponse, e = dh.handleBuildImageJson(rsp.Body, opts.Callback)
-	} else {
-		buildResponse, e = dh.handleBuildImagePlain(rsp.Body, opts.Callback)
-	}
-
-	if imageId = buildResponse.ImageId(); imageId == "" {
-		return "", fmt.Errorf("unable to extract image id from response: %v", buildResponse.Last())
-	}
-	return imageId, nil
+	ib := &imageBuildResponseHandler{userHandler: opts.Callback}
+	return ib.Run(rsp.Body)
 }
 
 // Tag the image with the given repository and tag. The tag is optional.
@@ -126,8 +103,10 @@ func (dh *DockerHost) TagImage(imageId, repository, tag string) (e error) {
 		url += "&tag=" + tag
 	}
 	rsp, e := dh.post(url)
-	defer rsp.Body.Close()
-	return e
+	if e != nil {
+		return e
+	}
+	return rsp.Body.Close()
 }
 
 // Pull the given image from the registry (part of the image name).
@@ -155,15 +134,17 @@ func (dh *DockerHost) PullImage(name string) error {
 	}
 	defer rsp.Body.Close()
 
-	scanner := bufio.NewScanner(rsp.Body)
-	for scanner.Scan() {
-		log.Printf("<-- %s", scanner.Text())
+	return handleJSONStream(rsp.Body, handlePullImageMessage)
+}
+
+func handlePullImageMessage(msg *JSONMessage) {
+	if e := msg.Err(); e != nil {
+		log.Printf("error creating image: %s", e)
 	}
 
-	// TODO properly handle the returned status messages (see
-	//      splitDockerStatusMessages, which didn't work for the current API).
-
-	return dh.waitForTag(registry+"/"+repository, tag, 10)
+	if msg.Status == "Download complete" {
+		log.Printf("finished downloading %s", msg.Id)
+	}
 }
 
 // Push the given image to the registry. The name should be <registry>/<repository>.
@@ -180,16 +161,19 @@ func (dh *DockerHost) PushImage(name string) error {
 	buf.WriteString(FAKE_AUTH)
 	url := dh.url() + "/images/" + registry + "/" + image + "/push?tag=" + tag
 
-	rsp, e := dh.postWithBuffer(url, buf)
+	rsp, e := dh.postWithReader(url, buf)
 	if e != nil {
 		return e
 	}
 	defer rsp.Body.Close()
-	scanner := bufio.NewScanner(rsp.Body)
-	for scanner.Scan() {
-		log.Printf("--> %s", scanner.Text())
+
+	return handleJSONStream(rsp.Body, handlePushImageMessage)
+}
+
+func handlePushImageMessage(msg *JSONMessage) {
+	if e := msg.Err(); e != nil {
+		log.Printf("error pushing image: %s", e)
 	}
-	return nil
 }
 
 // Delete the given image from the docker host.

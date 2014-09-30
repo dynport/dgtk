@@ -85,9 +85,8 @@ func (dh *DockerHost) CreateContainer(options *docker.ContainerConfig, name stri
 		u += "?name=" + name
 	}
 
-	content, _, e := dh.postJSON(u, options, container)
-	if e != nil {
-		return "", fmt.Errorf("failed creating container (%s): %s", e.Error(), content)
+	if _, e = dh.postJSON(u, options, container); e != nil {
+		return "", fmt.Errorf("failed creating container: %s", e.Error())
 	}
 	return container.Id, e
 }
@@ -97,14 +96,8 @@ func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.Host
 	if hostConfig == nil {
 		hostConfig = &docker.HostConfig{}
 	}
-	body, rsp, e := dh.postJSON(dh.url()+"/containers/"+containerId+"/start", hostConfig, nil)
-	if e != nil {
-		return e
-	}
-	if rsp.StatusCode < 200 || rsp.StatusCode >= 300 {
-		return fmt.Errorf("error starting container %s: status=%d, response=%s", containerId, rsp.StatusCode, string(body))
-	}
-	return nil
+	_, e = dh.postJSON(dh.url()+"/containers/"+containerId+"/start", hostConfig, nil)
+	return e
 }
 
 func (dh *DockerHost) RemoveContainer(containerId string) error {

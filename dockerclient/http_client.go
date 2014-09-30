@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -25,38 +26,41 @@ func handlePostResult(rsp *http.Response, err error) (*http.Response, error) {
 }
 
 func (dh *DockerHost) post(url string) (rsp *http.Response, e error) {
-	return handlePostResult(dh.httpClient.Post(url, "", nil))
+	return dh.postWithReader(url, nil)
 }
 
-func (dh *DockerHost) postWithBuffer(url string, buf *bytes.Buffer) (rsp *http.Response, e error) {
-	return handlePostResult(dh.httpClient.Post(url, "", buf))
+func (dh *DockerHost) postWithReader(url string, r io.Reader) (rsp *http.Response, e error) {
+	return dh.postWithContentType(url, "", r)
 }
 
-func (dh *DockerHost) postJSON(url string, input interface{}, output interface{}) (content []byte, rsp *http.Response, e error) {
+func (dh *DockerHost) postWithContentType(url, contentType string, r io.Reader) (rsp *http.Response, e error) {
+	return handlePostResult(dh.httpClient.Post(url, contentType, r))
+}
+
+func (dh *DockerHost) postJSON(url string, input interface{}, output interface{}) (rsp *http.Response, e error) {
 	buf := &bytes.Buffer{}
-	if input != nil {
-		json, e := json.Marshal(input)
-		if e != nil {
-			return nil, nil, e
-		}
-		buf.Write(json)
+	if e = json.NewEncoder(buf).Encode(input); e != nil {
+		return nil, e
 	}
 
-	rsp, e = handlePostResult(dh.httpClient.Post(url, "application/json", buf))
+	rsp, e = dh.postWithContentType(url, "application/json", buf)
 	if e != nil {
-		return nil, rsp, e
+		return rsp, e
 	}
 	defer rsp.Body.Close()
-	content, e = ioutil.ReadAll(rsp.Body)
+
+	var content []byte
+	if content, e = ioutil.ReadAll(rsp.Body); e != nil {
+		return nil, fmt.Errorf("failed reading content: %s", e)
+	}
 
 	if output != nil {
-		e = json.Unmarshal(content, output)
-		if e != nil {
-			e = fmt.Errorf("error unmarshalling: %s\n%s", e.Error(), string(content))
+		if e = json.Unmarshal(content, output); e != nil {
+			return nil, fmt.Errorf("error unmarshalling: %s\n%s", e.Error(), string(content))
 		}
 	}
 
-	return content, rsp, nil
+	return rsp, nil
 }
 
 func (dh *DockerHost) get(url string) (content []byte, rsp *http.Response, e error) {
