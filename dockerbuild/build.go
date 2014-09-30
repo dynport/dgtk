@@ -67,8 +67,8 @@ func (b *Build) connectToDockerHost() (e error) {
 		if port == 0 {
 			port = 4243
 		}
-		b.client = dockerclient.New(b.DockerHost, port)
-		return nil
+		b.client, e = dockerclient.New(b.DockerHost, port)
+		return e
 	}
 	b.client, e = dockerclient.NewViaTunnel(b.DockerHost, b.DockerHostUser, b.DockerHostPassword)
 	return e
