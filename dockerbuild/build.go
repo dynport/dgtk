@@ -36,6 +36,8 @@ type Build struct {
 
 	ForceBuild bool // Build even if image already exists.
 
+	Verbose bool
+
 	client *dockerclient.DockerHost
 }
 
@@ -118,9 +120,9 @@ func (b *Build) Build() (string, error) {
 		return "", e
 	}
 	progress := newProgress(stat.Size())
-
 	r := io.TeeReader(f, progress)
-	imageId, e := b.client.Build(r, &dockerclient.BuildImageOptions{Tag: b.DockerImageTag, Callback: callback})
+
+	imageId, e := b.client.Build(r, &dockerclient.BuildImageOptions{Tag: b.DockerImageTag, Callback: b.callback})
 	if e != nil {
 		return imageId, e
 	}
