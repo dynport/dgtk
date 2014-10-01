@@ -2,8 +2,7 @@ package gosql
 
 import (
 	"database/sql"
-	"log"
-	"os"
+
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,7 +39,7 @@ func TestMigrations(t *testing.T) {
 		So(e, ShouldBeNil)
 		defer tx.Rollback()
 		m := NewMigrator("CREATE TABLE users (id SERIAL PRIMARY KEY)", "SELECT 2")
-		m.Logger = log.New(os.Stdout, "", 0)
+		//m.Logger = log.New(os.Stdout, "", 0)
 		So(m, ShouldNotBeNil)
 
 		migs, e := m.migrations(tx)
