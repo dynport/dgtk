@@ -2,12 +2,18 @@ package gosql
 
 import (
 	"database/sql"
+
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 var cachedTx *sql.Tx
+
+type user struct {
+	Id   int    `sql:"id"`
+	Name string `sql:"name"`
+}
 
 func cleanup() {
 	if cachedTx != nil {
@@ -54,17 +60,13 @@ func TestSelect(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 
-	type user struct {
-		Id   int    `sql:"id"`
-		Name string `sql:"name"`
-	}
-
 	Convey("Select struct", t, func() {
 		defer cleanup()
 		tx := prepareTx(t, "CREATE TABLE users (id integer, name varchar)", "INSERT INTO users (id, name) VALUES (1, 'hans'), (11, 'marek')")
 		u := &user{}
-		e := SelectStruct(tx, "SELECT id, name FROM users ORDER BY id", u)
+		e := SelectStruct(tx, u, "SELECT id, name FROM users ORDER BY id")
 		So(e, ShouldBeNil)
+
 		So(u.Name, ShouldEqual, "hans")
 		So(u.Id, ShouldEqual, 1)
 

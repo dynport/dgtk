@@ -1,19 +1,15 @@
 package gosql
 
-import (
-	"database/sql"
-	"fmt"
-)
+import "database/sql"
 
-func SelectStruct(db Dbi, q string, i interface{}) error {
-	rows, e := db.Query(q)
+func SelectStruct(db Dbi, i interface{}, q string, params ...interface{}) error {
+	rows, e := db.Query(q, params...)
 	if e != nil {
 		return e
 	}
 	defer rows.Close()
-	ok := rows.Next()
-	if !ok {
-		return fmt.Errorf("expected to find 1 row, found 0")
+	if ok := rows.Next(); !ok {
+		return sql.ErrNoRows
 	}
 	return UnmarshalRow(rows, i)
 }
