@@ -34,6 +34,8 @@ type Build struct {
 	DockerHostPassword string // Password of the user, if required for SSH (public key authentication should be preferred).
 	DockerImageTag     string // tag used for the resulting image
 
+	ForceBuild bool // Build even if image already exists.
+
 	client *dockerclient.DockerHost
 }
 
@@ -84,16 +86,28 @@ func (b *Build) BuildAndPush() (string, error) {
 }
 
 func (b *Build) Build() (string, error) {
+	if e := b.connectToDockerHost(); e != nil {
+		return "", e
+	}
+
+	if !b.ForceBuild {
+		details, e := b.client.ImageDetails(b.DockerImageTag)
+		switch e {
+		case nil:
+			log.Printf("image for %q already exists", b.DockerImageTag)
+			return details.Id, nil
+		case dockerclient.ErrorNotFound:
+			// ignore
+		default:
+			return "", e
+		}
+	}
+
 	f, e := b.buildArchive()
 	if e != nil {
 		return "", e
 	}
 	defer func() { os.Remove(f.Name()) }()
-	log.Printf("wrote file %s", f.Name())
-
-	if e := b.connectToDockerHost(); e != nil {
-		return "", e
-	}
 
 	f, e = os.Open(f.Name())
 	if e != nil {
