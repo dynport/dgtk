@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var logger = log.New(os.Stderr, "[ts-reload] ", log.Ldate|log.Ltime)
+var logger = log.New(os.Stderr, "[go-reload] ", log.Ldate|log.Ltime)
 
 func main() {
 	e := run()
@@ -60,5 +60,4 @@ func run() error {
 			return e
 		}
 	}
-	return nil
 }
