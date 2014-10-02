@@ -33,7 +33,10 @@ func TestFileCache(t *testing.T) {
 	Convey("Open", t, func() {
 		defer cleanup()
 		br := strings.NewReader("just a string")
-		r := &FileCache{Source: &testSource{reader: br}, Key: "some.key", Root: "tmp/cache"}
+		fc := &FileCache{Source: &testSource{reader: br}, Key: "some.key", Root: "tmp/cache"}
+
+		r, e := fc.Open()
+		So(e, ShouldBeNil)
 
 		b, e := ioutil.ReadAll(r)
 		So(e, ShouldBeNil)
@@ -58,8 +61,11 @@ func TestFileCache(t *testing.T) {
 		}()
 		So(e, ShouldBeNil)
 
-		f := &FileCache{Source: &testSource{reader: buf}, Key: "some.key", Root: "tmp/cache", SrcCompressed: true}
-		b, e := ioutil.ReadAll(f)
+		fc := &FileCache{Source: &testSource{reader: buf}, Key: "some.key", Root: "tmp/cache", SrcCompressed: true}
+
+		r, e := fc.Open()
+		So(e, ShouldBeNil)
+		b, e := ioutil.ReadAll(r)
 		So(e, ShouldBeNil)
 		So(string(b), ShouldEqual, "just a compressed test")
 	})

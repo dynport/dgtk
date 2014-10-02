@@ -2,7 +2,6 @@ package util
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"path"
@@ -16,10 +15,6 @@ type FileCache struct {
 	Key           string
 	Source        Source
 	SrcCompressed bool
-
-	opened bool
-	reader io.Reader
-	gz     *gzip.Reader
 }
 
 type Source interface {
@@ -27,53 +22,16 @@ type Source interface {
 	Size() (int64, error)
 }
 
-func (f *FileCache) Close() error {
-	es := []string{}
-	if f.gz != nil {
-		e := f.gz.Close()
-		if e != nil {
-			es = append(es, e.Error())
-		}
-	}
-	if f.reader != nil {
-		if rc, ok := f.reader.(io.ReadCloser); ok {
-			e := rc.Close()
-			if e != nil {
-				es = append(es, e.Error())
-			}
-		}
-	}
-	return nil
-}
-
-func (f *FileCache) Read(b []byte) (int, error) {
-	if !f.opened {
-		e := f.open()
-		if e != nil {
-			return 0, e
-		}
-		f.opened = true
-	}
-	if f.gz != nil {
-		return f.gz.Read(b)
-	} else if f.reader != nil {
-		return f.reader.Read(b)
-	}
-	return 0, fmt.Errorf("needs to be opened first")
-}
-
-func (f *FileCache) open() error {
+func (f *FileCache) Open() (io.ReadCloser, error) {
 	root := f.Root
 	if root == "" {
 		root = os.ExpandEnv("$HOME/.cache")
 	}
 	localPath := root + "/" + f.Key
 	tmpPath := localPath + ".tmp"
-
-	var e error
-
 	reader, e := os.Open(localPath)
 
+	r := &GzipFileCloser{}
 	if os.IsNotExist(e) {
 		e = func() error {
 			started := time.Now()
@@ -118,24 +76,21 @@ func (f *FileCache) open() error {
 			return os.Rename(tmpPath, localPath)
 		}()
 		if e != nil {
-			return e
+			return nil, e
 		}
+		dbg.Printf("opening local path %q", localPath)
 		reader, e = os.Open(localPath)
 	} else if e != nil {
-		return e
+		return nil, e
 	} else {
 		dbg.Printf("using cached reader from %q", localPath)
 	}
-	if e != nil {
-		return e
-	}
-	f.reader = reader
+	r.reader = reader
 	if f.SrcCompressed {
-		f.gz, e = gzip.NewReader(f.reader)
+		r.gz, e = gzip.NewReader(r.reader)
 		if e != nil {
-			return e
+			return nil, e
 		}
 	}
-	f.opened = true
-	return nil
+	return r, nil
 }
