@@ -14,12 +14,12 @@ func NewProgress() *Progress {
 }
 
 type Progress struct {
-	Total         int
+	Total         int64
 	Writer        io.Writer
 	Frequency     time.Duration
 	Suffix        chan string
-	current       int
-	c             chan int
+	current       int64
+	c             chan int64
 	finished      chan struct{}
 	started       time.Time
 	last          string
@@ -27,8 +27,8 @@ type Progress struct {
 	closed        bool
 }
 
-func (p *Progress) Start() chan int {
-	p.c = make(chan int)
+func (p *Progress) Start() chan int64 {
+	p.c = make(chan int64)
 	p.finished = make(chan struct{})
 	p.Suffix = make(chan string)
 	p.started = time.Now()
@@ -53,7 +53,7 @@ func (p *Progress) Start() chan int {
 			case s := <-p.Suffix:
 				p.currentSuffix = s
 			case i, ok := <-p.c:
-				p.current += i
+				p.current += int64(i)
 				if !ok {
 					return
 				}
@@ -78,7 +78,7 @@ func (p *Progress) flush() error {
 	perSecond := float64(p.current) / diff.Seconds()
 	parts := []string{
 		fmt.Sprintf("%.0f", diff.Seconds()),
-		strconv.Itoa(p.current),
+		strconv.FormatInt(p.current, 10),
 		fmt.Sprintf("%.03f/second", perSecond),
 	}
 	if p.Total > 0 {
