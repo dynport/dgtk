@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -295,13 +296,7 @@ func (b *build) Run() error {
 			defer f.Close()
 			client := s3.NewFromEnv()
 			client.CustomEndpointHost = "s3-eu-west-1.amazonaws.com"
-
-			parts := strings.Split(b.Bucket, "/")
-			bucket := parts[0]
-			key := name
-			if len(parts) > 1 {
-				key = strings.Join(parts[1:], "/") + "/" + key
-			}
+			bucket, key := bucketAndKey(b.Bucket, name)
 			logger.Printf("uploading to bucket=%q key=%q", bucket, key)
 			return client.PutStream(bucket, key, f, nil)
 		}()
@@ -341,7 +336,7 @@ func (b *build) Run() error {
 			}{
 				Name: name, Sudo: cfg.User != "root",
 			}
-			cmd := renderRecursive("cd /usr/local/bin && cat - | sudo tee {{ .Name }}.tmp > /dev/null && {{ if .Sudo }}sudo {{ end }}chmod 0755 {{ .Name }}.tmp && {{ if .Sudo }}sudo {{ end }}mv {{ .Name }}.tmp {{ .Name }}", s)
+			cmd := renderRecursive("cd /usr/local/bin && cat - | {{ if .Sudo }}sudo {{ end}}tee {{ .Name }}.tmp > /dev/null && {{ if .Sudo }}sudo {{ end }}chmod 0755 {{ .Name }}.tmp && {{ if .Sudo }}sudo {{ end }}mv {{ .Name }}.tmp {{ .Name }}", s)
 			dbg.Printf("%s", cmd)
 			return ses.Run(cmd)
 		}()
@@ -352,19 +347,39 @@ func (b *build) Run() error {
 	return nil
 }
 
+func bucketAndKey(bucketWithPrefix, name string) (bucket, key string) {
+	parts := strings.Split(bucketWithPrefix, "/")
+	bucket = parts[0]
+	key = name
+	if len(parts) > 1 {
+		key = strings.TrimSuffix(strings.Join(parts[1:], "/"), "/") + "/" + key
+	}
+	return bucket, key
+}
+
 func parseConfig(s string) (*gossh.Config, error) {
 	cfg := &gossh.Config{}
 	parts := strings.Split(s, "@")
+	hostAndPort := ""
 	switch len(parts) {
 	case 0:
 		return nil, fmt.Errorf("Host must be set")
 	case 1:
-		cfg.Host = parts[0]
+		hostAndPort = parts[0]
 	case 2:
 		cfg.User = parts[0]
-		cfg.Host = parts[1]
+		hostAndPort = parts[1]
 	case 3:
 		return nil, fmt.Errorf("format of host %q not understood", s)
+	}
+	parts = strings.Split(hostAndPort, ":")
+	cfg.Host = parts[0]
+	if len(parts) == 2 {
+		var e error
+		cfg.Port, e = strconv.Atoi(parts[1])
+		if e != nil {
+			return nil, e
+		}
 	}
 	return cfg, nil
 }

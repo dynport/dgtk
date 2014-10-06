@@ -3,45 +3,68 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"os"
-	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/dynport/dgtk/expect"
 )
 
-func TestBuild(t *testing.T) {
-	b := &build{Dir: "test-app"}
+var b = &build{Dir: "test-app"}
+
+func init() {
 	logger = log.New(ioutil.Discard, "", 0)
+}
 
-	Convey("deps", t, func() {
-		deps, e := b.deps()
-		So(e, ShouldBeNil)
-		So(len(deps), ShouldBeGreaterThan, 10)
-		sort.Strings(deps)
-		So(deps, ShouldContain, "github.com/dynport/gocli")
-	})
+func TestDeps(t *testing.T) {
+	expect := expect.New(t)
+	deps, e := b.deps()
+	expect(e).ToBeNil()
+	expect(deps).ToHaveLength(23)
+	expect(deps[4]).ToEqual("github.com/dynport/gocli")
+}
 
-	Convey("currentPackage", t, func() {
-		cp, e := b.currentPackage()
-		So(e, ShouldBeNil)
-		So(cp, ShouldEqual, "github.com/dynport/dgtk/go-remote-build/test-app")
-	})
+func TestCurrentPackage(t *testing.T) {
+	expect := expect.New(t)
+	cp, e := b.currentPackage()
+	expect(e).ToBeNil()
+	expect(cp).ToEqual("github.com/dynport/dgtk/go-remote-build/test-app")
 
-	Convey("filesMap", t, func() {
-		m, e := b.filesMap()
-		So(e, ShouldBeNil)
-		So(len(m), ShouldBeGreaterThan, 3)
-	})
+}
 
-	Convey("createarchive", t, func() {
-		f, e := os.Create("/tmp/archive")
-		So(e, ShouldBeNil)
-		defer f.Close()
+func TestSplitBucket(t *testing.T) {
+	expect := expect.New(t)
+	s := "de-dynport-public/bin/linux_amd64/"
+	bucket, key := bucketAndKey(s, "metrix")
+	expect(bucket).ToEqual("de-dynport-public")
+	expect(key).ToEqual("bin/linux_amd64/metrix")
 
-		file, e := b.createArchive()
-		So(e, ShouldBeNil)
-		So(file, ShouldNotEqual, "")
-		defer os.RemoveAll(file)
-	})
+	bucket, key = bucketAndKey("de-dynport-public", "metrix")
+	expect(bucket).ToEqual("de-dynport-public")
+	expect(key).ToEqual("metrix")
+}
+
+func TestFilesMap(t *testing.T) {
+	expect := expect.New(t)
+	_, e := b.filesMap()
+	expect(e).ToBeNil()
+	//expect(m).ToHaveLength(0)
+}
+
+func TestCreateArchive(t *testing.T) {
+	expect := expect.New(t)
+	_, e := b.createArchive()
+	expect(e).ToBeNil()
+}
+
+func TestParseConfig(t *testing.T) {
+	expect := expect.New(t)
+	cfg, e := parseConfig("ubuntu@127.0.0.1")
+	expect(e).ToBeNil()
+	expect(cfg).ToNotBeNil()
+	expect(cfg.Host).ToEqual("127.0.0.1")
+	expect(cfg.User).ToEqual("ubuntu")
+
+	cfg, e = parseConfig("ubuntu@1.2.3.4:1234")
+	expect(e).ToBeNil()
+	expect(cfg.Port).ToEqual(1234)
+
 }
