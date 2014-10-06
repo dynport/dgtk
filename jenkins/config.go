@@ -5,7 +5,7 @@ import "encoding/xml"
 type Config struct {
 	XMLName                          xml.Name      `xml:"project"`
 	KeepDependencies                 bool          `xml:"keepDependencies"`
-	Properties                       []interface{} `xml:"properties"`
+	Properties                       []interface{} `xml:"properties>ignored"`
 	Scm                              interface{}   `xml:"scm"`
 	CanRoam                          bool          `xml:"canRoam"`                          // true</canRoam>
 	Disabled                         bool          `xml:"disabled"`                         // false</disabled>
@@ -14,6 +14,8 @@ type Config struct {
 	ConcurrentBuild                  bool          `xml:"concurrentBuild"`
 	Triggers                         []interface{} `xml:"triggers>trigger"`
 	Builders                         []interface{} `xml:"builders>builder"`
+	AssignedToNode                   string        `xml:"assignedNode,omitempty"`
+	Publishers                       []interface{} `xml:"publishers>ignored"`
 }
 
 type Builders struct {
