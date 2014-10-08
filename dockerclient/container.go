@@ -188,7 +188,6 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 			if stdout != nil {
 				_, _ = stdout.Write([]byte{'+'})
 			}
-			fallthrough
 		case 1: // stdout
 			if stdout != nil {
 				_, e := stdout.Write(msgBuf[:msgLength])
@@ -196,7 +195,6 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 					return e
 				}
 			}
-			return nil
 		case 2: // stderr
 			if stderr != nil {
 				_, e := stderr.Write(msgBuf[:msgLength])
@@ -204,7 +202,6 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 					return e
 				}
 			}
-			return nil
 		default:
 			return fmt.Errorf("unknown stream source received")
 		}
