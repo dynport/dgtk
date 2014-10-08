@@ -31,11 +31,12 @@ func main() {
 	host := flag.String("host", os.Getenv("DEV_HOST"), "Host to build on. Example: "+sshExample)
 	deploy := flag.String("deploy", "", "Deploy to host after building. Example: "+sshExample)
 	bucket := flag.String("bucket", "", "Upload binary to s3 bucket after building")
+	public := flag.Bool("public", false, "Upload to s3 and make public")
 	verbose := flag.Bool("verbose", false, "Build using -v flag")
 
 	flag.Parse()
 	logger.Printf("running with %q", *host)
-	b := &build{Host: *host, Dir: *dir, DeployTo: *deploy, Bucket: *bucket, verbose: *verbose}
+	b := &build{Host: *host, Dir: *dir, DeployTo: *deploy, Bucket: *bucket, verbose: *verbose, Public: *public}
 	e := b.Run()
 	if e != nil {
 		logger.Fatalf("ERROR: %s", e)
@@ -46,6 +47,7 @@ type build struct {
 	Host     string
 	Dir      string
 	Bucket   string
+	Public   bool
 	DeployTo string
 	verbose  bool
 }
@@ -298,7 +300,12 @@ func (b *build) Run() error {
 			client.CustomEndpointHost = "s3-eu-west-1.amazonaws.com"
 			bucket, key := bucketAndKey(b.Bucket, name)
 			logger.Printf("uploading to bucket=%q key=%q", bucket, key)
-			return client.PutStream(bucket, key, f, nil)
+
+			opts := &s3.PutOptions{}
+			if b.Public {
+				opts.AmzAcl = "public-read"
+			}
+			return client.PutStream(bucket, key, f, opts)
 		}()
 		if e != nil {
 			return e
