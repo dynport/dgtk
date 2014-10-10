@@ -67,7 +67,7 @@ func (p *progress) Write(b []byte) (int, error) {
 	p.current += int64(i)
 	fmt.Printf("\rupload progress %.1f%%", 100.0*float64(p.current)/float64(p.total))
 	if p.current == p.total {
-		fmt.Printf("\nuploaded total_size=%.3fMB in total_time%.3fs\n", float64(p.total)/(1024.0*1024.0), time.Since(p.started).Seconds())
+		fmt.Printf("\nuploaded total_size=%.3fMB in total_time=%.3fs\n", float64(p.total)/(1024.0*1024.0), time.Since(p.started).Seconds())
 	}
 	return i, nil
 }
