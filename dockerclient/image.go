@@ -147,11 +147,20 @@ func handlePullImageMessage(msg *JSONMessage) {
 	}
 }
 
+type PushImageOptions struct {
+	Callback func(s *JSONMessage)
+}
+
 // Push the given image to the registry. The name should be <registry>/<repository>.
-func (dh *DockerHost) PushImage(name string) error {
+func (dh *DockerHost) PushImage(name string, opts *PushImageOptions) error {
 	if name == "" {
 		return fmt.Errorf("no image name given")
 	}
+
+	if opts == nil {
+		opts = &PushImageOptions{Callback: handlePullImageMessage}
+	}
+
 	registry, image, tag := splitImageName(name)
 	if registry == "" {
 		return fmt.Errorf("no registry given")
@@ -167,7 +176,7 @@ func (dh *DockerHost) PushImage(name string) error {
 	}
 	defer rsp.Body.Close()
 
-	return handleJSONStream(rsp.Body, handlePushImageMessage)
+	return handleJSONStream(rsp.Body, opts.Callback)
 }
 
 func handlePushImageMessage(msg *JSONMessage) {

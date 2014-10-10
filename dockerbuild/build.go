@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -35,10 +36,20 @@ type Build struct {
 	DockerImageTag     string // tag used for the resulting image
 
 	ForceBuild bool // Build even if image already exists.
+	Verbose    bool
 
-	Verbose bool
+	msgList []message
 
 	client *dockerclient.DockerHost
+}
+
+type message struct {
+	Step     int
+	Cached   bool
+	Command  string
+	Image    string
+	Started  time.Time
+	Finished time.Time
 }
 
 type progress struct {
@@ -84,7 +95,7 @@ func (b *Build) BuildAndPush() (string, error) {
 		return imageId, e
 	}
 	// build has connected so we can assume b.client is set
-	return imageId, b.client.PushImage(b.DockerImageTag)
+	return imageId, b.client.PushImage(b.DockerImageTag, &dockerclient.PushImageOptions{Callback: b.callbackForPush})
 }
 
 func (b *Build) Build() (string, error) {
@@ -122,12 +133,10 @@ func (b *Build) Build() (string, error) {
 	progress := newProgress(stat.Size())
 	r := io.TeeReader(f, progress)
 
-	imageId, e := b.client.Build(r, &dockerclient.BuildImageOptions{Tag: b.DockerImageTag, Callback: b.callback})
-	if e != nil {
-		return imageId, e
-	}
-
-	return imageId, e
+	return b.client.Build(r, &dockerclient.BuildImageOptions{
+		Tag:      b.DockerImageTag,
+		Callback: b.callbackForBuild,
+	})
 }
 
 func (b *Build) buildArchive() (*os.File, error) {
@@ -212,4 +221,70 @@ func (build *Build) addFilesToArchive(root string, t *tar.Writer) (withDockerFil
 		}
 		return nil
 	})
+}
+
+func (b *Build) callbackForBuild(msg *dockerclient.JSONMessage) {
+	if e := msg.Err(); e != nil {
+		log.Printf("%s", e)
+		return
+	}
+	msg.Stream = strings.TrimSpace(msg.Stream)
+	switch {
+	case msg.Stream == "":
+		// ignore
+	case b.Verbose:
+		fmt.Println(msg.Stream)
+	case strings.HasPrefix(msg.Stream, "Step "):
+		parts := strings.SplitN(msg.Stream[5:], " : ", 2)
+		if len(parts) != 2 { // ignore message
+			return
+		}
+		step, e := strconv.Atoi(parts[0])
+		if e != nil {
+			return
+		}
+		newMessage := message{
+			Step:    step,
+			Command: parts[1],
+			Started: time.Now(),
+		}
+		b.msgList = append(b.msgList, newMessage)
+		fmt.Printf("%.3d %q", newMessage.Step, newMessage.Command)
+	case msg.Stream == "---> Using cache":
+		if len(b.msgList) > 0 {
+			b.msgList[len(b.msgList)-1].Cached = true
+		}
+	case strings.HasPrefix(msg.Stream, "---> "):
+		if len(b.msgList) > 0 && len(msg.Stream) == 17 {
+			i := len(b.msgList) - 1
+			b.msgList[i].Finished = time.Now()
+			b.msgList[i].Image = msg.Stream[5:]
+			status := "BUILT "
+			if b.msgList[i].Cached {
+				status = "CACHED"
+			}
+			duration := b.msgList[i].Finished.Sub(b.msgList[i].Started)
+			fmt.Printf("\r%.3d [%s] [%s] %q took %5.2fs\n", b.msgList[i].Step, status, b.msgList[i].Image, b.msgList[i].Command, duration.Seconds())
+		}
+	}
+}
+
+func (b *Build) callbackForPush(msg *dockerclient.JSONMessage) {
+	if e := msg.Err(); e != nil {
+		log.Printf("%s", e)
+		return
+	}
+	msg.Status = strings.TrimSpace(msg.Status)
+	switch {
+	case msg.Status == "":
+		// ignore
+	case b.Verbose:
+		fmt.Printf("%s\n", msg.Status)
+	case msg.Status == "Buffering to disk" && msg.Progress.Total > 0:
+		fmt.Printf("\r[%s] Buffering: %4.2f %%", msg.Id, 100.0*float32(msg.Progress.Current)/float32(msg.Progress.Total))
+	case msg.Status == "Pushing" && msg.Progress.Total > 0:
+		fmt.Printf("\r[%s] Pushing:   %4.2f %%", msg.Id, 100.0*float32(msg.Progress.Current)/float32(msg.Progress.Total))
+	case msg.Status == "Image successfully pushed":
+		fmt.Printf("\r[%s] Pushing:   ... done\n", msg.Id)
+	}
 }
