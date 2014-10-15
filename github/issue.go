@@ -70,10 +70,3 @@ type Milestone struct {
 	UpdatedAt    string `json:"updated_at,omitempty"` // "2014-03-03T18:58:10Z",
 	DueOn        string `json:"due_on,omitempty"`     // null
 }
-
-type PullRequest struct {
-	Url      string `json:"url"`       // "https://api.github.com/repos/octocat/Hello-World/pulls/1347",
-	HtmlUrl  string `json:"html_url"`  // "https://github.com/octocat/Hello-World/pull/1347",
-	DiffUrl  string `json:"diff_url"`  // "https://github.com/octocat/Hello-World/pull/1347.diff",
-	PatchUrl string `json:"patch_url"` // "https://github.com/octocat/Hello-World/pull/1347.patch"
-}
