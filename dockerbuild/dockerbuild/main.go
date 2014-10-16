@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -39,7 +40,7 @@ func main() {
 	}
 	dockerHost, dockerPort := parseDockerHost(*dockerHost)
 	build := &dockerbuild.Build{
-		Root:           root,
+		FileSystem:     http.Dir(root),
 		DockerImageTag: *tag,
 		Proxy:          *proxy,
 		GitRepository:  *repository,

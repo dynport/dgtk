@@ -6,8 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -17,8 +17,8 @@ import (
 )
 
 type Build struct {
-	Proxy string // http proxy to use for faster builds in local environment
-	Root  string // root directory used for archive (should contain a dockerfile at least)
+	Proxy      string // http proxy to use for faster builds in local environment
+	FileSystem http.FileSystem
 
 	GitRepository string // repository to check out into the docker build archive
 	GitRevision   string // revision of the repository to use
@@ -140,6 +140,11 @@ func (b *Build) Build() (string, error) {
 }
 
 func (b *Build) buildArchive() (*os.File, error) {
+	_, e := b.FileSystem.Open("Dockerfile")
+	if e != nil {
+		return nil, fmt.Errorf("archive must contain a Dockerfile")
+	}
+
 	f, e := ioutil.TempFile("/tmp", "docker_build")
 	if e != nil {
 		return nil, e
@@ -169,58 +174,56 @@ func (b *Build) buildArchive() (*os.File, error) {
 			}
 		}
 	}
-	if withDockerFile, e := b.addFilesToArchive(b.Root, t); e != nil {
-		return nil, e
-	} else if !withDockerFile {
-		return nil, fmt.Errorf("archive must contain a Dockerfile")
-	}
-	return f, nil
+	return f, b.addFilesToArchive(b.FileSystem, t)
 }
 
-func (build *Build) addFilesToArchive(root string, t *tar.Writer) (withDockerFile bool, e error) {
-	return withDockerFile, filepath.Walk(root, func(p string, info os.FileInfo, e error) error {
-		if e == nil && p != root {
-			var e error
-			name := strings.TrimPrefix(p, root+"/")
-			header := &tar.Header{Name: name, ModTime: info.ModTime().UTC()}
-			switch {
-			case info.IsDir():
-				if name == ".git" {
-					return filepath.SkipDir
-				}
-				header.Typeflag = tar.TypeDir
-				header.Mode = 0755
-				e = t.WriteHeader(header)
-			default:
-				b, e := ioutil.ReadFile(p)
-				if e != nil {
-					return e
-				}
+func (build *Build) addFilesToArchive(fs http.FileSystem, t *tar.Writer) error {
+	return walkFileSystem(fs, "", t)
+}
 
-				if name == "Dockerfile" {
-					withDockerFile = true
-					if build.Proxy != "" {
-						b = NewDockerfile(b).MixinProxy(build.Proxy)
-					}
-				}
-
-				header.Mode = 0644
-				header.Size = int64(len(b))
-				e = t.WriteHeader(header)
-				if e != nil {
-					return e
-				}
-				_, e = t.Write(b)
-				if e != nil {
-					return e
-				}
+func walkFileSystem(fs http.FileSystem, path string, t *tar.Writer) error {
+	fh, e := fs.Open(path)
+	if e != nil {
+		return e
+	}
+	infos, e := fh.Readdir(0)
+	if e != nil {
+		return e
+	}
+	for i := range infos {
+		name := infos[i].Name()
+		if path != "" {
+			name = fmt.Sprintf("%s/%s", path, name)
+		}
+		header := &tar.Header{Name: name, ModTime: infos[i].ModTime().UTC()}
+		switch {
+		case infos[i].IsDir():
+			header.Typeflag = tar.TypeDir
+			header.Mode = 0755
+			e = t.WriteHeader(header)
+			if e = walkFileSystem(fs, name, t); e != nil {
+				return e
 			}
+		default:
+			file, e := fs.Open(name)
+			if e != nil {
+				return e
+			}
+
+			header.Mode = 0644
+			header.Size = infos[i].Size()
+			e = t.WriteHeader(header)
+			if e != nil {
+				return e
+			}
+
+			_, e = io.Copy(t, file)
 			if e != nil {
 				return e
 			}
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (b *Build) callbackForBuild(msg *dockerclient.JSONMessage) {
