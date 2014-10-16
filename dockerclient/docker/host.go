@@ -3,9 +3,11 @@ package docker
 type Port string
 
 type HostConfig struct {
-	Binds        []string
-	PortBindings map[Port][]PortBinding
-	LxcConf      map[string]string
+	PublishAllPorts bool
+	NetworkMode     string
+	Binds           []string
+	PortBindings    map[Port][]PortBinding
+	LxcConf         map[string]string
 }
 
 type PortBinding struct {
