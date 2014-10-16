@@ -53,12 +53,12 @@ func determinePackageByPath() (string, error) {
 }
 
 func main() {
-	if e := cli.RunActionWithArgs(&action{}); e != nil {
-		switch e {
+	if err := cli.RunActionWithArgs(&action{}); err != nil {
+		switch err {
 		case nil, cli.ErrorHelpRequested, cli.ErrorNoRoute:
 			// ignore
 		default:
-			logger.Fatal(e.Error())
+			logger.Fatal(err.Error())
 		}
 	}
 }
