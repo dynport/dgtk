@@ -167,9 +167,6 @@ func TestParse(t *testing.T) {
 				}
 			}
 		}
-		logger.Printf("types=%#v", types)
-		logger.Printf("objects=%#v", objects)
-
 	})
 }
 
