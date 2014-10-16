@@ -62,7 +62,7 @@ func TestIntegration(t *testing.T) {
 	Convey("Integration test", t, func() {
 		cleanup(t)
 		os.MkdirAll("./tmp", 0755)
-		e := ioutil.WriteFile("./tmp/main.go", []byte(TEST_FILE), 0755)
+		e := ioutil.WriteFile("./tmp/main.go", []byte(testFile), 0755)
 		if e != nil {
 			t.Fatal(e.Error())
 		}
@@ -77,7 +77,7 @@ func TestIntegration(t *testing.T) {
 	})
 }
 
-const TEST_FILE = `
+const testFile = `
 package main
 
 import (
