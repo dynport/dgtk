@@ -3,7 +3,6 @@ package browser
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -35,7 +34,6 @@ func (t *transport) RoundTrip(r *http.Request) (*http.Response, error) {
 	}
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Host", r.URL.Host)
-	log.Printf("using headers %#v", r.Header)
 	return http.DefaultClient.Do(r)
 }
 
