@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -89,7 +90,7 @@ import (
 var logger = log.New(os.Stdout, "", 0)
 
 func main() {
-	f, e := FileSystem().Open("a.txt")
+	f, e := FileSystem("").Open("a.txt")
 	if e != nil {
 		logger.Fatal(e)
 	}

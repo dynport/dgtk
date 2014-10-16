@@ -1,6 +1,6 @@
 package main
 
-const TPL = `package {{ .Package }}
+const tpl = `package {{ .Package }}
 
 import (
 	"bytes"

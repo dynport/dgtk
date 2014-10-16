@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,11 +16,20 @@ import (
 var (
 	builtAt        = time.Now()
 	compiledAssets = assetIntFS{}
-	DevPath        string
-	assets         assetFileSystemI
+	assets         AssetFileSystem
 )
 
+func debugStream() io.Writer {
+	if os.Getenv("DEBUG") == "true" {
+		return os.Stderr
+	}
+	return ioutil.Discard
+}
+
+var dbg = log.New(debugStream(), "[DEBUG] ", log.Lshortfile)
+
 type assetProxy struct {
+	devPath string
 }
 
 func (a *assetProxy) Open(name string) (http.File, error) {
@@ -30,22 +40,28 @@ func (a *assetProxy) AssetNames() []string {
 	return a.fileSystem().AssetNames()
 }
 
-func (a *assetProxy) fileSystem() assetFileSystemI {
-	if DevPath != "" {
-		stat, e := os.Stat(DevPath)
+func (a *assetProxy) fileSystem() AssetFileSystem {
+	dbg.Printf("getting file system for %q", a.devPath)
+	if a.devPath != "" {
+		dbg.Printf("using dev path %s", a.devPath)
+		stat, e := os.Stat(a.devPath)
 		if e == nil && stat.IsDir() {
-			assets = &assetOsFS{root: DevPath}
+			assets = &assetOsFS{root: a.devPath}
 			return assets
+		} else {
+			dbg.Printf("dev path %s does not exist", a.devPath)
 		}
+	} else {
+		dbg.Printf("dev path seems to be empty")
 	}
 	return compiledAssets
 }
 
-func FileSystem() assetFileSystemI {
-	return &assetProxy{}
+func FileSystem(devPath string) AssetFileSystem {
+	return &assetProxy{devPath: devPath}
 }
 
-type assetFileSystemI interface {
+type AssetFileSystem interface {
 	Open(name string) (http.File, error)
 	AssetNames() []string
 }
@@ -81,7 +97,14 @@ func mustReadAsset(key string) []byte {
 type assetOsFS struct{ root string }
 
 func (aFS assetOsFS) Open(name string) (http.File, error) {
-	return os.Open(filepath.Join(aFS.root, name))
+	p := filepath.Join(aFS.root, name)
+	dbg.Printf("opening local file %q", p)
+	f, e := os.Open(p)
+	if e != nil {
+		dbg.Printf("ERROR reading local file: %q", name)
+		return nil, e
+	}
+	return f, nil
 }
 
 func (aFS *assetOsFS) AssetNames() []string {
@@ -145,6 +168,7 @@ func (afs assetIntFS) AssetNames() (names []string) {
 }
 
 func (afs assetIntFS) Open(name string) (af http.File, e error) {
+	dbg.Printf("opening tpl %s", name)
 	name = strings.TrimPrefix(name, "/")
 	if name == "" {
 		name = "index.html"
@@ -164,6 +188,7 @@ func (afs assetIntFS) Open(name string) (af http.File, e error) {
 		af = &assetFile{Reader: bytes.NewReader(b), name: name}
 		return af, nil
 	}
+	dbg.Printf("ERROR: index %s does not exist. known keys: %#v", name, afs.AssetNames())
 	return nil, os.ErrNotExist
 }
 

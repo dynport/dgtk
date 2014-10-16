@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const TPL = ""
+const tpl = ""
 
 var logger = log.New(os.Stderr, "", 0)
 
@@ -101,7 +101,7 @@ type assets struct {
 }
 
 func (assets *assets) Bytes() (b []byte, e error) {
-	tpl := template.Must(template.New("assets").Parse(TPL))
+	tpl := template.Must(template.New("assets").Parse(tpl))
 	buf := &bytes.Buffer{}
 	assets.builtAt = time.Now().UTC().Format(time.RFC3339Nano)
 	e = tpl.Execute(buf, assets)
@@ -176,7 +176,7 @@ func (assets *assets) packagePath() (path string, e error) {
 	return filepath.Abs(path)
 }
 
-const BYTE_LENGTH = 12
+const byteLength = 12
 
 type asset struct {
 	Path  string
@@ -207,7 +207,7 @@ func (asset *asset) Load() error {
 	asset.Name = path.Base(asset.Path)
 	for _, b := range list {
 		buffer = append(buffer, b)
-		if len(buffer) == BYTE_LENGTH {
+		if len(buffer) == byteLength {
 			asset.Bytes += strings.Join(buffer, ",") + ",\n"
 			buffer = makeLineBuffer()
 		}
@@ -270,5 +270,5 @@ func (assets *assets) build() error {
 }
 
 func makeLineBuffer() []string {
-	return make([]string, 0, BYTE_LENGTH)
+	return make([]string, 0, byteLength)
 }
