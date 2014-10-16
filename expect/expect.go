@@ -45,7 +45,7 @@ func (e *expectation) ToHaveSuffix(prefix string) {
 }
 
 func (e *expectation) ToNotEqual(i interface{}) {
-	e.expect(e.target != i, "expected %#v to equal %#v", e.target, i)
+	e.expect(e.target != i, "expected %#v to not equal %#v", e.target, i)
 }
 
 func (e *expectation) ToEqual(i interface{}) {
