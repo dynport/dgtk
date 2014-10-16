@@ -12,7 +12,7 @@ type LoadIssue struct {
 }
 
 func issueUrl(repo string, id int) string {
-	return apiRoot + "/repos/" + repo + "/issues/" + strconv.Itoa(id)
+	return ApiRoot + "/repos/" + repo + "/issues/" + strconv.Itoa(id)
 }
 
 func (i *LoadIssue) Execute(client *Client) (*Issue, error) {

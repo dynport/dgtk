@@ -27,7 +27,7 @@ func (c *CreateIssue) Create(client *Client) (*Issue, error) {
 	if e != nil {
 		return nil, e
 	}
-	req, e := http.NewRequest("POST", apiRoot+"/repos/"+c.Repo+"/issues", bytes.NewReader(b))
+	req, e := http.NewRequest("POST", ApiRoot+"/repos/"+c.Repo+"/issues", bytes.NewReader(b))
 	if e != nil {
 		return nil, e
 	}

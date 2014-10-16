@@ -57,7 +57,7 @@ func (a *ListIssues) Execute(client *Client) ([]*Issue, error) {
 		path += "?" + v.Encode()
 	}
 	issues := []*Issue{}
-	req, e := http.NewRequest("GET", apiRoot+path, nil)
+	req, e := http.NewRequest("GET", ApiRoot+path, nil)
 	if e != nil {
 		return nil, e
 	}

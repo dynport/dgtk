@@ -24,8 +24,6 @@ func NewHttpClient(token string) *http.Client {
 	return cl
 }
 
-const apiRoot = "https://api.github.com"
-
 type Client struct {
 	*http.Client
 }

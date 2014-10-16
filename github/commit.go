@@ -43,7 +43,7 @@ func (a *ListCommits) Execute(client *Client) ([]*Commit, error) {
 	if !a.Until.IsZero() {
 		v.Set("until", a.Until.UTC().Format("2006-01-02T15:04:05.00Z"))
 	}
-	theUrl := "https://api.github.com/repos/" + a.Org + "/" + a.Repo + "/commits"
+	theUrl := ApiRoot + "/repos/" + a.Org + "/" + a.Repo + "/commits"
 	if len(v) > 0 {
 		theUrl += "?" + v.Encode()
 	}
