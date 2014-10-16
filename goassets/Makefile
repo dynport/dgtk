@@ -4,6 +4,12 @@ build:
 test:
 	go test -v
 
+vet:
+	go vet .
+
+lint:
+	golint .
+
 testold: build
 	echo "running tests"
 	go test -v
