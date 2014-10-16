@@ -15,6 +15,16 @@ type Router struct {
 	initFailed bool
 }
 
+func New(routes ...func(*Router) error) (*Router, error) {
+	router := NewRouter()
+	for _, route := range routes {
+		if err := route(router); err != nil {
+			return nil, err
+		}
+	}
+	return router, nil
+}
+
 // Create a new router that will be used to register and run the actions of the application.
 func NewRouter() *Router {
 	r := &Router{}
