@@ -29,7 +29,7 @@ func (a *ListPullRequests) Execute(client *Client) ([]*PullRequest, error) {
 
 		}
 	}
-	theUrl := "https://api.github.com/repos/" + a.Org + "/" + a.Repo + "/pulls"
+	theUrl := ApiRoot + "/repos/" + a.Org + "/" + a.Repo + "/pulls"
 	if len(v) > 0 {
 		theUrl += "?" + v.Encode()
 	}
