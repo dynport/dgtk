@@ -276,6 +276,7 @@ const tpl = `package {{ .Pkg }}
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -390,46 +391,121 @@ func (aFS *assetOsFS) AssetNames() []string {
 
 type assetIntFS map[string][]byte
 
-type assetFile struct {
+type assetNode struct {
 	name string
-	*bytes.Reader
+	data *bytes.Reader
+	dir  bool
+
+	children map[string]*assetNode
 }
 
-type assetFileInfo struct {
-	*assetFile
-}
-
-func (info assetFileInfo) Name() string {
-	return info.assetFile.name
-}
-
-func (info assetFileInfo) ModTime() time.Time {
-	return builtAt
-}
-
-func (info assetFileInfo) Mode() os.FileMode {
-	return 0644
-}
-
-func (info assetFileInfo) Sys() interface{} {
+func addNode(root *assetNode, path string, content *bytes.Reader) error {
+	node := root
+	pathSegments := strings.Split(path, "/")
+	if len(pathSegments) > 1 {
+		for i := 0; i < len(pathSegments)-1; i++ {
+			if val, ok := node.children[pathSegments[i]]; ok {
+				node = val
+			} else {
+				newNode := &assetNode{name: pathSegments[i], dir: true, children: map[string]*assetNode{}}
+				node.children[pathSegments[i]] = newNode
+				node = newNode
+			}
+		}
+	}
+	filename := pathSegments[len(pathSegments)-1]
+	if _, ok := node.children[filename]; ok {
+		return fmt.Errorf("node %q already exists", filename)
+	}
+	node.children[filename] = &assetNode{name: filename, data: content}
 	return nil
 }
 
-func (info assetFileInfo) Size() int64 {
-	return int64(info.assetFile.Reader.Len())
+func (node *assetNode) Traverse(path []string) (*assetNode, error) {
+	switch len(path) {
+	case 0:
+		return node, nil
+	default:
+		child, ok := node.children[path[0]]
+		if !ok {
+			return nil, os.ErrNotExist
+		}
+		return child.Traverse(path[1:])
+	}
 }
 
-func (info assetFileInfo) IsDir() bool {
-	return false
+func (node *assetNode) Name() string {
+	return node.name
 }
 
-func (info assetFile) Readdir(count int) ([]os.FileInfo, error) {
-	return nil, nil
+func (node *assetNode) ModTime() time.Time {
+	return builtAt
 }
 
-func (f *assetFile) Stat() (os.FileInfo, error) {
-	info := assetFileInfo{assetFile: f}
-	return info, nil
+func (node *assetNode) Mode() os.FileMode {
+	if node.dir {
+		return 0755
+	}
+	return 0644
+}
+
+func (node *assetNode) Sys() interface{} {
+	return nil
+}
+
+func (node *assetNode) Size() int64 {
+	if node.dir {
+		return 0
+	}
+	return int64(node.data.Len())
+}
+
+func (node *assetNode) IsDir() bool {
+	return node.dir
+}
+
+func (node *assetNode) Readdir(count int) (stats []os.FileInfo, e error) {
+	if !node.dir {
+		return nil, nil
+	}
+
+	for _, child := range node.children {
+		stat, e := child.Stat()
+		if e != nil {
+			return nil, e
+		}
+		stats = append(stats, stat)
+	}
+	return stats, nil
+}
+
+func (node *assetNode) Stat() (os.FileInfo, error) {
+	return node, nil
+}
+
+func (node *assetNode) Close() error {
+	return nil
+}
+
+func (node *assetNode) Read(p []byte) (int, error) {
+	return node.data.Read(p)
+}
+
+func (node *assetNode) Seek(offset int64, whence int) (int64, error) {
+	if node.dir {
+		return 0, nil
+	}
+	return node.data.Seek(offset, whence)
+}
+
+func (node *assetNode) Open(name string) (af http.File, e error) {
+	dbg.Printf("opening tpl %s", name)
+	if name == "." {
+		return node, nil
+	}
+	name = strings.TrimPrefix(name, "/")
+	nameSegments := strings.Split(name, "/")
+	return node.Traverse(nameSegments)
 }
 
 func (afs assetIntFS) AssetNames() (names []string) {
@@ -442,38 +518,62 @@ func (afs assetIntFS) AssetNames() (names []string) {
 
 func (afs assetIntFS) Open(name string) (af http.File, e error) {
 	dbg.Printf("opening tpl %s", name)
-	name = strings.TrimPrefix(name, "/")
-	if name == "" {
+
+	switch name {
+	case "":
 		name = "index.html"
+	case "/":
+		name = ""
+	default:
+		name = strings.TrimPrefix(name, "/")
 	}
+
+	// single asset referenced, load it directly
 	if asset, found := afs[name]; found {
-		decomp, e := gzip.NewReader(bytes.NewBuffer(asset))
-		if e != nil {
-			return nil, e
-		}
-		defer func() {
-			_ = decomp.Close()
-		}()
-		b, e := ioutil.ReadAll(decomp)
-		if e != nil {
-			return nil, e
-		}
-		af = &assetFile{Reader: bytes.NewReader(b), name: name}
-		return af, nil
+		reader, e := createReader(asset)
+		af = &assetNode{data: reader, name: name}
+		return af, e
 	}
+
+	// directory request?
+	switch {
+	case name == "":
+		// ignore
+	case !strings.HasSuffix(name, "/"):
+		name += "/"
+	}
+	root := &assetNode{dir: true, name: ".", children: map[string]*assetNode{}}
+	for k, v := range afs {
+		if strings.HasPrefix(k, name) {
+			reader, e := createReader(v)
+			if e != nil {
+				return nil, e
+			}
+			dbg.Printf("adding node %q", k)
+			addNode(root, strings.TrimPrefix(k, name), reader)
+		}
+	}
+	if len(root.children) > 0 {
+		return root, nil
+	}
+
 	dbg.Printf("ERROR: index %s does not exist. known keys: %#v", name, afs.AssetNames())
 	return nil, os.ErrNotExist
 }
 
-func (a *assetFile) Close() error {
-	return nil
-}
-
-func (a *assetFile) Read(p []byte) (n int, e error) {
-	if a.Reader == nil {
-		return 0, os.ErrInvalid
+func createReader(data []byte) (*bytes.Reader, error) {
+	decomp, e := gzip.NewReader(bytes.NewBuffer(data))
+	if e != nil {
+		return nil, e
 	}
-	return a.Reader.Read(p)
+	defer func() {
+		_ = decomp.Close()
+	}()
+	b, e := ioutil.ReadAll(decomp)
+	if e != nil {
+		return nil, e
+	}
+	return bytes.NewReader(b), nil
 }
 
 func init() {
