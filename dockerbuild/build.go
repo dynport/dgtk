@@ -178,7 +178,7 @@ func (b *Build) buildArchive() (*os.File, error) {
 }
 
 func (build *Build) addFilesToArchive(fs http.FileSystem, t *tar.Writer) error {
-	return walkFileSystem(fs, "", t)
+	return walkFileSystem(fs, "/", t)
 }
 
 func walkFileSystem(fs http.FileSystem, path string, t *tar.Writer) error {
@@ -192,7 +192,7 @@ func walkFileSystem(fs http.FileSystem, path string, t *tar.Writer) error {
 	}
 	for i := range infos {
 		name := infos[i].Name()
-		if path != "" {
+		if path != "/" {
 			name = fmt.Sprintf("%s/%s", path, name)
 		}
 		header := &tar.Header{Name: name, ModTime: infos[i].ModTime().UTC()}
