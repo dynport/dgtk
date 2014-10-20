@@ -144,3 +144,17 @@ func (b *Browser) Close() error {
 	}
 	return nil
 }
+
+func AbsoluteURL(pathOrURL string, u *url.URL) string {
+	if !strings.HasPrefix(pathOrURL, "http") {
+		base := u.Scheme + "://" + u.Host
+		if strings.HasPrefix(pathOrURL, "/") {
+			return base + pathOrURL
+		} else {
+			return base + u.Path + "/" + pathOrURL
+		}
+
+	} else {
+		return pathOrURL
+	}
+}

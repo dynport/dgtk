@@ -5,12 +5,35 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestAbsoluteUrl(t *testing.T) {
+	u, err := url.Parse("http://www.mysite.com/some/path")
+	if err != nil {
+		t.Fatalf("error parsing initial url: %s", err)
+	}
+
+	tests := []struct {
+		Path   string
+		Result string
+	}{
+		{"some.action.html", "http://www.mysite.com/some/path/some.action.html"},
+		{"/index.html", "http://www.mysite.com/index.html"},
+		{"http://some.other.site.de", "http://some.other.site.de"},
+	}
+	for _, tst := range tests {
+		abs := AbsoluteURL(tst.Path, u)
+		if abs != tst.Result {
+			t.Errorf("expected absolute url for path %q to be %q, was %q", tst.Path, tst.Result, abs)
+		}
+	}
+}
 
 func TestName(t *testing.T) {
 	Convey("Cookie Handling and User-Agent", t, func() {
@@ -33,7 +56,6 @@ func TestName(t *testing.T) {
 		// and the correct cookies are set
 		browser.UserAgent("GoogleBot")
 		e = browser.Visit(u)
-		logger.Printf("reading body")
 		b, e = browser.Body()
 		So(e, ShouldBeNil)
 		So(string(b), ShouldContainSubstring, "cookie=value")
