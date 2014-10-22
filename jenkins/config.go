@@ -16,6 +16,25 @@ type Config struct {
 	Builders                         []interface{} `xml:"builders>builder"`
 	AssignedToNode                   string        `xml:"assignedNode,omitempty"`
 	Publishers                       []interface{} `xml:"publishers>ignored"`
+	LogRotator                       *LogRotator   `xml:"logRotator,omitempty"`
+}
+
+type LogRotator struct {
+	Class              string `xml:"class,attr"`
+	DaysToKeep         int    `xml:"daysToKeep"`
+	NumToKeep          int    `xml:"numToKeep"`
+	ArtifactDaysToKeep int    `xml:"artifactDaysToKeep"`
+	ArtifactNumToKeep  int    `xml:"artifactNumToKeep"`
+}
+
+func NewLogRotator(n int) *LogRotator {
+	return &LogRotator{
+		Class:              "hudson.tasks.LogRotator",
+		DaysToKeep:         -1,
+		NumToKeep:          10,
+		ArtifactDaysToKeep: -1,
+		ArtifactNumToKeep:  -1,
+	}
 }
 
 type Builders struct {
