@@ -33,10 +33,10 @@ func main() {
 	bucket := flag.String("bucket", "", "Upload binary to s3 bucket after building")
 	public := flag.Bool("public", false, "Upload to s3 and make public")
 	verbose := flag.Bool("verbose", false, "Build using -v flag")
-
+	goVersion := flag.String("go-version", "1.3.3", "Go version")
 	flag.Parse()
-	logger.Printf("running with %q", *host)
-	b := &build{Host: *host, Dir: *dir, DeployTo: *deploy, Bucket: *bucket, verbose: *verbose, Public: *public}
+	logger.Printf("running with host=%q go_version=%q", *host, *goVersion)
+	b := &build{Host: *host, Dir: *dir, DeployTo: *deploy, Bucket: *bucket, verbose: *verbose, Public: *public, GoVersion: *goVersion}
 	e := b.Run()
 	if e != nil {
 		logger.Fatalf("ERROR: %s", e)
@@ -44,12 +44,13 @@ func main() {
 }
 
 type build struct {
-	Host     string
-	Dir      string
-	Bucket   string
-	Public   bool
-	DeployTo string
-	verbose  bool
+	Host      string
+	Dir       string
+	Bucket    string
+	Public    bool
+	DeployTo  string
+	verbose   bool
+	GoVersion string
 }
 
 func benchmark(message string) func() {
@@ -245,7 +246,10 @@ func (b *build) Run() error {
 		Current: currentPkg,
 		Sudo:    cfg.User != "root",
 		Verbose: b.verbose,
-		Version: "1.3.1",
+		Version: b.GoVersion,
+	}
+	if buildCfg.Version == "" {
+		buildCfg.Version = "1.3.3"
 	}
 
 	cmd := renderRecursive(buildCmd, buildCfg)
