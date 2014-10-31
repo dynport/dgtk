@@ -416,7 +416,8 @@ cd $GOPATH/src
 tar xfz -
 cd {{ .Current }}
 go get {{ if .Verbose }}-v{{ end }} .
-{{ with .Sudo }}sudo {{ end }}cp $GOPATH/bin/{{ .BinName }} /usr/local/bin/
+{{ with .Sudo }}sudo {{ end }}cp $GOPATH/bin/{{ .BinName }} /usr/local/bin/{{ .BinName }}.tmp
+{{ with .Sudo }}sudo {{ end }}mv /usr/local/bin/{{ .BinName }}.tmp /usr/local/bin/{{ .BinName }}
 `
 
 func debugStream() io.Writer {
