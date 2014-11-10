@@ -30,6 +30,7 @@ func (list *ListAction) Run() error {
 	for _, t := range tags {
 		tagsMap[t.Id()] = t.Value
 	}
+
 	table.Add("Id", "Name", "Status", "Started", "Cpus", "Memory", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
 	for _, vm := range vms {
 		vmx, e := vm.Vmx()
@@ -37,14 +38,11 @@ func (list *ListAction) Run() error {
 			return e
 		}
 		mac := vmx.MacAddress
+		dbg.Printf("looking up mac %q", mac)
 		lease := leases.Lookup(mac)
 		ip := ""
 		if lease != nil {
 			ip = lease.Ip
-		}
-		status := "STOPPED"
-		if vm.Running() {
-			status = "RUNNING"
 		}
 		started := ""
 		if s, e := vm.StartedAt(); e == nil {
@@ -53,8 +51,12 @@ func (list *ListAction) Run() error {
 			logger.Print(e.Error())
 		}
 		name := tagsMap[vm.Id()+":Name"]
-		table.Add(name, vm.Id(), status, started, vmx.Cpus, vmx.Memory, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
+		table.Add(name, vm.Id(), vm.State, started, vmx.Cpus, vmx.Memory, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
 	}
 	logger.Println(table)
 	return nil
+}
+
+func runningVMs() ([]string, error) {
+	return nil, nil
 }

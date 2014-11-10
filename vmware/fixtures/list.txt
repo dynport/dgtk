@@ -1,0 +1,2 @@
+Total running VMs: 1
+/Users/tobias/Documents/Virtual Machines.localized/debian-7.vmwarevm/debian-7.vmx

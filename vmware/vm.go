@@ -2,16 +2,17 @@ package vmware
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"time"
 )
 
 type Vm struct {
-	Path string
-	Tags Tags
+	Path  string
+	Tags  Tags
+	State string
 
 	// cached values
 	started time.Time
@@ -53,18 +54,6 @@ func (vm *Vm) Name() string {
 		}
 	}
 	return ""
-}
-
-func (vm *Vm) Running() bool {
-	ip, e := vm.Ip()
-	if e != nil || ip == "" {
-		return false
-	}
-	files, e := filepath.Glob(vm.dir() + "/*.vmem")
-	if e != nil {
-		return false
-	}
-	return len(files) > 0
 }
 
 func (vm *Vm) dir() string {
@@ -131,6 +120,13 @@ func (vm *Vm) Clone(dst string, opts *CloneOptions) (*Vm, error) {
 
 func (vm *Vm) Delete() error {
 	return DeleteVM(vm.Path)
+}
+
+func (vm *Vm) Running() (bool, error) {
+	if vm.State == "" {
+		return false, errors.New("State is not set")
+	}
+	return vm.State == stateRunning, nil
 }
 
 type Vms []*Vm

@@ -25,6 +25,21 @@ func Start(path string, gui bool) error {
 	return nil
 }
 
+func Running() ([]string, error) {
+	b, err := vmrun("list")
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(string(b), "\n")
+	o := []string{}
+	for i, l := range lines {
+		if i > 0 {
+			o = append(o, l)
+		}
+	}
+	return o, nil
+}
+
 func DeleteSnapshot(path string, name string) error {
 	out, e := vmrun("deleteSnapshot", path, name)
 	logger.Println(out)
@@ -151,6 +166,8 @@ var (
 	Root              = os.Getenv("HOME") + "/.vmware"
 	CloudVMLocation   = Root + "/vms"
 	TemplatesPath     = Root + "/templates"
+	stateRunning      = "running"
+	stateStopped      = "stopped"
 )
 
 func AllTemplates() (vms Vms, e error) {
@@ -161,8 +178,33 @@ func AllWithTemplates() (vms Vms, e error) {
 	return FindVms([]string{DefaultVMLocation, CloudVMLocation, TemplatesPath})
 }
 
-func All() (vms Vms, e error) {
-	return FindVms([]string{DefaultVMLocation, CloudVMLocation})
+func All() (Vms, error) {
+	r, err := func() (map[string]struct{}, error) {
+		l, err := Running()
+		if err != nil {
+			return nil, err
+		}
+		m := map[string]struct{}{}
+		for _, l := range l {
+			m[l] = struct{}{}
+		}
+		return m, nil
+	}()
+	if err != nil {
+		return nil, err
+	}
+	vms, err := FindVms([]string{DefaultVMLocation, CloudVMLocation})
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range vms {
+		if _, ok := r[v.Path]; ok {
+			v.State = stateRunning
+		} else {
+			v.State = stateStopped
+		}
+	}
+	return vms, nil
 }
 
 func FindVms(locations []string) (vms Vms, e error) {
@@ -224,5 +266,6 @@ func List() (vms Vms, e error) {
 			vms = append(vms, &Vm{Path: line})
 		}
 	}
+	dbg.Printf("returning %d vms", len(vms))
 	return vms, nil
 }

@@ -10,7 +10,10 @@ func (action *Delete) Run() error {
 	if e != nil {
 		return e
 	}
-	if vm.Running() {
+	r, err := vm.Running()
+	if err != nil {
+		return err
+	} else if r {
 		logger.Printf("vm is running, stopping")
 		e = vm.Stop()
 		if e != nil {

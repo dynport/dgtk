@@ -16,8 +16,10 @@ func (r *vmModify) Run() error {
 	if e != nil {
 		return e
 	}
-	if vm.Running() {
-		return fmt.Errorf("vm must be running to be modified")
+	if r, err := vm.Running(); err != nil {
+		return err
+	} else if r {
+		return fmt.Errorf("vm must be stopped to be modified")
 	}
 	logger.Printf("modifying vm %q", vm.Path)
 	modified := false
