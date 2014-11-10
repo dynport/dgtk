@@ -33,7 +33,7 @@ type Indexer struct {
 	docsBatch   []*Doc
 	docsChannel chan *Doc
 	timer       *time.Timer
-	Stats       IndexerStats
+	Stats       *IndexerStats
 }
 
 func (indexer *Indexer) Finish() error {
