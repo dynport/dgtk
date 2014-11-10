@@ -1,6 +1,7 @@
 package es
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -13,6 +14,12 @@ type IndexerStats struct {
 	IndexedDocs int64
 	TotalTime   time.Duration
 	started     time.Time
+}
+
+func (i *IndexerStats) String() string {
+	diff := time.Since(i.started)
+	perSecond := float64(i.IndexedDocs) / diff.Seconds()
+	return fmt.Sprintf("docs=%d %.01f/second", i.IndexedDocs, perSecond)
 }
 
 func (stats *IndexerStats) Add(count int, dur time.Duration) {
