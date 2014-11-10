@@ -12,9 +12,13 @@ type IndexerStats struct {
 	Runs        int64
 	IndexedDocs int64
 	TotalTime   time.Duration
+	started     time.Time
 }
 
 func (stats *IndexerStats) Add(count int, dur time.Duration) {
+	if stats.started.IsZero() {
+		stats.started = time.Now()
+	}
 	stats.Runs++
 	stats.IndexedDocs += int64(count)
 	stats.TotalTime += dur
