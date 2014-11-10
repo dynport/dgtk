@@ -3,6 +3,7 @@ package gosql
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -51,8 +52,58 @@ func WithName(s string) tableOpt {
 	}
 }
 
-var PublicTables = func(o *tableOptions) {
+func PublicTables(o *tableOptions) {
 	o.TableSchema = "public"
+}
+
+type View struct {
+	TableCatalog            string `sql:"table_catalog"`              //              | information_schema.sql_identifier |
+	TableSchema             string `sql:"table_schema"`               //               | information_schema.sql_identifier |
+	TableName               string `sql:"table_name"`                 //                 | information_schema.sql_identifier |
+	ViewDefinition          string `sql:"view_definition"`            //            | information_schema.character_data |
+	CheckOption             string `sql:"check_option"`               //               | information_schema.character_data |
+	IsUpdatable             string `sql:"is_updatable"`               //               | information_schema.yes_or_no      |
+	IsInsertableInto        string `sql:"is_insertable_into"`         //         | information_schema.yes_or_no      |
+	IsTriggerUpdatable      string `sql:"is_trigger_updatable"`       //       | information_schema.yes_or_no      |
+	IsTriggerDeletable      string `sql:"is_trigger_deletable"`       //       | information_schema.yes_or_no      |
+	IsTriggerInsertableInto string `sql:"is_trigger_insertable_into"` // | information_schema.yes_or_no      |
+}
+
+type viewOptions struct {
+	Catalog string
+	Schema  string
+	Name    string
+}
+
+func PublicViews(o *viewOptions) {
+	o.Schema = "public"
+}
+
+type viewOpt func(*viewOptions)
+
+func Views(db Dbi, funcs ...viewOpt) ([]*View, error) {
+	o := &viewOptions{}
+	for _, f := range funcs {
+		f(o)
+	}
+	w := []string{}
+	i := []interface{}{}
+	for _, v := range []struct{ Name, Value string }{
+		{"table_catalog", o.Catalog},
+		{"table_schema", o.Schema},
+		{"table_name", o.Name},
+	} {
+		if v.Value != "" {
+			w = append(w, v.Name+" = $"+strconv.Itoa(len(w)+1))
+			i = append(i, v.Value)
+		}
+	}
+	q := "SELECT table_catalog, table_schema, table_name FROM information_schema.views"
+	if len(w) > 0 {
+		q += " WHERE " + strings.Join(w, " AND ")
+	}
+	var v []*View
+	return v, SelectStructs(db, q, &v, i...)
 }
 
 func Tables(db Dbi, funcs ...tableOpt) ([]*Table, error) {
