@@ -14,8 +14,8 @@ func SelectStruct(db Dbi, i interface{}, q string, params ...interface{}) error 
 	return UnmarshalRow(rows, i)
 }
 
-func SelectStructs(db Dbi, q string, i interface{}) error {
-	rows, e := db.Query(q)
+func SelectStructs(db Dbi, q string, i interface{}, params ...interface{}) error {
+	rows, e := db.Query(q, params...)
 	if e != nil {
 		return e
 	}
