@@ -93,8 +93,8 @@ type Range struct {
 }
 
 type Filtered struct {
-	Filter *Filter
-	Query  *Query
+	Filter *Filter `json:"filter"`
+	Query  *Query  `json:"query"`
 }
 
 type QueryString struct {
