@@ -236,6 +236,9 @@ func (line *NginxLine) Parse(raw string) error {
 	}
 	forwarded := false
 	for i, field := range line.fields {
+		if forwarded && strings.Contains(field, "=") {
+			forwarded = false
+		}
 		parts := strings.SplitN(field, "=", 2)
 		if len(parts) == 2 {
 			key := parts[0]
@@ -250,6 +253,7 @@ func (line *NginxLine) Parse(raw string) error {
 					forwarded = true
 				}
 			case "forwarded":
+				forwarded = false
 				line.XForwardedFor = []string{parts[1]}
 			case "method":
 				line.Method = value
@@ -273,7 +277,7 @@ func (line *NginxLine) Parse(raw string) error {
 				forwarded = true
 			}
 		} else if forwarded {
-			if strings.HasPrefix(field, "host=") || field == "-" {
+			if strings.HasPrefix(field, "host") || field == "-" {
 				forwarded = false
 			} else {
 				line.XForwardedFor = append(line.XForwardedFor, strings.TrimSuffix(field, ","))
