@@ -71,7 +71,6 @@ func (r Router) Router(app *App) (router *httprouter.Router, e error) {
 			if handle == nil {
 				return nil, fmt.Errorf("no handler defined for %T", i)
 			}
-
 			switch method {
 			case "PUT":
 				router.PUT(path, handle)
