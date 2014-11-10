@@ -70,11 +70,17 @@ type Term map[string]interface{}
 type Terms map[string][]interface{}
 
 type Filter struct {
-	Not   *Not              `json:"not,omitempty"`
-	And   []*Filter         `json:"and,omitempty"`
-	Term  *Term             `json:"term,omitempty"`
-	Terms *Terms            `json:"term,omitempty"`
-	Range map[string]*Range `json:"range,omitempty"`
+	Not    *Not              `json:"not,omitempty"`
+	And    []*Filter         `json:"and,omitempty"`
+	Term   *Term             `json:"term,omitempty"`
+	Terms  *Terms            `json:"term,omitempty"`
+	Range  map[string]*Range `json:"range,omitempty"`
+	Script *Script           `json:"script,omitempty"`
+}
+
+type Script struct {
+	Script string                 `json:"script,omitempty"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 type Not struct {
