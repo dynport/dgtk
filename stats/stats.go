@@ -58,6 +58,7 @@ func Percentile(values []int, perc int) (o int) {
 	return values[floor]
 }
 
+// Perc calculates the percentile, use 50 for median
 func (stats *Stats) Perc(perc int) int {
 	stats.Sort()
 	return Percentile(stats.Values, perc)
