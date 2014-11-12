@@ -23,6 +23,9 @@ func (i *IndexerStats) String() string {
 }
 
 func (stats *IndexerStats) Add(count int, dur time.Duration) {
+	if stats == nil {
+		panic("stats can not be nil")
+	}
 	if stats.started.IsZero() {
 		stats.started = time.Now()
 	}
@@ -123,6 +126,9 @@ func (indexer *Indexer) indexBatch() error {
 	e := indexer.Index.IndexDocs(indexer.docsBatch)
 	if e != nil {
 		return e
+	}
+	if indexer.Stats == nil {
+		indexer.Stats = &IndexerStats{}
 	}
 	indexer.Stats.Add(len(indexer.docsBatch), time.Now().Sub(started))
 	indexer.resetBatch()
