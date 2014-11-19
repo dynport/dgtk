@@ -33,10 +33,10 @@ func SelectString(db Dbi, q string) (string, error) {
 	return v, db.QueryRow(q).Scan(&v)
 }
 
-func SelectInts(db Dbi, q string) ([]int, error) {
+func SelectInts(db Dbi, q string, args ...interface{}) ([]int, error) {
 	out := []int{}
 
-	e := selectRaw(db, q, func(rows *sql.Rows) error {
+	e := selectRaw(db, q, args, func(rows *sql.Rows) error {
 		var i int
 		e := rows.Scan(&i)
 		if e != nil {
@@ -48,10 +48,10 @@ func SelectInts(db Dbi, q string) ([]int, error) {
 	return out, e
 }
 
-func SelectStrings(db Dbi, q string) ([]string, error) {
+func SelectStrings(db Dbi, q string, args ...interface{}) ([]string, error) {
 	out := []string{}
 
-	e := selectRaw(db, q, func(rows *sql.Rows) error {
+	e := selectRaw(db, q, args, func(rows *sql.Rows) error {
 		var v string
 		e := rows.Scan(&v)
 		if e != nil {
@@ -63,8 +63,8 @@ func SelectStrings(db Dbi, q string) ([]string, error) {
 	return out, e
 }
 
-func selectRaw(db Dbi, q string, c func(*sql.Rows) error) error {
-	rows, e := db.Query(q)
+func selectRaw(db Dbi, q string, args []interface{}, c func(*sql.Rows) error) error {
+	rows, e := db.Query(q, args...)
 	if e != nil {
 		return e
 	}
