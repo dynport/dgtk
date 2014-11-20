@@ -65,11 +65,14 @@ func UnmarshalRow(rows Rows, i interface{}) error {
 	}
 	out := []interface{}{}
 	for _, c := range columns {
+		var i interface{}
 		field, ok := fields[c]
-		if !ok {
-			return fmt.Errorf("no field mapped for %s", c)
+		if ok {
+			i = field.Addr().Interface()
+		} else {
+			i = &i
 		}
-		out = append(out, field.Addr().Interface())
+		out = append(out, i)
 	}
 	return rows.Scan(out...)
 }
