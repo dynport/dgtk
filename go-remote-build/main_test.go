@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 	"testing"
-
-	"github.com/dynport/dgtk/expect"
 )
 
 var b = &build{Dir: "test-app"}
@@ -15,56 +13,85 @@ func init() {
 }
 
 func TestDeps(t *testing.T) {
-	expect := expect.New(t)
-	deps, e := b.deps()
-	expect(e).ToBeNil()
-	expect(deps).ToHaveLength(23)
-	expect(deps[4]).ToEqual("github.com/dynport/gocli")
+	deps, err := b.deps()
+	if err != nil {
+		t.Error("error getting deps", err)
+	}
+
+	if len(deps) != 23 {
+		t.Errorf("expected to get 23 deps, got %d", len(deps))
+	}
+	d := deps[4]
+	if d != "github.com/dynport/gocli" {
+		t.Errorf("expected deps[4] to eq %q, was %q", "github.com/dynport/gocli", d)
+	}
 }
 
 func TestCurrentPackage(t *testing.T) {
-	expect := expect.New(t)
-	cp, e := b.currentPackage()
-	expect(e).ToBeNil()
-	expect(cp).ToEqual("github.com/dynport/dgtk/go-remote-build/test-app")
-
+	cp, err := b.currentPackage()
+	if err != nil {
+		t.Fatal("error calling currentPackage", err)
+	}
+	if cp != "github.com/dynport/dgtk/go-remote-build/test-app" {
+		t.Errorf("expected currentPackage to eq %q, was %q", "github.com/dynport/dgtk/go-remote-build/test-app", cp)
+	}
 }
 
 func TestSplitBucket(t *testing.T) {
-	expect := expect.New(t)
-	s := "de-dynport-public/bin/linux_amd64/"
-	bucket, key := bucketAndKey(s, "metrix")
-	expect(bucket).ToEqual("de-dynport-public")
-	expect(key).ToEqual("bin/linux_amd64/metrix")
+	tests := []struct {
+		Bucket         string
+		Key            string
+		ExpectedBucket string
+		ExpectedKey    string
+	}{
+		{"de-dynport-public/bin/linux_amd64/", "metrix", "de-dynport-public", "bin/linux_amd64/metrix"},
+		{"de-dynport-public", "metrix", "de-dynport-public", "metrix"},
+	}
 
-	bucket, key = bucketAndKey("de-dynport-public", "metrix")
-	expect(bucket).ToEqual("de-dynport-public")
-	expect(key).ToEqual("metrix")
+	for _, tst := range tests {
+		bucket, key := bucketAndKey(tst.Bucket, tst.Key)
+		if bucket != tst.ExpectedBucket {
+			t.Errorf("expected bucket to eq %q, was %q", tst.ExpectedBucket, bucket)
+		}
+		if key != tst.ExpectedKey {
+			t.Errorf("expected key to eq %q, was %q", tst.ExpectedKey, key)
+		}
+	}
 }
 
 func TestFilesMap(t *testing.T) {
-	expect := expect.New(t)
-	_, e := b.filesMap()
-	expect(e).ToBeNil()
-	//expect(m).ToHaveLength(0)
+	_, err := b.filesMap()
+	if err != nil {
+		t.Fatal("error getting filesMap", err)
+	}
 }
 
 func TestCreateArchive(t *testing.T) {
-	expect := expect.New(t)
-	_, e := b.createArchive()
-	expect(e).ToBeNil()
+	_, err := b.createArchive()
+	if err != nil {
+		t.Error("error creating archive", err)
+	}
 }
 
 func TestParseConfig(t *testing.T) {
-	expect := expect.New(t)
-	cfg, e := parseConfig("ubuntu@127.0.0.1")
-	expect(e).ToBeNil()
-	expect(cfg).ToNotBeNil()
-	expect(cfg.Host).ToEqual("127.0.0.1")
-	expect(cfg.User).ToEqual("ubuntu")
+	cfg, err := parseConfig("ubuntu@127.0.0.1")
+	if err != nil {
+		t.Fatal("error parsing config", err)
+	}
+	if cfg.Host != "127.0.0.1" {
+		t.Errorf("expected Host to eq %q, was %q", "127.0.0.1", cfg.Host)
+	}
 
-	cfg, e = parseConfig("ubuntu@1.2.3.4:1234")
-	expect(e).ToBeNil()
-	expect(cfg.Port).ToEqual(1234)
+	if cfg.User != "ubuntu" {
+		t.Errorf("expected User to eq %q, was %q", "ububuntu", cfg.User)
+	}
+
+	cfg, err = parseConfig("ubuntu@1.2.3.4:1234")
+	if err != nil {
+		t.Fatal("error parsing config", err)
+	}
+	if cfg.Port != 1234 {
+		t.Errorf("expected Port to eq 1234, was %d", cfg.Port)
+	}
 
 }
