@@ -11,7 +11,7 @@ PACKAGES    := $(filter-out $(IGN_PKGS),$(ALL_PKGS))
 IGN_TEST_PKGS := github.com/dynport/dgtk/es github.com/dynport/dgtk/es/aggregations github.com/dynport/dgtk/bsondecoder
 TEST_PKGS   := $(filter-out $(IGN_TEST_PKGS),$(PACKAGES))
 
-default: build
+default: build vet test
 
 build:
 	@go install $(PACKAGES)
