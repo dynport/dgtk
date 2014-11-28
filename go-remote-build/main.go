@@ -30,13 +30,14 @@ func main() {
 	dir := flag.String("dir", "", "Dir to build. Default: current directory")
 	host := flag.String("host", os.Getenv("DEV_HOST"), "Host to build on. Example: "+sshExample)
 	deploy := flag.String("deploy", "", "Deploy to host after building. Example: "+sshExample)
+	deployDir := flag.String("deploy-dir", "/usr/local/bin", "Deploy to this directory for -deploy")
 	bucket := flag.String("bucket", "", "Upload binary to s3 bucket after building")
 	public := flag.Bool("public", false, "Upload to s3 and make public")
 	verbose := flag.Bool("verbose", false, "Build using -v flag")
 	goVersion := flag.String("go-version", "1.3.3", "Go version")
 	flag.Parse()
 	logger.Printf("running with host=%q go_version=%q", *host, *goVersion)
-	b := &build{Host: *host, Dir: *dir, DeployTo: *deploy, Bucket: *bucket, verbose: *verbose, Public: *public, GoVersion: *goVersion}
+	b := &build{DeployDir: *deployDir, Host: *host, Dir: *dir, DeployTo: *deploy, Bucket: *bucket, verbose: *verbose, Public: *public, GoVersion: *goVersion}
 	e := b.Run()
 	if e != nil {
 		logger.Fatalf("ERROR: %s", e)
@@ -49,6 +50,7 @@ type build struct {
 	Bucket    string
 	Public    bool
 	DeployTo  string
+	DeployDir string
 	verbose   bool
 	GoVersion string
 }
@@ -342,12 +344,15 @@ func (b *build) Run() error {
 			ses.Stdout = os.Stdout
 			ses.Stderr = os.Stderr
 			s := struct {
-				Name string
-				Sudo bool
+				Name      string
+				Sudo      bool
+				DeployDir string
 			}{
-				Name: name, Sudo: cfg.User != "root",
+				Name:      name,
+				Sudo:      cfg.User != "root",
+				DeployDir: b.DeployDir,
 			}
-			cmd := renderRecursive("cd /usr/local/bin && cat - | {{ if .Sudo }}sudo {{ end}}tee {{ .Name }}.tmp > /dev/null && {{ if .Sudo }}sudo {{ end }}chmod 0755 {{ .Name }}.tmp && {{ if .Sudo }}sudo {{ end }}mv {{ .Name }}.tmp {{ .Name }}", s)
+			cmd := renderRecursive("cd {{ .DeployDir }} && cat - | {{ if .Sudo }}sudo {{ end}}tee {{ .Name }}.tmp > /dev/null && {{ if .Sudo }}sudo {{ end }}chmod 0755 {{ .Name }}.tmp && {{ if .Sudo }}sudo {{ end }}mv {{ .Name }}.tmp {{ .Name }}", s)
 			dbg.Printf("%s", cmd)
 			return ses.Run(cmd)
 		}()
