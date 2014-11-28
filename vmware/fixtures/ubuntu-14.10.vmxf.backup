@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<Foundry>
+<VM>
+<VMId type="string">52 82 21 33 6a 29 b1 0f-f1 d7 39 18 a9 88 8d 6f</VMId>
+<ClientMetaData>
+<clientMetaDataAttributes/>
+<HistoryEventList/></ClientMetaData>
+<vmxPathName type="string">ubuntu-14.10.vmx</vmxPathName></VM></Foundry>
