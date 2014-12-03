@@ -1,25 +1,19 @@
 package goproxy
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
-
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func New(root string) (*Proxy, error) {
-	db, e := leveldb.OpenFile(root, nil)
-	if e != nil {
-		return nil, e
-	}
-	return &Proxy{db: db}, nil
+	return &Proxy{}, nil
 }
 
 func (proxy *Proxy) Ignored(p string) bool {
@@ -35,11 +29,6 @@ func (proxy *Proxy) Ignore(name string) {
 }
 
 func (proxy *Proxy) Run() error {
-	db, e := leveldb.OpenFile(proxy.CacheDir(), nil)
-	if e != nil {
-		return e
-	}
-	proxy.db = db
 	handler := &handler{Proxy: proxy}
 	return http.ListenAndServe(proxy.Address, handler)
 }
@@ -47,17 +36,27 @@ func (proxy *Proxy) Run() error {
 type Proxy struct {
 	Address        string
 	CustomCacheDir string
-	db             *leveldb.DB
 	ignored        map[string]struct{}
 }
 
 func (proxy *Proxy) Store(r *Resource) error {
-	buf := &bytes.Buffer{}
-	e := json.NewEncoder(buf).Encode(r)
-	if e != nil {
-		return e
+	d := proxy.CacheDir() + "/" + string(proxy.cacheKey(r))
+	t := d + ".tmp"
+	if err := os.MkdirAll(path.Dir(t), 0755); err != nil {
+		return err
 	}
-	return proxy.db.Put(proxy.cacheKey(r), buf.Bytes(), nil)
+	f, err := os.Create(t)
+	if err != nil {
+		return err
+	}
+	err = func() error {
+		defer f.Close()
+		return json.NewEncoder(f).Encode(r)
+	}()
+	if err != nil {
+		return err
+	}
+	return os.Rename(t, d)
 }
 
 func (proxy *Proxy) cacheKey(r *Resource) []byte {
@@ -65,12 +64,13 @@ func (proxy *Proxy) cacheKey(r *Resource) []byte {
 }
 
 func (proxy *Proxy) loadCached(r *Resource) (loaded bool, e error) {
-	b, e := proxy.db.Get(proxy.cacheKey(r), nil)
-	if e != nil {
-		return false, e
+	d := proxy.CacheDir() + "/" + string(proxy.cacheKey(r))
+	f, err := os.Open(d)
+	if err != nil {
+		return false, err
 	}
-	e = json.Unmarshal(b, r)
-	return true, e
+	defer f.Close()
+	return true, json.NewDecoder(f).Decode(&r)
 }
 
 func (proxy *Proxy) Load(r *Resource) (bool, error) {
@@ -126,9 +126,10 @@ func (proxy *Proxy) Load(r *Resource) (bool, error) {
 }
 
 func (proxy *Proxy) cached(r *Resource) bool {
-	it := proxy.db.NewIterator(nil, nil)
 	key := proxy.cacheKey(r)
-	return it.Seek(key)
+	d := proxy.CacheDir() + "/" + string(key)
+	_, err := os.Stat(d)
+	return err == nil
 }
 
 func (proxy *Proxy) CacheDir() string {
