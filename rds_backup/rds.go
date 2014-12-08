@@ -102,6 +102,10 @@ func (act *backupRDSSnapshot) Run() (e error) {
 	}
 	logger.Printf("last snapshot %q from %s", snapshot.DBSnapshotIdentifier, snapshot.SnapshotCreateTime)
 
+	if snapshot.SnapshotCreateTime.Before(time.Now().Add(-24 * time.Hour)) {
+		return fmt.Errorf("latest snapshot older than 24 hours!")
+	}
+
 	// Restore snapshot into new instance.
 	var instance *rds.DBInstance
 	if instance, e = act.restoreDBInstance(snapshot); e != nil {
