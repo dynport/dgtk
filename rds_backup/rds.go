@@ -64,7 +64,8 @@ type backupRDSSnapshot struct {
 	InstanceType string `cli:"opt -t --instance-type default=db.t1.micro desc='db instance type'"`
 	Uncompressed bool   `cli:"opt --uncompressed desc='run dump uncompressed'"`
 
-	Database string `cli:"arg required desc='the database to backup'"`
+	Database string   `cli:"arg required desc='the database to backup'"`
+	Tables   []string `cli:"arg desc='list of tables to dump (all if not specified)'"`
 }
 
 func (act *backupRDSSnapshot) user() string {
@@ -236,6 +237,9 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, fil
 			args = append(args, "--compress")
 		}
 		args = append(args, act.Database)
+		if act.Tables != nil && len(act.Tables) > 0 {
+			args = append(args, act.Tables...)
+		}
 		cmd = exec.Command("mysqldump", args...)
 	case "postgres":
 		args := []string{"--host=" + address, "--port=" + portS, "--username=" + act.user()}
@@ -243,6 +247,9 @@ func (act *backupRDSSnapshot) dumpDatabase(engine, address string, port int, fil
 			args = append(args, "--compress=6")
 		}
 		args = append(args, act.Database)
+		for i := range act.Tables {
+			args = append(args, "-t", act.Tables[i])
+		}
 		cmd = exec.Command("pg_dump", args...)
 		cmd.Env = append(cmd.Env, "PGPASSWORD="+act.Password)
 		compressed = true
