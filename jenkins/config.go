@@ -31,7 +31,7 @@ func NewLogRotator(n int) *LogRotator {
 	return &LogRotator{
 		Class:              "hudson.tasks.LogRotator",
 		DaysToKeep:         -1,
-		NumToKeep:          10,
+		NumToKeep:          n,
 		ArtifactDaysToKeep: -1,
 		ArtifactNumToKeep:  -1,
 	}
