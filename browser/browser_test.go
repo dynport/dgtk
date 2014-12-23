@@ -9,8 +9,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAbsoluteUrl(t *testing.T) {
@@ -36,31 +34,44 @@ func TestAbsoluteUrl(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
-	Convey("Cookie Handling and User-Agent", t, func() {
-		browser, e := New()
-		So(e, ShouldBeNil)
-		So(browser, ShouldNotBeNil)
+	browser, err := New()
+	if err != nil {
+		t.Fatal("error initializing browser: %s", err)
+	}
+	s := httptest.NewServer(http.HandlerFunc(testHandler))
 
-		s := httptest.NewServer(http.HandlerFunc(testHandler))
+	u := "http://" + s.Listener.Addr().String()
 
-		u := "http://" + s.Listener.Addr().String()
+	err = browser.Visit(u)
+	if err != nil {
+		t.Fatal("error visiting %q: %s", u, err)
+	}
 
-		e = browser.Visit(u)
-		So(e, ShouldBeNil)
+	b, err := browser.Body()
+	if err != nil {
+		t.Fatalf("error getting body of browser", err)
+	}
+	bs := string(b)
+	if !strings.Contains(bs, `ua="Go 1.1 package http"`) {
+		t.Errorf("expected body %q to contain %q", bs, `ua="Go 1.1 package http"`)
+	}
+	// validate that the correct user agent
+	// and the correct cookies are set
+	browser.UserAgent("GoogleBot")
+	if err := browser.Visit(u); err != nil {
+		t.Fatalf("error visiting url %s: %s", u, err)
+	}
+	b, err = browser.Body()
+	if err != nil {
+		t.Fatalf("error gettong bod", err)
 
-		b, e := browser.Body()
-		So(e, ShouldBeNil)
-		So(string(b), ShouldContainSubstring, `ua="Go 1.1 package http"`)
-
-		// validate that the correct user agent
-		// and the correct cookies are set
-		browser.UserAgent("GoogleBot")
-		e = browser.Visit(u)
-		b, e = browser.Body()
-		So(e, ShouldBeNil)
-		So(string(b), ShouldContainSubstring, "cookie=value")
-		So(string(b), ShouldContainSubstring, "GoogleBot")
-	})
+	}
+	str := string(b)
+	for _, p := range []string{"cookie=value", "GoogleBot"} {
+		if !strings.Contains(str, p) {
+			t.Errorf("expected body %q to contain %q", str, p)
+		}
+	}
 }
 
 var logger = log.New(os.Stderr, "", 0)
