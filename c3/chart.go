@@ -12,12 +12,13 @@ func New() *Chart {
 	return &Chart{Data: &Data{}}
 }
 
-func NewTimeSeries(f string) *Chart {
+// use "%Y-%m-%d %H:%M:%S"
+func NewTimeSeries(timeFormat string) *Chart {
 	n := 0
 	return &Chart{
-		Data: &Data{X: "x", XFormat: f},
+		Data: &Data{X: "x", XFormat: timeFormat},
 		Axis: map[string]*Axis{
-			"x": &Axis{Type: "timeseries", Tick: &Tick{Format: "%Y-%m-%d %H%:%M:%S", Count: 5}},
+			"x": &Axis{Type: "timeseries", Tick: &Tick{Format: timeFormat, Count: 5}},
 			"y": &Axis{Min: &n}, // use pointer to 0
 		},
 	}
