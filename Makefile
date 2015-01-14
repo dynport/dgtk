@@ -8,7 +8,7 @@ DEPS        := $(filter-out $(IGN_DEPS),$(ALL_DEPS))
 ALL_PKGS    := $(shell go list ./...)
 IGN_PKGS    := github.com/dynport/dgtk/goassets/script/tpl
 PACKAGES    := $(filter-out $(IGN_PKGS),$(ALL_PKGS))
-IGN_TEST_PKGS := github.com/dynport/dgtk/es github.com/dynport/dgtk/es/aggregations github.com/dynport/dgtk/bsondecoder
+IGN_TEST_PKGS := github.com/dynport/dgtk/es github.com/dynport/dgtk/es/aggregations github.com/dynport/dgtk/bsondecoder github.com/dynport/dgtk/goproxy
 TEST_PKGS   := $(filter-out $(IGN_TEST_PKGS),$(PACKAGES))
 
 default: build vet test
