@@ -12,6 +12,7 @@ import (
 type sendNotification struct {
 	Message string   `cli:"arg required"`
 	Command []string `cli:"arg required"`
+	Channel string   `cli:"opt -c --channel"`
 
 	slackClient *slack.Client
 }
@@ -27,12 +28,22 @@ func (act *sendNotification) Run() error {
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
+	n := &slack.Notification{Attachments: []slack.Attachment{{Text: act.Message}}}
+
+	if act.Channel != "" {
+		n.Channel = act.Channel
+	}
+
 	switch err = cmd.Run(); err {
 	case nil:
-		return act.slackClient.SendSuccess("[Success] %s", act.Message)
+		n.Attachments[0].Fallback = "[SUCCESS] " + act.Message
+		n.Attachments[0].Color = "good"
 	default:
-		return act.slackClient.SendError("[Failed] %s\n%s", act.Message, err)
+		n.Attachments[0].Fallback = "[FAILURE] " + act.Message
+		n.Attachments[0].Color = "danger"
 	}
+
+	return act.slackClient.Send(n)
 }
 
 func (act *sendNotification) initSlack() error {
