@@ -18,7 +18,7 @@ func TestArWriter(t *testing.T) {
 	s := buf.String()
 
 	if !strings.HasSuffix(s, "c") {
-		t.Errorf("expected %q to have suffix", s, "c")
+		t.Errorf("expected %q to have suffix %q", s, "c")
 	}
 	for _, ss := range []string{"a\nb.txt/", "abc.txt/"} {
 		if !strings.Contains(s, ss) {

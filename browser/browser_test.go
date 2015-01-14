@@ -36,7 +36,7 @@ func TestAbsoluteUrl(t *testing.T) {
 func TestName(t *testing.T) {
 	browser, err := New()
 	if err != nil {
-		t.Fatal("error initializing browser: %s", err)
+		t.Fatalf("error initializing browser: %s", err)
 	}
 	s := httptest.NewServer(http.HandlerFunc(testHandler))
 
@@ -44,12 +44,12 @@ func TestName(t *testing.T) {
 
 	err = browser.Visit(u)
 	if err != nil {
-		t.Fatal("error visiting %q: %s", u, err)
+		t.Fatalf("error visiting %q: %s", u, err)
 	}
 
 	b, err := browser.Body()
 	if err != nil {
-		t.Fatalf("error getting body of browser", err)
+		t.Fatalf("error getting body of browser: %s", err)
 	}
 	bs := string(b)
 	if !strings.Contains(bs, `ua="Go 1.1 package http"`) {
@@ -63,7 +63,7 @@ func TestName(t *testing.T) {
 	}
 	b, err = browser.Body()
 	if err != nil {
-		t.Fatalf("error gettong bod", err)
+		t.Fatalf("error gettong bod: %s", err)
 
 	}
 	str := string(b)
