@@ -3,48 +3,85 @@ package vmware
 import (
 	"sort"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTags(t *testing.T) {
-	var e error
-	Convey("Tags", t, func() {
-		tags := Tags{}
-		So(tags.Len(), ShouldEqual, 0)
+	var v, ex interface{}
+	tags := Tags{}
 
-		tag := &Tag{VmId: "vm1", Key: "Name", Value: "This is the Name"}
-		tags, e = tags.Update(tag)
-		So(e, ShouldBeNil)
-		So(tags.Len(), ShouldEqual, 1)
-		So(tags[0].Key, ShouldEqual, "Name")
-		So(tags[0].Value, ShouldEqual, "This is the Name")
+	v = tags.Len()
+	ex = 0
+	if ex != v {
+		t.Errorf("expected tags.Len() to be %#v, was %#v", ex, v)
+	}
 
-		// updating an existing tag
-		tag = &Tag{VmId: "vm1", Key: "Name", Value: "New Name"}
-		tags, e = tags.Update(tag)
-		So(e, ShouldBeNil)
+	tag := &Tag{VmId: "vm1", Key: "Name", Value: "This is the Name"}
+	tags, err := tags.Update(tag)
+	if err != nil {
+		t.Fatal("error calling Update", err)
+	}
 
-		So(tags.Len(), ShouldEqual, 1)
+	tests := []struct {
+		Name     string
+		Expected interface{}
+		Value    interface{}
+	}{
+		{"tags.Len()", 1, tags.Len()},
+		{"tags[0].Key", "Name", tags[0].Key},
+		{"tags[0].Value", "This is the Name", tags[0].Value},
+	}
 
-		So(tags[0].Key, ShouldEqual, "Name")
-		So(tags[0].Value, ShouldEqual, "New Name")
+	for _, tst := range tests {
+		if tst.Expected != tst.Value {
+			t.Errorf("expected %s to be %#v, was %#v", tst.Name, tst.Expected, tst.Value)
+		}
+	}
 
-		// adding a new tag to the list
-		tag = &Tag{VmId: "vm1", Key: "Enabled", Value: "true"}
-		tags, e = tags.Update(tag)
-		So(e, ShouldBeNil)
-		So(tags.Len(), ShouldEqual, 2)
+	// updating an existing tag
+	tag = &Tag{VmId: "vm1", Key: "Name", Value: "New Name"}
+	tags, err = tags.Update(tag)
+	if err != nil {
+		t.Fatal("error calling update", err)
+	}
 
-		sort.Sort(tags)
+	tests = []struct {
+		Name     string
+		Expected interface{}
+		Value    interface{}
+	}{
+		{"tags.Len()", 1, tags.Len()},
+		{"tags[0].Key", "Name", tags[0].Key},
+		{"tags[0].Value", "New Name", tags[0].Value},
+	}
 
-		So(tags[0].Key, ShouldEqual, "Enabled")
-		So(tags[0].Value, ShouldEqual, "true")
+	// adding a new tag to the list
+	tag = &Tag{VmId: "vm1", Key: "Enabled", Value: "true"}
+	tags, err = tags.Update(tag)
+	if err != nil {
+		t.Fatal("error calling update", err)
+	}
 
-		// removing a tag
-		tag = &Tag{VmId: "vm1", Key: "Enabled", Value: ""}
-		tags, e = tags.Update(tag)
-		So(e, ShouldBeNil)
-		So(tags.Len(), ShouldEqual, 1)
-	})
+	sort.Sort(tags)
+
+	tests = []struct {
+		Name     string
+		Expected interface{}
+		Value    interface{}
+	}{
+		{"tags.Len()", 2, tags.Len()},
+		{"tags[0].Key", "Enabled", tags[0].Key},
+		{"tags[0].Value", "true", tags[0].Value},
+	}
+
+	// removing a tag
+	tag = &Tag{VmId: "vm1", Key: "Enabled", Value: ""}
+	tags, err = tags.Update(tag)
+	if err != nil {
+		t.Fatal("error calling update", err)
+	}
+	v = 1
+	ex = tags.Len()
+	if ex != v {
+		t.Errorf("expected tags.Len() to be %#v, was %#v", ex, v)
+	}
 }

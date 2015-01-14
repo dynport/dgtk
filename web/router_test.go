@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -37,50 +36,80 @@ func (t *userShow) Template() ([]byte, error) {
 }
 
 func TestRouter(t *testing.T) {
-	Convey("Router", t, func() {
-		app := &App{}
-		r := &Router{
-			"GET": {
-				"/":                  index,
-				"/params/:id/action": paramsAction,
-				"/user/:id/show":     &userShow{},
-				"/index":             &NamedRoute{Name: "named", Handler: namedRoute},
-			},
+	var ex, v interface{}
+	app := &App{}
+	r := &Router{
+		"GET": {
+			"/":                  index,
+			"/params/:id/action": paramsAction,
+			"/user/:id/show":     &userShow{},
+			"/index":             &NamedRoute{Name: "named", Handler: namedRoute},
+		},
+	}
+
+	r2, e := r.Router(app)
+	if e != nil {
+		t.Fatal("error getting router", e)
+	}
+
+	for _, s := range []string{"userShowPath", "namedPath"} {
+		if _, ok := app.Funcs[s]; !ok {
+			t.Errorf("func %v should exist", s)
 		}
+	}
+	f, ok := app.Funcs["userShowPath"].(UrlFunc)
+	if !ok {
+		t.Errorf("func userShowPath should exist")
+	}
+	ex = "/user/123/show"
+	v = f(123)
 
-		r2, e := r.Router(app)
-		So(e, ShouldBeNil)
-		So(r2, ShouldNotBeNil)
+	if v != ex {
+		t.Errorf("f(123) should eq %v, was %v", ex, v)
+	}
 
-		So(app.Funcs["userShowPath"], ShouldNotBeNil)
-		So(app.Funcs["namedPath"], ShouldNotBeNil)
-		f, ok := app.Funcs["userShowPath"].(UrlFunc)
-		So(f, ShouldNotBeNil)
-		So(ok, ShouldEqual, true)
-		So(f(123), ShouldEqual, "/user/123/show")
-		So(app.Url("userShow", 124), ShouldEqual, "/user/124/show")
+	ex = "/user/124/show"
+	v = app.Url("userShow", 124)
+	if v != ex {
+		t.Errorf(`app.Url("userShow", 124) should eq %v, was %v`, ex, v)
+	}
+	s := httptest.NewServer(r2)
+	defer s.Close()
+	addr := s.Listener.Addr()
 
-		s := httptest.NewServer(r2)
-		defer s.Close()
-		addr := s.Listener.Addr()
+	var i interface{} = &userShow{}
 
-		var i interface{} = &userShow{}
+	_, ok = i.(Action)
+	if !ok {
+		t.Errorf("userShow should cast to Action")
+	}
 
-		_, ok = i.(Action)
-		So(ok, ShouldEqual, true)
+	rsp, body, e := get("http://" + addr.String())
+	if rsp.StatusCode != 200 {
+		t.Errorf("expected StatusCode to eq 200, was %v", rsp.StatusCode)
+	}
 
-		rsp, body, e := get("http://" + addr.String())
-		So(rsp.StatusCode, ShouldEqual, 200)
-		So(body, ShouldEqual, "index")
+	if body != "index" {
+		t.Errorf("expected body to eq index, was %v", body)
+	}
 
-		rsp, body, e = get("http://" + addr.String() + "/index")
-		So(rsp.StatusCode, ShouldEqual, 200)
-		So(body, ShouldEqual, "named route")
+	rsp, body, e = get("http://" + addr.String() + "/index")
 
-		rsp, body, e = get("http://" + addr.String() + "/user/12/show")
-		So(rsp.StatusCode, ShouldEqual, 200)
-		So(body, ShouldEqual, "User 12 => named_route=/index")
-	})
+	if rsp.StatusCode != 200 {
+		t.Errorf("expected StatusCode to eq 200, was %v", rsp.StatusCode)
+	}
+	if body != "named route" {
+		t.Errorf("expected body to eq %q, was %q", "named route", body)
+	}
+
+	rsp, body, e = get("http://" + addr.String() + "/user/12/show")
+	if rsp.StatusCode != 200 {
+		t.Errorf("expected StatusCode to eq 200, was %v", rsp.StatusCode)
+	}
+	ex = "User 12 => named_route=/index"
+	if ex != body {
+		t.Errorf("expected body to eq %v, was %v", ex, body)
+	}
 }
 
 func get(url string) (*http.Response, string, error) {
