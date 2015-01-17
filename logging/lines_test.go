@@ -19,25 +19,33 @@ const (
 )
 
 func TestFields(t *testing.T) {
-	Convey("Fields", t, func() {
-		line := `this is a test`
-
-		fields := Fields(line)
-		So(len(fields), ShouldEqual, 4)
-		So(fields[1], ShouldEqual, "is")
-
-		line = `this "is a test" with extras`
-		fields = Fields(line)
-		So(len(fields), ShouldEqual, 4)
-		So(fields[1], ShouldEqual, "is a test")
-		So(fields[2], ShouldEqual, "with")
-
-		line = `this is us="user agent" test`
-		fields = Fields(line)
-		So(len(fields), ShouldEqual, 4)
-		So(fields[0], ShouldEqual, "this")
-		So(fields[2], ShouldEqual, `us=user agent`)
-	})
+	tests := []struct {
+		Line   string
+		Idx    int
+		Value  string
+		Length int
+	}{
+		{"this is a test", 0, "this", 4},
+		{"this is a test", 1, "is", 4},
+		{`this "is a test" with extras`, 2, "with", 4},
+		{`this "is a test" with extras`, 1, "is a test", 4},
+		{`this is us="user agent" test`, 0, "this", 4},
+		{`this is us="user agent" test`, 2, `us=user agent`, 4},
+	}
+	for _, tst := range tests {
+		fields := Fields(tst.Line)
+		if tst.Idx >= len(fields) {
+			t.Errorf("expected %v to have at least %d fields, got %d", tst.Idx+1, len(fields))
+		} else {
+			v := fields[tst.Idx]
+			if v != tst.Value {
+				t.Errorf("expected field %v of %v to be %v, was %v", tst.Idx, fields, tst.Value, v)
+			}
+		}
+		if len(fields) != tst.Length {
+			t.Errorf("expected %d fields for %+v, got %d", tst.Length, fields, len(fields))
+		}
+	}
 }
 
 func TestLineTags(t *testing.T) {
@@ -150,27 +158,41 @@ func TestParseSslLine(t *testing.T) {
 
 func TestParseHAProxyLine(t *testing.T) {
 	line := &HAProxyLine{}
-	Convey("Parse HaProxy line", t, func() {
-		So(line.Parse(HAPROXY_LINE), ShouldBeNil)
-		So(line.Frontend, ShouldEqual, "in-ff")
-		So(line.BackendHost, ShouldEqual, "cnc-a6ce4d77")
-		So(line.BackendImageId, ShouldEqual, "ecb880d6f772")
-		So(line.BackendContainerId, ShouldEqual, "c4093e8b1754")
-		So(line.Status, ShouldEqual, "200")
-		So(line.Length, ShouldEqual, 74674)
-		So(line.ClientRequestTime, ShouldEqual, 1)
-		So(line.ConnectionQueueTime, ShouldEqual, 2)
-		So(line.TcpConnectTime, ShouldEqual, 3)
-		So(line.ServerResponseTime, ShouldEqual, 392)
-		So(line.SessionDurationTime, ShouldEqual, 395)
-		So(line.ActiveConnections, ShouldEqual, 2)
-		So(line.FrontendConnections, ShouldEqual, 4)
-		So(line.BackendConnectons, ShouldEqual, 6)
-		So(line.ServerConnections, ShouldEqual, 7)
-		So(line.Retries, ShouldEqual, 8)
-		So(line.ServerQueue, ShouldEqual, 9)
-		So(line.BackendQueue, ShouldEqual, 7)
-		So(line.Method, ShouldEqual, "GET")
-		So(line.Uri, ShouldEqual, "/api/v1/categories/3989/photos?param=true&page=1&limit=24")
-	})
+	err := line.Parse(HAPROXY_LINE)
+	if err != nil {
+		t.Fatalf("error parsing line %v: %v", line, err)
+	}
+
+	tests := []struct {
+		Name     string
+		Expected interface{}
+		Value    interface{}
+	}{
+		{"line.Frontend", line.Frontend, "in-ff"},
+		{"line.BackendHost", line.BackendHost, "cnc-a6ce4d77"},
+		{"line.BackendImageId", line.BackendImageId, "ecb880d6f772"},
+		{"line.BackendContainerId", line.BackendContainerId, "c4093e8b1754"},
+		{"line.Status", line.Status, "200"},
+		{"line.Length", line.Length, 74674},
+		{"line.ClientRequestTime", line.ClientRequestTime, 1},
+		{"line.ConnectionQueueTime", line.ConnectionQueueTime, 2},
+		{"line.TcpConnectTime", line.TcpConnectTime, 3},
+		{"line.ServerResponseTime", line.ServerResponseTime, 392},
+		{"line.SessionDurationTime", line.SessionDurationTime, 395},
+		{"line.ActiveConnections", line.ActiveConnections, 2},
+		{"line.FrontendConnections", line.FrontendConnections, 4},
+		{"line.BackendConnectons", line.BackendConnectons, 6},
+		{"line.ServerConnections", line.ServerConnections, 7},
+		{"line.Retries", line.Retries, 8},
+		{"line.ServerQueue", line.ServerQueue, 9},
+		{"line.BackendQueue", line.BackendQueue, 7},
+		{"line.Method", line.Method, "GET"},
+		{"line.Uri", line.Uri, "/api/v1/categories/3989/photos?param=true&page=1&limit=24"},
+	}
+
+	for _, tst := range tests {
+		if tst.Expected != tst.Value {
+			t.Errorf("expected %s to be %#v, was %#v", tst.Name, tst.Expected, tst.Value)
+		}
+	}
 }

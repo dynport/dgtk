@@ -8,36 +8,49 @@ import (
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestScanner(t *testing.T) {
-	Convey("Scanner", t, func() {
-		dir, e := setup()
-		So(e, ShouldBeNil)
-		f, e := os.Open(dir + "/albums.bson")
-		So(e, ShouldBeNil)
-		defer f.Close()
+	dir, e := setup(t)
+	if e != nil {
+		t.Fatal("error setting up")
+	}
+	f, e := os.Open(dir + "/albums.bson")
+	if e != nil {
+		t.Fatal("error opening fixture")
+	}
+	defer f.Close()
 
-		scanner := New(f)
-		So(scanner, ShouldNotBeNil)
-
-		albums := []*Album{}
-		for {
-			var a *Album
-			e = scanner.Decode(&a)
-			if e == io.EOF {
-				break
-			}
-			So(e, ShouldBeNil)
-			albums = append(albums, a)
+	scanner := New(f)
+	albums := []*Album{}
+	for {
+		var a *Album
+		e = scanner.Decode(&a)
+		if e == io.EOF {
+			break
 		}
-		So(len(albums), ShouldEqual, 3)
-		first := albums[0]
-		So(first.Artist, ShouldEqual, "Mos Def")
-		So(first.Title, ShouldEqual, "Black on Both Sides")
-	})
+		if e != nil {
+			t.Error("error decoding album", e)
+		}
+		albums = append(albums, a)
+	}
+	if len(albums) != 3 {
+		t.Errorf("expectet len(albums) to eq 3, was %v", len(albums))
+	}
+	first := albums[0]
+	var ex, v interface{}
+	ex = "Mos Def"
+	v = first.Artist
+	if ex != v {
+		t.Errorf("expected first.Artist to be %#v, was %#v", ex, v)
+	}
+
+	ex = "Black on Both Sides"
+	v = first.Title
+
+	if ex != v {
+		t.Errorf("expected first.Title to be %#v, was %#v", ex, v)
+	}
 }
 
 type Album struct {
@@ -51,7 +64,7 @@ const (
 	dbName  = "bsonscanner-test"
 )
 
-func setup() (string, error) {
+func setup(t *testing.T) (string, error) {
 	e := func() error {
 		ses, e := mgo.Dial("127.0.0.1")
 		if e != nil {
@@ -73,13 +86,18 @@ func setup() (string, error) {
 		for _, album := range albums {
 			album.Id = bson.NewObjectId()
 			e := db.C(colName).Insert(album)
-			So(e, ShouldBeNil)
+			if e != nil {
+				t.Fatal("error writing album", e)
+			}
 		}
 
 		cnt, e := db.C(colName).Find(nil).Count()
-		So(e, ShouldBeNil)
-		So(cnt, ShouldEqual, 3)
-
+		if e != nil {
+			t.Fatal("error counting albums", e)
+		}
+		if cnt != 3 {
+			t.Errorf("expected cnt to be 3, was %v", cnt)
+		}
 		if e = os.RemoveAll("tmp"); e != nil {
 			return e
 		}
