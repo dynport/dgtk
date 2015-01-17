@@ -55,6 +55,9 @@ func (stats *Stats) Median() int {
 func Percentile(values []int, perc int) (o int) {
 	middle := float64(len(values)) * float64(perc) / 100.0
 	floor := int(math.Floor(middle))
+	if len(values) <= floor {
+		panic(fmt.Sprintf("unabel to get idx %d of %v", floor, values))
+	}
 	return values[floor]
 }
 
