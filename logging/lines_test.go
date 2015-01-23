@@ -35,7 +35,7 @@ func TestFields(t *testing.T) {
 	for _, tst := range tests {
 		fields := Fields(tst.Line)
 		if tst.Idx >= len(fields) {
-			t.Errorf("expected %v to have at least %d fields, got %d", tst.Idx+1, len(fields))
+			t.Errorf("expected %v to have at least %d fields, got %d", tst.Line, tst.Idx+1, len(fields))
 		} else {
 			v := fields[tst.Idx]
 			if v != tst.Value {

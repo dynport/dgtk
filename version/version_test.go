@@ -29,7 +29,7 @@ func TestParseVersion(t *testing.T) {
 		v := versions[i]
 		b, err := Parse(v)
 		if err != nil {
-			t.Fatal("error parsing version %v: %v", v, err)
+			t.Fatalf("error parsing version %v: %v", v, err)
 		}
 		if a.Less(b) {
 			t.Errorf("expected %v to not be less than %v", a, b)
