@@ -40,12 +40,12 @@ func (arg *argument) setField(target reflect.Value, source string) (e error) {
 	switch target.Kind() {
 	case reflect.String:
 		target.SetString(source)
-	case reflect.Int:
-		i, e := strconv.Atoi(source)
+	case reflect.Int, reflect.Int64:
+		i, e := strconv.ParseInt(source, 10, 64)
 		if e != nil {
 			return fmt.Errorf(`argument %q at index "%d" has wrong type`, arg.field, arg.position)
 		}
-		target.SetInt(int64(i))
+		target.SetInt(i)
 	default:
 		return fmt.Errorf("invalid type %q", target.Type().String())
 	}
