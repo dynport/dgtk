@@ -16,6 +16,7 @@ import (
 type S3Resource struct {
 	Client  *s3.Client
 	Bucket  string
+	Prefix  string
 	Request *http.Request
 }
 
@@ -84,7 +85,7 @@ func (resource *S3Resource) Tags() (map[string]string, error) {
 }
 
 func (r *S3Resource) LoadResource(p string) ([]byte, error) {
-	key := strings.TrimPrefix(p, "/")
+	key := r.prefixKey(strings.TrimPrefix(p, "/"))
 	rsp, e := r.Client.Get(r.Bucket, key)
 	if e != nil {
 		return nil, e
@@ -128,5 +129,12 @@ func (resource *S3Resource) Store() error {
 func (resource *S3Resource) key() string {
 	path := resource.Request.URL.String()
 	path = strings.Replace(path, "/library/", "/", -1)
-	return strings.TrimPrefix(path, "/")
+	return resource.prefixKey(strings.TrimPrefix(path, "/"))
+}
+
+func (resource *S3Resource) prefixKey(k string) string {
+	if resource.Prefix != "" {
+		k = strings.TrimPrefix(resource.Prefix+"/"+k, "/")
+	}
+	return k
 }

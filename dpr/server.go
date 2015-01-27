@@ -17,6 +17,7 @@ type Server struct {
 	DataRoot string
 	Address  string
 	Bucket   string
+	Prefix   string
 }
 
 func (s *Server) Run() error {
@@ -26,7 +27,7 @@ func (s *Server) Run() error {
 func (server *Server) newResource(r *http.Request) Resource {
 	if server.Bucket != "" {
 		client := s3.NewFromEnv()
-		return &S3Resource{Request: r, Bucket: server.Bucket, Client: client}
+		return &S3Resource{Request: r, Bucket: server.Bucket, Prefix: server.Prefix, Client: client}
 	} else {
 		return NewFileResource(server.DataRoot, r)
 	}

@@ -12,6 +12,7 @@ var (
 	dataDir = flag.String("D", os.Getenv("HOME")+"/.dpr", "Location of data dir")
 	addr    = flag.String("H", ":80", "Address to bind to")
 	bucket  = flag.String("B", "", "S3 bucket to use for push")
+	prefix  = flag.String("P", "", "S3 key prefix to use")
 )
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
 		DataRoot: *dataDir,
 		Address:  *addr,
 		Bucket:   *bucket,
+		Prefix:   *prefix,
 	}
 	log.Printf("starting dpr on %s", server.Address)
 	e := server.Run()
