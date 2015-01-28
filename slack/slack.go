@@ -26,7 +26,7 @@ func (c *Client) SendSuccess(format string, args ...interface{}) error {
 	return c.Send(&Notification{
 		Attachments: []Attachment{
 			{
-				Fallback: "Error: " + msg,
+				Fallback: "Success: " + msg,
 				Text:     msg,
 				Color:    "good",
 			},
@@ -39,7 +39,7 @@ func (c *Client) SendWarning(format string, args ...interface{}) error {
 	return c.Send(&Notification{
 		Attachments: []Attachment{
 			{
-				Fallback: "Error: " + msg,
+				Fallback: "Warning: " + msg,
 				Text:     msg,
 				Color:    "warning",
 			},
