@@ -1,8 +1,9 @@
 package cli
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func testCreateAction(path string, r Runner) *action {
