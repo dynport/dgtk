@@ -15,6 +15,7 @@ type Stats struct {
 func (stats *Stats) Add(i int) {
 	stats.sum += i
 	stats.Values = append(stats.Values, i)
+	stats.sorted = false
 }
 
 func (stats *Stats) Max() int {
