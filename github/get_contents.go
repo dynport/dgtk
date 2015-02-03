@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 )
 
 // http://developer.github.com/v3/repos/contents/#get-contents
@@ -23,7 +22,6 @@ func (action *GetContents) Execute(client *Client) ([]*Content, error) {
 	if action.Ref != "" {
 		theUrl += "?ref=" + action.Ref
 	}
-	log.Printf(theUrl)
 	rsp, e := client.Get(theUrl)
 	if e != nil {
 		return nil, e
