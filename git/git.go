@@ -28,7 +28,8 @@ func (repo *Repository) cacheDir() string {
 
 func (repo *Repository) Fetch() error {
 	logger.Println("fetching origin")
-	_, e := repo.executeGitCommand("fetch")
+	// -f is required to make sure force pushes will properly update.
+	_, e := repo.executeGitCommand("fetch", "-f")
 	return e
 }
 
