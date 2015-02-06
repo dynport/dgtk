@@ -41,6 +41,12 @@ func (c *Context) currentTime() time.Time {
 }
 
 func (c *Context) Sign(r *http.Request) error {
+	if c.AccessKeyID == "" {
+		panic("AccessKeyID must be set")
+	}
+	if c.SecretAccessKey == "" {
+		panic("SecretAccessKey must be set")
+	}
 	date := r.Header.Get("Date")
 	t := c.currentTime().UTC()
 	if date != "" {
