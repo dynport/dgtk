@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 )
@@ -17,8 +16,12 @@ func New(migrations ...interface{}) *Migrations {
 	return &Migrations{steps: migrations}
 }
 
+type logger interface {
+	Printf(string, ...interface{})
+}
+
 type Migrations struct {
-	Logger *log.Logger
+	Logger logger
 	steps  []interface{}
 }
 
@@ -76,7 +79,7 @@ func newMigration(idx int, statement interface{}) (*Migration, error) {
 type Migration struct {
 	Idx       int
 	Statement string
-	*log.Logger
+	Logger    logger
 }
 
 const errorMigrationsDoesNotExist = `pq: relation "migrations" does not exist`
@@ -102,7 +105,7 @@ func (m *Migration) log(t string) {
 		for _, l := range lines {
 			out = append(out, strings.TrimSpace(l))
 		}
-		m.Printf(t+": migration %d %q %q", m.Idx, m.checksum(), strings.Join(strings.Fields(strings.Join(out, " ")), " "))
+		m.Logger.Printf(t+": migration %d %q %q", m.Idx, m.checksum(), strings.Join(strings.Fields(strings.Join(out, " ")), " "))
 	}
 }
 
