@@ -54,7 +54,7 @@ func loadForms(baseUrl string, b []byte) ([]*Form, error) {
 			if strings.HasPrefix(action, "/") {
 				action = base + action
 			} else {
-				action = base + u.Path + action
+				action = base + u.Path + "/" + strings.TrimPrefix(action, "/")
 			}
 		}
 		f := &Form{Method: node.Attr("method"), Action: action}
