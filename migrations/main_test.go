@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"database/sql"
+	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -13,6 +14,9 @@ func insertUsers(con Con) error {
 }
 
 func TestRun(t *testing.T) {
+	if os.Getenv("TEST_WITH_DB") != "true" {
+		t.SkipNow()
+	}
 	migs := New(
 		"CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, name VARCHAR NOT NULL)",
 		insertUsers,
