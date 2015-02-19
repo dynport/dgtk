@@ -4,9 +4,18 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"fmt"
+	"reflect"
+	"runtime"
 	"strings"
 	"time"
 )
+
+type Con interface {
+	QueryRow(query string, args ...interface{}) *sql.Row
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	Prepare(query string) (*sql.Stmt, error)
+	Exec(query string, args ...interface{}) (sql.Result, error)
+}
 
 const createMigrationsSql = `
   CREATE TABLE migrations (idx INTEGER PRIMARY KEY NOT NULL, md5 UUID NOT NULL, statement VARCHAR NOT NULL, created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL)
@@ -53,9 +62,8 @@ func (list Migrations) ExecuteTx(tx *sql.Tx) error {
 				return e
 			}
 			m.Logger = list.Logger
-			_, e = m.Execute(tx)
-			if e != nil {
-				return e
+			if err := m.Execute(tx); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -70,6 +78,9 @@ func newMigration(idx int, statement interface{}) (*Migration, error) {
 		m.Statement = casted
 	case fmt.Stringer:
 		m.Statement = casted.String()
+	case func(Con) error:
+		m.Statement = runtime.FuncForPC(reflect.ValueOf(statement).Pointer()).Name()
+		m.Func = casted
 	default:
 		return nil, fmt.Errorf("type %T not supported", casted)
 	}
@@ -79,6 +90,7 @@ func newMigration(idx int, statement interface{}) (*Migration, error) {
 type Migration struct {
 	Idx       int
 	Statement string
+	Func      func(Con) error
 	Logger    logger
 }
 
@@ -113,34 +125,35 @@ func (m *Migration) checksum() string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(m.Statement)))
 }
 
-func (m *Migration) Execute(tx *sql.Tx) (sql.Result, error) {
-	rows, e := tx.Query("SELECT md5 FROM migrations where idx = $1", m.Idx)
-	if e != nil {
-		return nil, e
+func (m *Migration) Execute(tx *sql.Tx) error {
+	rows, err := tx.Query("SELECT md5 FROM migrations where idx = $1", m.Idx)
+	if err != nil {
+		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var cs string
-		e = rows.Scan(&cs)
-		if e != nil {
-			return nil, e
+		if err := rows.Scan(&cs); err != nil {
+			return err
 		}
 		cs = strings.Replace(cs, "-", "", -1)
 		if cs == m.checksum() {
 			m.log("SKIP")
-			return nil, nil
+			return nil
 		} else {
-			return nil, fmt.Errorf("migration %d (new checksum %s) already exists with checksum %q", m.Idx, cs, m.checksum())
+			return fmt.Errorf("migration %d (new checksum %s) already exists with checksum %q", m.Idx, cs, m.checksum())
 		}
 	}
 	m.log("EXEC")
-	res, e := tx.Exec(m.Statement)
-	if e != nil {
-		return nil, e
+	if m.Func != nil {
+		if err := m.Func(tx); err != nil {
+			return err
+		}
+	} else {
+		if _, err := tx.Exec(m.Statement); err != nil {
+			return err
+		}
 	}
-	_, e = tx.Exec("INSERT INTO migrations (idx, md5, statement, created_at) VALUES ($1, $2, $3, $4)", m.Idx, m.checksum(), m.Statement, time.Now().UTC().Format(time.RFC3339Nano))
-	if e != nil {
-		return nil, e
-	}
-	return res, e
+	_, err = tx.Exec("INSERT INTO migrations (idx, md5, statement, created_at) VALUES ($1, $2, $3, $4)", m.Idx, m.checksum(), m.Statement, time.Now().UTC().Format(time.RFC3339Nano))
+	return err
 }
