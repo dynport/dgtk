@@ -78,6 +78,12 @@ func (dh *DockerHost) CreateContainer(options *docker.ContainerConfig, name stri
 		}
 	}
 
+	imgDetails, err := dh.ImageDetails(imageId)
+	if err != nil {
+		return "", err
+	}
+	options.Env = append(options.Env, "DOCKER_IMAGE="+imgDetails.Id)
+
 	container := &docker.Container{}
 	u := dh.url() + "/containers/create"
 
