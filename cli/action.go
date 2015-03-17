@@ -183,7 +183,6 @@ func (a *action) handleParams(paramName string, short bool, args []string, idx i
 	if !short {
 		parts := strings.SplitN(paramName, "=", 2)
 		if len(parts) == 2 {
-			fmt.Printf("--> %s = %s\n", parts[0], parts[1])
 			paramName = parts[0]
 			value = parts[1]
 		}
