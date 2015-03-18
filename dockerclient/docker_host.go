@@ -27,7 +27,7 @@ type DockerHostInfo struct {
 }
 
 func (dh *DockerHost) HostInfo() (*DockerHostInfo, error) {
-	u := dh.url() + "/info"
+	u := dh.Address + "/info"
 
 	dhi := &DockerHostInfo{}
 	return dhi, dh.getJSON(u, &dhi)

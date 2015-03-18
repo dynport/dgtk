@@ -21,20 +21,20 @@ var (
 
 // Get the list of all images available on the this host.
 func (dh *DockerHost) Images() (images []*docker.Image, e error) {
-	e = dh.getJSON(dh.url()+"/images/json", &images)
+	e = dh.getJSON(dh.Address+"/images/json", &images)
 	return images, e
 }
 
 // Get the details for image with the given id (either hash or name).
 func (dh *DockerHost) ImageDetails(id string) (imageDetails *docker.ImageDetails, e error) {
 	imageDetails = &docker.ImageDetails{}
-	return imageDetails, dh.getJSON(dh.url()+"/images/"+id+"/json", imageDetails)
+	return imageDetails, dh.getJSON(dh.Address+"/images/"+id+"/json", imageDetails)
 }
 
 // Get the given image's history.
 func (dh *DockerHost) ImageHistory(id string) (imageHistory *docker.ImageHistory, e error) {
 	imageHistory = &docker.ImageHistory{}
-	e = dh.getJSON(dh.url()+"/images/"+id+"/history", imageHistory)
+	e = dh.getJSON(dh.Address+"/images/"+id+"/history", imageHistory)
 	return imageHistory, e
 }
 
@@ -75,7 +75,7 @@ func (dh *DockerHost) BuildDockerfile(dockerfile string, opts *BuildImageOptions
 
 // Build a container image from a tar or tar.gz Reader
 func (dh *DockerHost) Build(r io.Reader, opts *BuildImageOptions) (imageId string, e error) {
-	u := dh.url() + "/build"
+	u := dh.Address + "/build"
 	if opts == nil {
 		opts = &BuildImageOptions{}
 	}
@@ -97,7 +97,7 @@ func (dh *DockerHost) TagImage(imageId, repository, tag string) (e error) {
 	if repository == "" {
 		return fmt.Errorf("empty repository given")
 	}
-	url := dh.url() + "/images/" + imageId + "/tag?repo=" + repository
+	url := dh.Address + "/images/" + imageId + "/tag?repo=" + repository
 
 	if tag != "" {
 		url += "&tag=" + tag
@@ -117,7 +117,7 @@ func (dh *DockerHost) PullImage(name string) error {
 
 	registry, repository, tag := splitImageName(name)
 
-	reqUrl := dh.url() + "/images/create"
+	reqUrl := dh.Address + "/images/create"
 	values := &url.Values{}
 	values.Add("fromImage", registry+"/"+repository)
 	values.Add("repo", repository)
@@ -168,7 +168,7 @@ func (dh *DockerHost) PushImage(name string, opts *PushImageOptions) error {
 
 	buf := &bytes.Buffer{}
 	buf.WriteString(FAKE_AUTH)
-	url := dh.url() + "/images/" + registry + "/" + image + "/push?tag=" + tag
+	url := dh.Address + "/images/" + registry + "/" + image + "/push?tag=" + tag
 
 	rsp, e := dh.postWithReader(url, buf)
 	if e != nil {
@@ -191,12 +191,12 @@ func (dh *DockerHost) DeleteImage(name string) error {
 		return fmt.Errorf("no image name given")
 	}
 
-	req, e := http.NewRequest("DELETE", dh.url()+"/images/"+name, nil)
+	req, e := http.NewRequest("DELETE", dh.Address+"/images/"+name, nil)
 	if e != nil {
 		return e
 	}
 
-	resp, e := dh.httpClient.Do(req)
+	resp, e := dh.Client.Do(req)
 	if e != nil {
 		return e
 	}

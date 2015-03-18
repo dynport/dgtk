@@ -34,7 +34,7 @@ func (dh *DockerHost) postWithReader(url string, r io.Reader) (rsp *http.Respons
 }
 
 func (dh *DockerHost) postWithContentType(url, contentType string, r io.Reader) (rsp *http.Response, e error) {
-	return handlePostResult(dh.httpClient.Post(url, contentType, r))
+	return handlePostResult(dh.Client.Post(url, contentType, r))
 }
 
 func (dh *DockerHost) postJSON(url string, input interface{}, output interface{}) (rsp *http.Response, e error) {
@@ -64,7 +64,7 @@ func (dh *DockerHost) postJSON(url string, input interface{}, output interface{}
 }
 
 func (dh *DockerHost) get(url string) (content []byte, rsp *http.Response, e error) {
-	rsp, e = dh.httpClient.Get(url)
+	rsp, e = dh.Client.Get(url)
 	if e != nil {
 		return nil, rsp, e
 	}

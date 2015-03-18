@@ -48,7 +48,7 @@ func (dh *DockerHost) Containers() (containers []*docker.Container, e error) {
 }
 
 func (dh *DockerHost) ListContainers(opts *ListContainersOptions) (containers []*docker.Container, e error) {
-	u := dh.url() + "/containers/json"
+	u := dh.Address + "/containers/json"
 	if opts != nil {
 		if params := opts.Encode(); params != "" {
 			u += "?" + params
@@ -61,7 +61,7 @@ func (dh *DockerHost) ListContainers(opts *ListContainersOptions) (containers []
 // Get the information for the container with the given id.
 func (dh *DockerHost) Container(containerId string) (containerInfo *docker.ContainerInfo, e error) {
 	containerInfo = &docker.ContainerInfo{}
-	e = dh.getJSON(dh.url()+"/containers/"+containerId+"/json", containerInfo)
+	e = dh.getJSON(dh.Address+"/containers/"+containerId+"/json", containerInfo)
 	return containerInfo, e
 }
 
@@ -85,7 +85,7 @@ func (dh *DockerHost) CreateContainer(options *docker.ContainerConfig, name stri
 	options.Env = append(options.Env, "DOCKER_IMAGE="+imgDetails.Id)
 
 	container := &docker.Container{}
-	u := dh.url() + "/containers/create"
+	u := dh.Address + "/containers/create"
 
 	if name != "" {
 		u += "?name=" + name
@@ -102,16 +102,16 @@ func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.Host
 	if hostConfig == nil {
 		hostConfig = &docker.HostConfig{}
 	}
-	_, e = dh.postJSON(dh.url()+"/containers/"+containerId+"/start", hostConfig, nil)
+	_, e = dh.postJSON(dh.Address+"/containers/"+containerId+"/start", hostConfig, nil)
 	return e
 }
 
 func (dh *DockerHost) RemoveContainer(containerId string) error {
-	req, e := http.NewRequest("DELETE", dh.url()+"/containers/"+containerId, nil)
+	req, e := http.NewRequest("DELETE", dh.Address+"/containers/"+containerId, nil)
 	if e != nil {
 		return e
 	}
-	rsp, e := dh.httpClient.Do(req)
+	rsp, e := dh.Client.Do(req)
 	if e != nil {
 		return e
 	}
@@ -123,7 +123,7 @@ func (dh *DockerHost) RemoveContainer(containerId string) error {
 
 // Kill the container with the given identifier.
 func (dh *DockerHost) StopContainer(containerId string) (e error) {
-	rsp, e := dh.post(dh.url() + "/containers/" + containerId + "/kill")
+	rsp, e := dh.post(dh.Address + "/containers/" + containerId + "/kill")
 	defer rsp.Body.Close()
 	return e
 }
@@ -219,7 +219,7 @@ func (dh *DockerHost) AttachContainer(containerId string, opts *AttachOptions) (
 	if opts == nil {
 		opts = &AttachOptions{}
 	}
-	rsp, e := dh.post(dh.url() + "/containers/" + containerId + "/attach" + opts.Encode())
+	rsp, e := dh.post(dh.Address + "/containers/" + containerId + "/attach" + opts.Encode())
 	if e != nil {
 		return e
 	}
