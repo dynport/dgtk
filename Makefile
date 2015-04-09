@@ -1,4 +1,4 @@
-.PHONY: build check default deps test vet
+.PHONY: build check default deps test vet jenkins
 
 ALL_DEPS    := $(shell go list ./... | xargs go list -f '{{join .Deps "\n"}}' | grep -e "$github.com\|code.google.com\|launchpad.net" | sort | uniq | grep -v "github.com/dynport/dgtk")
 EXTRA_DEPS  := github.com/dynport/dgtk/goassets github.com/smartystreets/assertions github.com/smartystreets/goconvey github.com/stretchr/testify/assert github.com/jacobsa/oglematchers labix.org/v2/mgo/bson github.com/lib/pq golang.org/x/tools/cmd/vet
@@ -31,3 +31,9 @@ test: build
 vet: build
 	@go vet $(PACKAGES)
 
+
+jenkins:
+	go get -t ./...
+	go get golang.org/x/tools/cmd/vet
+	go vet ./...
+	go test ./...
