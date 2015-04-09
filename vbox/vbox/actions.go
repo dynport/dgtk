@@ -22,7 +22,7 @@ func (action *actDownloadTemplateVM) Run() error {
 }
 
 type actCloneVM struct {
-	Snapshot string `cli:"type=opt short=s long=snapshot default='base' desc='The template VM\'s snapshot to use for cloning.'"`
+	Snapshot string `cli:"type=opt short=s long=snapshot default='base' desc='The template VMs snapshot to use for cloning.'"`
 	Template string `cli:"type=arg required=true desc='The VM to use for cloning.'"`
 	Name     string `cli:"type=arg required=true desc='Name of the new VM'"`
 }
