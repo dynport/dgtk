@@ -43,8 +43,8 @@ func StartServer(tx *sql.Tx) (waitForClose chan struct{}, address string) {
 			if ctx.Query != "" {
 				ctx.Table, err = loadQuery(tx, ctx.Query)
 				if err != nil {
-					//doClose(err)
-					return err
+					doClose(err)
+					return nil
 				}
 			}
 			tpl, err := template.New("index").Parse(txDebugTpl)
