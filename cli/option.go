@@ -26,6 +26,11 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 	}
 
 	field := value.FieldByName(o.field)
+	if field.Kind() == reflect.Ptr {
+		n := reflect.New(field.Type().Elem())
+		field.Set(n)
+		field = field.Elem()
+	}
 
 	switch field.Kind() {
 	case reflect.String:

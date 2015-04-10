@@ -65,3 +65,12 @@ If there is only a single action for a program the router is not required and th
 
 	cli.RunActionWithArgs(&ExampleRunner{})
 
+If you must know whether an option was set, or not you can use pointer values. Note that this has implications, as values must first be tested for nil (aka the option wasn't given on the command line) and must be dereferenced, to get the actual value. For booleans the flag mechanisms is deactivated, i.e. a value (true or false) must be given.
+
+	// Struct used to configure an action.
+	type ExampleRunner struct {
+		Opt1 *string `cli:"opt -o"`
+		Opt2 *int    `cli:"opt -i"`
+		Opt3 *bool   `cli:"opt -t"`
+	}
+
