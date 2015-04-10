@@ -1,4 +1,4 @@
-// Debug database transactions inside tests
+// Debug SQL transactions inside tests
 //
 package txdbg
 
