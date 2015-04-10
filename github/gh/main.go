@@ -84,11 +84,20 @@ func openGithubUrl(suffix string) error {
 
 func openUrl(theUrl string) error {
 	logger.Printf("opening %q", theUrl)
-	c := exec.Command("open", theUrl)
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	c.Stdin = nil
-	return c.Run()
+	for _, n := range []string{"open", "xdg-open"} {
+		if p, err := exec.LookPath(n); err == nil {
+			c := exec.Command(p, theUrl)
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = nil
+			if err := c.Run(); err == nil {
+				return nil
+			} else {
+				logger.Printf("err=%q", err)
+			}
+		}
+	}
+	return fmt.Errorf("could not find command to open url")
 }
 
 type GithubNotifications struct {
