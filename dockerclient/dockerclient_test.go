@@ -1,34 +1,33 @@
 package dockerclient
 
 import (
-	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
-var data = []struct {
-	in  string
-	out []string
-}{
-	{"foo", []string{"", "foo", ""}},
-	{"foo/bar", []string{"foo", "bar", ""}},
-	{"foo/bar:buz", []string{"foo", "bar", "buz"}},
-	{"foo.boo/bar:buz", []string{"foo.boo", "bar", "buz"}},
-	{"foo.boo:500/bar:buz", []string{"foo.boo:500", "bar", "buz"}},
-}
-
 func TestSplitImageName(t *testing.T) {
-	for _, tt := range data {
-		Convey(fmt.Sprintf("Given the image name %s", tt.in), t, func() {
-			iname := tt.in
-			Convey("When the name is split into segments", func() {
-				registry, repository, tag := splitImageName(iname)
-				Convey("Then the segments should be found properly", func() {
-					So(registry, ShouldEqual, tt.out[0])
-					So(repository, ShouldEqual, tt.out[1])
-					So(tag, ShouldEqual, tt.out[2])
-				})
-			})
-		})
+	tests := []struct {
+		in         string
+		registry   string
+		repository string
+		tag        string
+	}{
+		{"foo", "", "foo", ""},
+		{"foo/bar", "foo", "bar", ""},
+		{"foo/bar:buz", "foo", "bar", "buz"},
+		{"foo.boo/bar:buz", "foo.boo", "bar", "buz"},
+		{"foo.boo:500/bar:buz", "foo.boo:500", "bar", "buz"},
+	}
+
+	for _, tc := range tests {
+		registry, repository, tag := splitImageName(tc.in)
+		if registry != tc.registry {
+			t.Errorf("expected registry to be %q, was %q", tc.registry, registry)
+		}
+		if repository != tc.repository {
+			t.Errorf("expected repository to be %q, was %q", tc.repository, repository)
+		}
+		if tag != tc.tag {
+			t.Errorf("expected tag to be %q, was %q", tc.tag, tag)
+		}
 	}
 }
