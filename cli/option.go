@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type option struct {
@@ -26,6 +27,11 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 	}
 
 	field := value.FieldByName(o.field)
+	if field.Kind() == reflect.Ptr {
+		n := reflect.New(field.Type().Elem())
+		field.Set(n)
+		field = field.Elem()
+	}
 
 	switch field.Kind() {
 	case reflect.String:
@@ -38,6 +44,25 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 		field.SetInt(int64(i))
 	case reflect.Bool:
 		field.SetBool(o.value == "true")
+	case reflect.Slice:
+		parts := strings.Split(o.value, ",")
+		st := field.Type().Elem()
+		sl := reflect.MakeSlice(field.Type(), len(parts), len(parts))
+		for i := range parts {
+			switch st.Kind() {
+			case reflect.String:
+				sl.Index(i).SetString(parts[i])
+			case reflect.Int:
+				val, e := strconv.Atoi(parts[i])
+				if e != nil {
+					return e
+				}
+				sl.Index(i).SetInt(int64(val))
+			default:
+				return fmt.Errorf("invalid type %q for slice", st.String())
+			}
+			field.Set(sl)
+		}
 	default:
 		return fmt.Errorf("invalid type %q", field.Type().String())
 	}

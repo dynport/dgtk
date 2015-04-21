@@ -205,7 +205,7 @@ func (a *action) handleParams(paramName string, short bool, args []string, idx i
 		}
 	} else {
 		if value == "" {
-			if idx+1 > len(args) {
+			if idx+1 >= len(args) {
 				return -1, fmt.Errorf("missing value for option %q!", option.field)
 			}
 			value = args[idx+1]
