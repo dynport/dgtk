@@ -44,12 +44,20 @@ func run() error {
 		if len(os.Args) > 2 {
 			options = os.Args[2:]
 		}
-		c := exec.Command(path, options...)
-		c.Stdout = os.Stdout
-		c.Stdin = os.Stdin
-		c.Stderr = os.Stderr
-		if err := c.Start(); err != nil {
-			return errors.New(err)
+		var c *exec.Cmd
+		for i := 0; i < 10; i++ {
+			err := func() error {
+				c = exec.Command(path, options...)
+				c.Stdout = os.Stdout
+				c.Stdin = os.Stdin
+				c.Stderr = os.Stderr
+				return c.Start()
+			}()
+			if err != nil {
+				time.Sleep(1 * time.Second)
+			} else {
+				break
+			}
 		}
 		logger.Printf("running with pid %d", c.Process.Pid)
 		for {
