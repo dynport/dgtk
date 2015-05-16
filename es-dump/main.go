@@ -148,10 +148,6 @@ func loadDocumentsWithScroll(addr string, id string) (string, []json.RawMessage,
 	}
 	defer rsp.Body.Close()
 	switch rsp.StatusCode {
-	case 404:
-		b, _ := ioutil.ReadAll(rsp.Body)
-		logger.Printf("%s", string(b))
-		return "", nil, nil
 	case 200:
 		var rr *scrollResponse
 		err = json.NewDecoder(rsp.Body).Decode(&rr)
