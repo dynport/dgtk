@@ -32,6 +32,7 @@ var (
 	index     = flag.String("i", "", "Index Name")
 	out       = flag.String("o", "", "Output file")
 	batchSize = flag.Int("b", 1000, "Batch Size")
+	scroll    = flag.String("s", "1m", "Scroll duration")
 )
 
 func run() error {
@@ -55,7 +56,7 @@ func run() error {
 	gz := gzip.NewWriter(f)
 	defer gz.Close()
 
-	docs, err := iterateIndex(*address, *index, *batchSize)
+	docs, err := iterateIndex(*address, *index, *batchSize, *scroll)
 	if err != nil {
 		return err
 	}
@@ -104,8 +105,8 @@ func progress() (chan struct{}, *sync.WaitGroup) {
 	return c, wg
 }
 
-func iterateIndex(addr, name string, size int) (chan json.RawMessage, error) {
-	scrollID, err := openIndex(addr, name, size, "1m")
+func iterateIndex(addr, name string, size int, scroll string) (chan json.RawMessage, error) {
+	scrollID, err := openIndex(addr, name, size, scroll)
 	if err != nil {
 		return nil, err
 	}
