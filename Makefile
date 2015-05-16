@@ -31,9 +31,8 @@ test: build
 vet: build
 	@go vet $(PACKAGES)
 
-
-jenkins:
+test_deps:
 	go get -t ./...
 	go get golang.org/x/tools/cmd/vet
-	go vet ./...
-	go test ./...
+
+jenkins: test_deps vet test
