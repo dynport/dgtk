@@ -50,24 +50,32 @@ func (list Migrations) Execute(db *sql.DB) error {
 }
 
 func (list Migrations) ExecuteTx(tx *sql.Tx) error {
-	_, e := list.setup(tx)
-	if e != nil {
-		return e
+	if _, err := list.setup(tx); err != nil {
+		return err
 	}
 
-	return func() error {
-		for idx, i := range list.steps {
-			m, e := newMigration(idx+1, i)
-			if e != nil {
-				return e
-			}
-			m.Logger = list.Logger
-			if err := m.Execute(tx); err != nil {
-				return err
-			}
+	migrations, err := list.migrations()
+	if err != nil {
+		return err
+	}
+	for _, m := range migrations {
+		if err := m.Execute(tx); err != nil {
+			return err
 		}
-		return nil
-	}()
+	}
+	return nil
+}
+
+func (list Migrations) migrations() (out []*Migration, err error) {
+	for idx, i := range list.steps {
+		if m, err := newMigration(idx+1, i); err != nil {
+			return nil, err
+		} else {
+			m.Logger = list.Logger
+			out = append(out, m)
+		}
+	}
+	return out, nil
 }
 
 func newMigration(idx int, statement interface{}) (*Migration, error) {
@@ -126,22 +134,22 @@ func (m *Migration) checksum() string {
 }
 
 func (m *Migration) Execute(tx *sql.Tx) error {
-	rows, err := tx.Query("SELECT md5 FROM migrations where idx = $1", m.Idx)
+	rows, err := tx.Query("SELECT md5, statement FROM migrations where idx = $1", m.Idx)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var cs string
-		if err := rows.Scan(&cs); err != nil {
+		var cs, statement string
+		if err := rows.Scan(&cs, &statement); err != nil {
 			return err
 		}
 		cs = strings.Replace(cs, "-", "", -1)
-		if cs == m.checksum() {
+		if statement == m.Statement {
 			m.log("SKIP")
 			return nil
 		} else {
-			return fmt.Errorf("migration %d (new checksum %s) already exists with checksum %q", m.Idx, cs, m.checksum())
+			return fmt.Errorf("expected migration %d to be\n%q\nwas\n%q\n.", m.Idx, m.Statement, statement)
 		}
 	}
 	m.log("EXEC")
@@ -156,4 +164,12 @@ func (m *Migration) Execute(tx *sql.Tx) error {
 	}
 	_, err = tx.Exec("INSERT INTO migrations (idx, md5, statement, created_at) VALUES ($1, $2, $3, $4)", m.Idx, m.checksum(), m.Statement, time.Now().UTC().Format(time.RFC3339Nano))
 	return err
+}
+
+func sameStatement(a, b string) bool {
+	if a == b {
+		return true
+	}
+	// TODO: think of actually implementing a match
+	return false
 }

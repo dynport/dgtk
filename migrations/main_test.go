@@ -63,5 +63,33 @@ func TestRun(t *testing.T) {
 			t.Errorf("expected %s to be %#v, was %#v", tst.Name, tst.Expected, tst.Value)
 		}
 	}
+}
 
+func TestMigrations(t *testing.T) {
+	migs, err := New("CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, email VARCHAR)", migFunc).migrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		Name     string
+		Expected interface{}
+		Value    interface{}
+	}{
+		{"len(migs)", 2, len(migs)},
+		{"migs[0].Idx", 1, migs[0].Idx},
+		{"migs[0].Statement", "CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, email VARCHAR)", migs[0].Statement},
+		{"migs[1].Idx", 2, migs[1].Idx},
+		{"migs[1].Statement", "github.com/dynport/dgtk/migrations.migFunc", migs[1].Statement},
+	}
+
+	for _, tst := range tests {
+		if tst.Expected != tst.Value {
+			t.Errorf("expected %s to be %#v, was %#v", tst.Name, tst.Expected, tst.Value)
+		}
+	}
+}
+
+func migFunc(tx Con) error {
+	return nil
 }
