@@ -4,6 +4,18 @@ import "sort"
 
 type Map map[string]*Value
 
+func (m Map) ReversedValues() Values {
+	v := m.Values()
+	sort.Sort(sort.Reverse(v))
+	return v
+}
+
+func (m Map) SortedValues() Values {
+	v := m.Values()
+	sort.Sort(v)
+	return v
+}
+
 func (m Map) Values() Values {
 	values := make(Values, 0, len(m))
 	for _, v := range m {
