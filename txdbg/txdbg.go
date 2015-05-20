@@ -9,9 +9,21 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os/exec"
 	"text/template"
 	"time"
 )
+
+func Open(tx *sql.Tx) error {
+	cc, a := StartServer(tx)
+	cmd, err := openCommand()
+	if err != nil {
+		return err
+	}
+	exec.Command(cmd, a).Run()
+	<-cc
+	return nil
+}
 
 // StartServer starts a new http server for the given transaction
 //
@@ -152,5 +164,13 @@ func valueToString(i interface{}) string {
 		return c.UTC().Format("2006-01-02T15:04:05")
 	default:
 		return fmt.Sprint(i)
+	}
+}
+
+func openCommand() (string, error) {
+	if p, err := exec.LookPath("xdg-open"); err != nil {
+		return exec.LookPath("open")
+	} else {
+		return p, nil
 	}
 }
