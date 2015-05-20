@@ -8,25 +8,32 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
+func NewUnbuffered(in io.Reader) *Decoder {
+	return &Decoder{in: in}
+}
+
 func New(in io.Reader) *Decoder {
 	return &Decoder{in: bufio.NewReader(in)}
 }
 
 type Decoder struct {
-	in *bufio.Reader
+	in io.Reader
 }
 
 func (d *Decoder) Decode(i interface{}) error {
-	b, e := d.in.Peek(4)
-	if e != nil {
-		return e
+	// no longer use bufio.Reader.Peek because we do want to avoid buffering (to enable capturing of parts of bson)
+	// read 4 bytes into buffer and save them in saved (so we can use them for reading later)
+	buf, saved := &bytes.Buffer{}, &bytes.Buffer{}
+	if _, err := io.CopyN(buf, io.TeeReader(d.in, saved), 4); err != nil {
+		return err
 	}
-	buf := &bytes.Buffer{}
-	_, e = io.CopyN(buf, d.in, int64(decodeint32(b)))
-	if e != nil {
-		return e
+	toRead := int64(decodeint32(buf.Bytes()))
+
+	bsonBuf := &bytes.Buffer{}
+	if _, err := io.CopyN(bsonBuf, io.MultiReader(saved, d.in), toRead); err != nil {
+		return err
 	}
-	return bson.Unmarshal(buf.Bytes(), i)
+	return bson.Unmarshal(bsonBuf.Bytes(), i)
 }
 
 func decodeint32(b []byte) int32 {
