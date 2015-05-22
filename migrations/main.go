@@ -149,7 +149,7 @@ func (m *Migration) Execute(tx *sql.Tx) error {
 			m.log("SKIP")
 			return nil
 		} else {
-			return fmt.Errorf("expected migration %d to be\n%q\nwas\n%q\n.", m.Idx, m.Statement, statement)
+			return fmt.Errorf("MIGRATION MISMATCH:\n<<<<<<< code migration %d\n%q\n=======\n%q\n>>>>>>> db migration\n", m.Idx, m.Statement, statement)
 		}
 	}
 	m.log("EXEC")
