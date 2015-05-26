@@ -165,7 +165,7 @@ func loadSessionToken(cfg *config) (sts *stsToken, err error) {
 	}
 	dbg.Printf("token is %q", tok)
 	dbg.Printf("getting session token with token %q and id %q", tok, dev.SerialNumber)
-	sts, err = getSessionToken(cfg, tok, dev.SerialNumber, 3600)
+	sts, err = getSessionToken(cfg, tok, dev.SerialNumber, 8*3600)
 	if err != nil {
 		return nil, err
 	}
