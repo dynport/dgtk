@@ -17,6 +17,8 @@ func main() {
 	router.Register("aliases/create", &aliasCreate{}, "Create alias")
 	router.Register("aliases/delete", &aliasDelete{}, "Delete alias")
 	router.Register("indexes/delete", &indexDelete{}, "Delete index")
+
+	router.Register("spy", &spy{}, "Spy on es requests")
 	switch e := router.RunWithArgs(); e {
 	case nil, cli.ErrorHelpRequested, cli.ErrorNoRoute:
 		// ignore
