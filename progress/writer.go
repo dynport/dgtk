@@ -36,9 +36,9 @@ func (p *Writer) start() {
 	doPrint := func() {
 		diff := time.Since(started).Seconds()
 		perSecond := float64(p.current) / diff
-		out := fmt.Sprintf("%s/second %s", SizePretty(int64(perSecond)), SizePretty(p.current))
+		out := fmt.Sprintf("%s/second %s", SizePretty(perSecond), SizePretty(float64(p.current)))
 		if p.total > 0 {
-			out += "/" + SizePretty(p.total)
+			out += "/" + SizePretty(float64(p.total))
 			pending := p.total - p.current
 			timeToGo := time.Duration(int(float64(pending)/perSecond)) * time.Second
 			out += " " + fmt.Sprintf("eta=%s", timeToGo.String())

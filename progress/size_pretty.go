@@ -3,12 +3,12 @@ package progress
 import "fmt"
 
 var (
-	oneKb = int64(1024)
-	oneMb = oneKb * 1024
-	oneGb = oneMb * 1024
+	oneKb float64 = 1024
+	oneMb float64 = oneKb * 1024
+	oneGb float64 = oneMb * 1024
 )
 
-func SizePretty(raw int64) string {
+func SizePretty(raw float64) string {
 	f := raw
 	if f < oneKb {
 		return formatSize("%.0fB", f, 1)
@@ -21,6 +21,6 @@ func SizePretty(raw int64) string {
 	}
 }
 
-func formatSize(p string, i int64, div int64) string {
-	return fmt.Sprintf(p, float64(i)/float64(div))
+func formatSize(p string, i, div float64) string {
+	return fmt.Sprintf(p, i/div)
 }
