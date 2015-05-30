@@ -9,8 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 )
 
 type dump struct {
@@ -26,48 +24,12 @@ func (r *dump) Run() error {
 		return err
 	}
 
-	c, wg := progress()
 	for d := range docs {
 		if _, err = io.WriteString(os.Stdout, string(d)+"\n"); err != nil {
 			return err
 		}
-		c <- struct{}{}
 	}
-	close(c)
-	wg.Wait()
 	return nil
-}
-
-func progress() (chan struct{}, *sync.WaitGroup) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	c := make(chan struct{})
-	go func() {
-		defer wg.Done()
-		t := time.Tick(1 * time.Second)
-		started := time.Now()
-		cnt := 0
-
-		printStatus := func() {
-			diff := time.Since(started).Seconds()
-			perSecond := float64(cnt) / diff
-			logger.Printf("cnt=%d time=%.01f per_second=%.1f/second", cnt, diff, perSecond)
-		}
-		for {
-			select {
-			case _, ok := <-c:
-				if !ok {
-					printStatus()
-					return
-				}
-				cnt++
-			case <-t:
-				printStatus()
-			}
-
-		}
-	}()
-	return c, wg
 }
 
 func iterateIndex(addr, name string, size int, scroll string) (chan json.RawMessage, error) {
