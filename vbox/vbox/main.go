@@ -9,6 +9,7 @@ import (
 func main() {
 	router := cli.NewRouter()
 
+	router.Register("import", &actImportTemplateVM{}, "Import template VM used for cloning.")
 	router.Register("get/template", &actDownloadTemplateVM{}, "Get template VM used for cloning.")
 
 	router.Register("list", &actListVMs{}, "List available VMs.")

@@ -11,6 +11,15 @@ import (
 	"github.com/dynport/dgtk/vbox"
 )
 
+type actImportTemplateVM struct {
+	FileToImport string `cli:"arg required desc='Filename of the template VM to import'"`
+	Identifier   string `cli:"arg required desc='Identifier of the template VM'"`
+}
+
+func (action *actImportTemplateVM) Run() error {
+	return vbox.ImportTemplateVM(action.FileToImport, action.Identifier)
+}
+
 type actDownloadTemplateVM struct {
 	SourceURL  string `cli:"type=opt short=s long=source default='http://192.168.1.10/vbox' desc='location of the template to download'"`
 	Template   string `cli:"type=arg required=true desc='The name of the template to load (try ubuntu_precise_template.ova)'"`

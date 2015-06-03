@@ -56,6 +56,31 @@ func downloadFile(baseUrl, filename string) (target string, e error) {
 	return target, nil
 }
 
+func ImportTemplateVM(filename, vm string) error {
+	switch _, err := os.Stat(filename); {
+	case os.IsNotExist(err):
+		return fmt.Errorf("file %s does not exist", filename)
+	case err != nil:
+		return err
+	}
+
+	if vmList, err := ListAllVMs(); err != nil {
+		return err
+	} else {
+		for i := range vmList {
+			if vmList[i].Name == vm {
+				return fmt.Errorf("vm %q already exists!", vm)
+			}
+		}
+	}
+
+	log.Print("importing vm ...")
+	_, err := run("import", filename, "--vsys", "0", "--vmname", vm)
+	log.Print(" ... done")
+	return err
+
+}
+
 func DownloadTemplateVM(sourceURL, filename, vm string) (e error) {
 	vmList, e := ListAllVMs()
 	if e != nil {
