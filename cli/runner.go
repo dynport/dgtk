@@ -5,3 +5,9 @@ package cli
 type Runner interface {
 	Run() error
 }
+
+type RunFunc func() error
+
+func (rf RunFunc) Run() error {
+	return rf()
+}
