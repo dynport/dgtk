@@ -18,6 +18,7 @@ func main() {
 	router.Register("index/dump", &dump{}, "Dump an index")
 	router.Register("index/ls", &esIndexes{}, "List es indexes")
 	router.Register("index/rm", &indexDelete{}, "Delete index")
+	router.Register("nodes/ls", &nodesLS{}, "Nodes List")
 	router.Register("spy", &spy{}, "Spy on es requests")
 
 	switch e := router.RunWithArgs(); e {
