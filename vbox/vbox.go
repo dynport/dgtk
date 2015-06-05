@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var VBoxManage = "VBoxManage"
@@ -390,6 +391,26 @@ func GetIP(vm string, iface int, timeout int) (ip string, e error) {
 }
 
 func DeleteVM(name string) (e error) {
+	err := func() error {
+		if running, err := isVMRunning(name); err != nil {
+			return err
+		} else if running {
+			_ = ShutdownVM(name)
+			for i := 0; i < 20; i++ { // wait for 10 seconds
+				running, _ := isVMRunning(name)
+				if !running {
+					return nil
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+			return fmt.Errorf("failed to shutdown vm")
+		}
+		return nil
+	}()
+	if err != nil {
+		return err
+	}
+
 	_, e = run("unregistervm", name, "--delete")
 	return e
 }
