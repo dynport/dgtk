@@ -1,25 +1,26 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 )
 
 type dump struct {
-	IndexName      string `cli:"arg required"`
-	Address        string `cli:"opt -a default=http://127.0.0.1:9200"`
-	BatchSize      int    `cli:"opt -b default=1000"`
-	ScrollDuration string `cli:"opt -s default=1m"`
+	IndexName      string   `cli:"arg required"`
+	Address        string   `cli:"opt -a default=http://127.0.0.1:9200"`
+	BatchSize      int      `cli:"opt -b default=1000"`
+	ScrollDuration string   `cli:"opt -s default=1m"`
+	Fields         []string `cli:"opt --fields"`
 }
 
 func (r *dump) Run() error {
-	docs, err := iterateIndex(r.Address, r.IndexName, r.BatchSize, r.ScrollDuration)
+	docs, err := iterateIndex(r.Address, r.IndexName, OpenIndexSize(r.BatchSize), OpenIndexScroll(r.ScrollDuration), OpenIndexFields(r.Fields))
 	if err != nil {
 		return err
 	}
@@ -32,8 +33,32 @@ func (r *dump) Run() error {
 	return nil
 }
 
-func iterateIndex(addr, name string, size int, scroll string) (chan json.RawMessage, error) {
-	scrollID, err := openIndex(addr, name, size, scroll)
+type openIndexOpt struct {
+	Size   int
+	Scroll string
+	Fields []string
+}
+
+func OpenIndexSize(size int) func(*openIndexOpt) {
+	return func(o *openIndexOpt) {
+		o.Size = size
+	}
+}
+
+func OpenIndexScroll(scroll string) func(*openIndexOpt) {
+	return func(o *openIndexOpt) {
+		o.Scroll = scroll
+	}
+}
+
+func OpenIndexFields(fields []string) func(*openIndexOpt) {
+	return func(o *openIndexOpt) {
+		o.Fields = fields
+	}
+}
+
+func iterateIndex(addr, name string, funcs ...func(*openIndexOpt)) (chan json.RawMessage, error) {
+	scrollID, err := openIndex(addr, name, funcs...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,10 +113,28 @@ func loadDocumentsWithScroll(addr string, id string) (string, []json.RawMessage,
 	}
 }
 
-func openIndex(addr, name string, size int, scroll string) (scrollID string, err error) {
-	rsp, err := http.Post(addr+"/"+name+"/_search?search_type=scan&scroll="+scroll,
+type openIndexDoc struct {
+	Size   int      `json:"size"`
+	Fields []string `json:"fields,omitempty"`
+}
+
+func openIndex(addr, name string, funcs ...func(*openIndexOpt)) (scrollID string, err error) {
+	o := &openIndexOpt{}
+	for _, f := range funcs {
+		f(o)
+	}
+	doc := &openIndexDoc{
+		Size:   o.Size,
+		Fields: o.Fields,
+	}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		return "", err
+	}
+
+	rsp, err := http.Post(addr+"/"+name+"/_search?search_type=scan&scroll="+o.Scroll,
 		"application/json",
-		strings.NewReader(`{"query": {"match_all": {} }, "size": `+strconv.Itoa(size)+`}`),
+		bytes.NewReader(b),
 	)
 	if err != nil {
 		return "", err
