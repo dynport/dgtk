@@ -140,7 +140,7 @@ const txDebugTpl = `
 </form>
 
 {{ with .Table }}
-	<table>
+	<table border=1>
 	<tr>{{ range .Header }}<th>{{ . }}{{ end }}</tr>
 	{{ range .Rows }}
 		<tr>{{ range . }}<td>{{ . }}{{ end }}
