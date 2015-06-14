@@ -3,10 +3,12 @@ package vmware
 import (
 	"fmt"
 	"math/rand"
+	"net"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -176,6 +178,54 @@ func AllTemplates() (vms Vms, e error) {
 
 func AllWithTemplates() (vms Vms, e error) {
 	return FindVms([]string{DefaultVMLocation, CloudVMLocation, TemplatesPath})
+}
+
+func AllWithIPsAndTags() (Vms, error) {
+	vms, e := All()
+	if e != nil {
+		return nil, e
+	}
+	sort.Sort(vms)
+	leases, e := AllLeases()
+	if e != nil {
+		return nil, e
+	}
+	arpInterfaces, err := LoadArpInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	arpMap := map[string]*NetworkInterface{}
+	for _, i := range arpInterfaces {
+		arpMap[i.MAC.String()] = i
+	}
+	tags, e := LoadTags()
+	if e != nil {
+		return nil, e
+	}
+
+	tagsMap := map[string]string{}
+	for _, t := range tags {
+		tagsMap[t.Id()] = t.Value
+	}
+	for _, v := range vms {
+		vmx, err := v.Vmx()
+		if err != nil {
+			return nil, err
+		}
+
+		mac := vmx.MacAddress
+		if lease := leases.Lookup(mac); lease != nil {
+			v.IP = lease.Ip
+		} else {
+			if m, err := net.ParseMAC(mac); err == nil {
+				if i, ok := arpMap[m.String()]; ok && i.IP != nil {
+					v.IP = i.IP.String()
+				}
+			}
+		}
+		v.Name = tagsMap[v.Id()+":Name"]
+	}
+	return vms, nil
 }
 
 func All() (Vms, error) {

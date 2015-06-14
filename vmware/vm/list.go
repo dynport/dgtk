@@ -1,8 +1,6 @@
 package main
 
 import (
-	"sort"
-
 	"github.com/dynport/dgtk/vmware"
 	"github.com/dynport/gocli"
 )
@@ -11,38 +9,16 @@ type ListAction struct {
 }
 
 func (list *ListAction) Run() error {
-	vms, e := vmware.All()
-	if e != nil {
-		return e
+	vms, err := vmware.AllWithIPsAndTags()
+	if err != nil {
+		return err
 	}
-	sort.Sort(vms)
 	table := gocli.NewTable()
-	leases, e := vmware.AllLeases()
-	if e != nil {
-		return e
-	}
-	tags, e := vmware.LoadTags()
-	if e != nil {
-		return e
-	}
-
-	tagsMap := map[string]string{}
-	for _, t := range tags {
-		tagsMap[t.Id()] = t.Value
-	}
-
 	table.Add("Id", "Name", "Status", "Started", "Cpus", "Memory", "Mac", "Ip", "SoftPowerOff", "CleanShutdown")
 	for _, vm := range vms {
 		vmx, e := vm.Vmx()
 		if e != nil {
 			return e
-		}
-		mac := vmx.MacAddress
-		dbg.Printf("looking up mac %q", mac)
-		lease := leases.Lookup(mac)
-		ip := ""
-		if lease != nil {
-			ip = lease.Ip
 		}
 		started := ""
 		if s, e := vm.StartedAt(); e == nil {
@@ -50,8 +26,7 @@ func (list *ListAction) Run() error {
 		} else {
 			logger.Print(e.Error())
 		}
-		name := tagsMap[vm.Id()+":Name"]
-		table.Add(name, vm.Id(), vm.State, started, vmx.Cpus, vmx.Memory, mac, ip, vmx.SoftPowerOff, vmx.CleanShutdown)
+		table.Add(vm.Name, vm.Id(), vm.State, started, vmx.Cpus, vmx.Memory, vmx.MacAddress, vm.IP, vmx.SoftPowerOff, vmx.CleanShutdown)
 	}
 	logger.Println(table)
 	return nil

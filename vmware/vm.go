@@ -13,6 +13,8 @@ type Vm struct {
 	Path  string
 	Tags  Tags
 	State string
+	IP    string
+	Name  string
 
 	// cached values
 	started time.Time
@@ -45,15 +47,6 @@ func (vm *Vm) Ip() (string, error) {
 		return lease.Ip, nil
 	}
 	return "", nil
-}
-
-func (vm *Vm) Name() string {
-	for _, t := range vm.Tags {
-		if t.Key == "Name" {
-			return t.Value
-		}
-	}
-	return ""
 }
 
 func (vm *Vm) dir() string {
