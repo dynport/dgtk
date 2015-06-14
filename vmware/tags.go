@@ -22,9 +22,12 @@ type Tag struct {
 }
 
 func LoadTags() (Tags, error) {
-	f, e := os.Open(tagsPath)
-	if e != nil {
-		return nil, e
+	f, err := os.Open(tagsPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
 	defer f.Close()
 	var tags Tags
