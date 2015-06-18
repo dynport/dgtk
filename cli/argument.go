@@ -20,7 +20,7 @@ type argument struct {
 // Reflect the gathered information into the concrete action instance.
 func (arg *argument) reflectTo(value reflect.Value) (e error) {
 	if arg.value == "" && len(arg.values) == 0 {
-		if arg.required {
+		if arg.required && isFieldBlank(value, arg.field) {
 			return fmt.Errorf("required argument not set")
 		}
 		return nil
@@ -50,6 +50,20 @@ func (arg *argument) setField(target reflect.Value, source string) (e error) {
 		return fmt.Errorf("invalid type %q", target.Type().String())
 	}
 	return nil
+}
+
+func isFieldBlank(value reflect.Value, name string) bool {
+	if value.Type().Kind() == reflect.Ptr {
+		return true
+	}
+	switch c := value.FieldByName(name).Interface().(type) {
+	case string:
+		return c == ""
+	case int:
+		return c == 0
+	default:
+		return true
+	}
 }
 
 func setSlice(target reflect.Value, source []string) (e error) {
