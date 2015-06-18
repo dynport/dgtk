@@ -6,6 +6,36 @@ import (
 	"os/exec"
 )
 
+func ExampleOpen() {
+	// dummy database setup
+	db, err := sql.Open("postgres", "postgres://127.0.0.1/template1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	Open(tx)
+}
+
+func ExampleOpenWithQuery() {
+	// dummy database setup
+	db, err := sql.Open("postgres", "postgres://127.0.0.1/template1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	OpenWithQuery(tx, "SELECT count(1) FROM users") // starts with this query as "default"
+}
+
 func ExampleStartServer() {
 	// dummy database setup
 	db, err := sql.Open("postgres", "postgres://127.0.0.1/template1")
@@ -18,7 +48,7 @@ func ExampleStartServer() {
 	}
 	defer tx.Rollback()
 
-	waitForClose, addr := StartServer(tx)
+	waitForClose, addr := StartServer(tx, "")
 	openURL(addr)
 	<-waitForClose // blocks until the QUIT button is pressed or first error occurs on tx
 }

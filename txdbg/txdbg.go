@@ -15,7 +15,11 @@ import (
 )
 
 func Open(tx *sql.Tx) error {
-	cc, a := StartServer(tx)
+	return OpenWithQuery(tx, "")
+}
+
+func OpenWithQuery(tx *sql.Tx, query string) error {
+	cc, a := StartServer(tx, query)
 	cmd, err := openCommand()
 	if err != nil {
 		return err
@@ -28,7 +32,7 @@ func Open(tx *sql.Tx) error {
 // StartServer starts a new http server for the given transaction
 //
 // The server shuts down when a) the user presses the "quit" button or b) on the first db error (as we can not recover from that error inside the transaction)
-func StartServer(tx *sql.Tx) (waitForClose chan struct{}, address string) {
+func StartServer(tx *sql.Tx, query string) (waitForClose chan struct{}, address string) {
 	cc := make(chan struct{})
 	var s *httptest.Server
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +55,9 @@ func StartServer(tx *sql.Tx) (waitForClose chan struct{}, address string) {
 			}
 			ctx := &debugContext{
 				Query: r.Form.Get("query"),
+			}
+			if ctx.Query == "" {
+				ctx.Query = query
 			}
 			if ctx.Query != "" {
 				ctx.Table, err = loadQuery(tx, ctx.Query)
