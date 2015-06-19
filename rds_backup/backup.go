@@ -183,33 +183,31 @@ func (act *backup) dumpDatabase(engine, address string, port int64, filename str
 	return nil
 }
 
-func (act *backup) restoreDBInstance(snapshot *rds.DBSnapshot) (instance *rds.DBInstance, e error) {
+func (act *backup) restoreDBInstance(snapshot *rds.DBSnapshot) (instance *rds.DBInstance, err error) {
 	defer benchmark("restoreDBInstance")()
 	client := newClient()
 
-	_, err := client.RestoreDBInstanceFromDBSnapshot(&rds.RestoreDBInstanceFromDBSnapshotInput{
+	if _, err := client.RestoreDBInstanceFromDBSnapshot(&rds.RestoreDBInstanceFromDBSnapshotInput{
 		DBInstanceIdentifier: s2p(act.dbInstanceId()),
 		DBSnapshotIdentifier: snapshot.DBSnapshotIdentifier,
 		DBInstanceClass:      &act.InstanceType,
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	if _, e = act.waitForDBInstance(instanceAvailable); e != nil {
-		return nil, e
+	if _, err := act.waitForDBInstance(instanceAvailable); err != nil {
+		return nil, err
 	}
 
-	_, err = client.ModifyDBInstance(&rds.ModifyDBInstanceInput{
+	if _, err := client.ModifyDBInstance(&rds.ModifyDBInstanceInput{
 		DBInstanceIdentifier: s2p(act.dbInstanceId()),
 		DBSecurityGroups:     []*string{s2p(act.dbSGName())},
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	if instance, e = act.waitForDBInstance(instancePortAvailable); e != nil {
-		return nil, e
+	if instance, err = act.waitForDBInstance(instancePortAvailable); err != nil {
+		return nil, err
 	}
 
 	logger.Printf("Created instance: %q in status %q reachable via %s", p2s(instance.DBInstanceIdentifier), p2s(instance.DBInstanceStatus), p2s(instance.Endpoint.Address))
