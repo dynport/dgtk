@@ -64,7 +64,7 @@ type openIndexDoc struct {
 }
 
 func openIndex(addr, name string, funcs ...func(*openIndexOpt)) (scrollID string, err error) {
-	o := &openIndexOpt{}
+	o := &openIndexOpt{Scroll: "1m", Size: 1000}
 	for _, f := range funcs {
 		f(o)
 	}
