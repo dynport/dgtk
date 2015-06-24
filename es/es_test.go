@@ -1,9 +1,10 @@
 package es
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
+
+	"github.com/dynport/dgtk/tskip/tskip"
 )
 
 type TestLog struct {
@@ -26,7 +27,8 @@ var index = &Index{
 func validateEsRunning(t *testing.T) {
 	_, e := index.Status()
 	if e != nil {
-		t.Fatalf("ElasticSearch is not running on %s. %s", index.BaseUrl(), e.Error())
+		tskip.Errorf(t, 1, "ElasticSearch is not running on %s. %s", index.BaseUrl(), e.Error())
+		t.FailNow()
 	}
 }
 
@@ -45,42 +47,39 @@ func setupIndex() error {
 
 func TestDeleteFromImage(t *testing.T) {
 	validateEsRunning(t)
-	Convey("Delete from Index", t, func() {
-		So(setupIndex(), ShouldBeNil)
-		So(index.Refresh(), ShouldBeNil)
-		req := &Request{
-			Size: 10,
+	failIfError(t, setupIndex())
+	failIfError(t, index.Refresh())
+	req := &Request{
+		Size: 10,
+	}
+	rsp, err := index.Search(req)
+	failIfError(t, err)
+	assertEqual(t, rsp.Hits.Total, 6)
+
+	_, err = index.DeleteByQuery("Tag:nginx")
+	failIfError(t, err)
+	failIfError(t, index.Refresh())
+
+	rsp, err = index.Search(req)
+	failIfError(t, err)
+	assertEqual(t, rsp.Hits.Total, 3)
+
+	tags := map[string]int{}
+	for _, hit := range rsp.Hits.Hits {
+		tag := hit.Source["Tag"]
+		switch tag := tag.(type) {
+		case string:
+			tags[tag]++
 		}
-		rsp, e := index.Search(req)
-		So(e, ShouldBeNil)
-		So(rsp.Hits.Total, ShouldEqual, 6)
+	}
+	assertEqual(t, tags["unicorn"], 3)
 
-		_, r := index.DeleteByQuery("Tag:nginx")
-		So(r, ShouldBeNil)
-		So(index.Refresh(), ShouldBeNil)
+	_, err = index.DeleteByQuery("Tag:unicorn AND Created:[2013-12-01 TO 2013-12-02]")
+	failIfError(t, err)
+	failIfError(t, index.Refresh())
 
-		rsp, e = index.Search(req)
-		So(e, ShouldBeNil)
-		So(rsp.Hits.Total, ShouldEqual, 3)
-
-		tags := map[string]int{}
-		for _, hit := range rsp.Hits.Hits {
-			tag := hit.Source["Tag"]
-			switch tag := tag.(type) {
-			case string:
-				tags[tag]++
-			}
-		}
-		So(tags["unicorn"], ShouldEqual, 3)
-
-		_, r = index.DeleteByQuery("Tag:unicorn AND Created:[2013-12-01 TO 2013-12-02]")
-		So(r, ShouldBeNil)
-		So(index.Refresh(), ShouldBeNil)
-
-		rsp, e = index.Search(req)
-		So(e, ShouldBeNil)
-		So(rsp.Hits.Total, ShouldEqual, 1)
-
-		So(rsp.Hits.Hits[0].Source["Created"], ShouldEqual, "2013-12-03")
-	})
+	rsp, err = index.Search(req)
+	failIfError(t, err)
+	assertEqual(t, rsp.Hits.Total, 1)
+	assertEqual(t, rsp.Hits.Hits[0].Source["Created"], "2013-12-03")
 }

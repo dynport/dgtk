@@ -1,7 +1,6 @@
 package es
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
@@ -18,13 +17,11 @@ var source = &Source{
 }
 
 func TestUnmarshalField(t *testing.T) {
-	Convey("Test unmarshal field", t, func() {
-		line := &Line{}
-		So(source.Unmarshal(line), ShouldBeNil)
-		So(line.Tag, ShouldEqual, "tag")
-		So(line.Float, ShouldEqual, 0.1)
-		So(line.Int, ShouldEqual, 10)
-	})
+	line := &Line{}
+	failIfError(t, source.Unmarshal(line))
+	assertEqual(t, line.Tag, "tag")
+	assertEqual(t, line.Float, 0.1)
+	assertEqual(t, line.Int, 10)
 }
 
 func TestUnmarshalStatistical(t *testing.T) {
@@ -39,19 +36,17 @@ func TestUnmarshalStatistical(t *testing.T) {
 		"variance":       5818248664852.342,
 		"std_deviation":  2412104.613165097,
 	}
-	Convey("Unmarshal statistics", t, func() {
-		sf := &StatisticalFacet{}
-		So(sf.Load(stat), ShouldBeNil)
-		So(sf.Type, ShouldEqual, "statistical")
-		So(sf.Count, ShouldEqual, 1909)
-		So(sf.Total, ShouldEqual, 7295467964)
-		So(sf.Min, ShouldEqual, 110000.0)
-		So(sf.Max, ShouldEqual, 15555000.0)
-		So(sf.Mean, ShouldEqual, 3821617.5819800943)
-		So(sf.SumOfSquares, ShouldEqual, 3.898752534119804e+16)
-		So(sf.Variance, ShouldEqual, 5818248664852.342)
-		So(sf.StdDeviation, ShouldEqual, 2412104.613165097)
-	})
+	sf := &StatisticalFacet{}
+	failIfError(t, sf.Load(stat))
+	assertEqual(t, sf.Type, "statistical")
+	assertEqual(t, sf.Count, 1909)
+	assertEqual(t, sf.Total, 7295467964)
+	assertEqual(t, sf.Min, 110000.0)
+	assertEqual(t, sf.Max, 15555000.0)
+	assertEqual(t, sf.Mean, 3821617.5819800943)
+	assertEqual(t, sf.SumOfSquares, 3.898752534119804e+16)
+	assertEqual(t, sf.Variance, 5818248664852.342)
+	assertEqual(t, sf.StdDeviation, 2412104.613165097)
 }
 
 func TestUnmarshalTermsFacet(t *testing.T) {
@@ -75,18 +70,17 @@ func TestUnmarshalTermsFacet(t *testing.T) {
 			},
 		},
 	}
-	Convey("Unmarshal Terms Facet", t, func() {
-		f := &TermsFacet{}
-		So(f.Load(stat), ShouldBeNil)
-		So(f.Type, ShouldEqual, "terms")
-		So(f.Total, ShouldEqual, 1909)
-		So(f.Missing, ShouldEqual, 1)
-		So(f.Other, ShouldEqual, 2)
-		So(len(f.Terms), ShouldEqual, 3)
-		term := f.Terms[0]
-		So(term.Count, ShouldEqual, 1085)
-		So(term.Term, ShouldEqual, "api/v1/photos#create")
-	})
+	f := &TermsFacet{}
+	failIfError(t, f.Load(stat))
+	assertEqual(t, f.Type, "terms")
+	assertEqual(t, f.Total, 1909)
+	assertEqual(t, f.Missing, 1)
+	assertEqual(t, f.Other, 2)
+	assertEqual(t, len(f.Terms), 3)
+
+	term := f.Terms[0]
+	assertEqual(t, term.Count, 1085)
+	assertEqual(t, term.Term, "api/v1/photos#create")
 }
 
 func TestUnmarshalDateHistogramFacet(t *testing.T) {
@@ -114,17 +108,16 @@ func TestUnmarshalDateHistogramFacet(t *testing.T) {
 		},
 	}
 	h := &DateHistogramFacet{}
-	Convey("Unmarshal Date histogram facet", t, func() {
-		So(h.Load(stat), ShouldBeNil)
-		So(h.Type, ShouldEqual, "date_histogram")
-		So(len(h.Entries), ShouldEqual, 2)
-		entry := h.Entries[0]
-		So(entry.Time, ShouldEqual, 1384005600000)
-		So(entry.Count, ShouldEqual, 43)
-		So(entry.Min, ShouldEqual, 632000)
-		So(entry.Max, ShouldEqual, 6.908e+06)
-		So(entry.Total, ShouldEqual, 117121999)
-		So(entry.TotalCount, ShouldEqual, 44)
-		So(entry.Mean, ShouldEqual, 2723767.418604651)
-	})
+	failIfError(t, h.Load(stat))
+	assertEqual(t, h.Type, "date_histogram")
+	assertEqual(t, len(h.Entries), 2)
+	entry := h.Entries[0]
+
+	assertEqual(t, entry.Time, 1384005600000)
+	assertEqual(t, entry.Count, 43)
+	assertEqual(t, entry.Min, 632000.0)
+	assertEqual(t, entry.Max, 6.908e+06)
+	assertEqual(t, entry.Total, 117121999)
+	assertEqual(t, entry.TotalCount, 44)
+	assertEqual(t, entry.Mean, 2723767.418604651)
 }

@@ -415,11 +415,7 @@ type Sharder interface {
 }
 
 func (index *Index) loadSearch(req interface{}, rsp Sharder) error {
-	u := index.TypeUrl()
-	if !strings.HasSuffix(u, "/") {
-		u += "/"
-	}
-	u += "/_search"
+	u := strings.TrimSuffix(index.TypeUrl(), "/") + "/_search"
 	httpRequest, e := http.NewRequest("POST", u, nil)
 	if e != nil {
 		return e
@@ -444,7 +440,12 @@ func (index *Index) loadSearch(req interface{}, rsp Sharder) error {
 	rsp.SetRaw(b)
 	dbg.Printf("resonse: %s", string(b))
 	if httpResponse.Status[0] != '2' {
-		return fmt.Errorf("expected staus 2xx, git %s", httpResponse.Status)
+		log.Printf("%#v", httpResponse.Request.URL.String())
+		for k, v := range httpResponse.Header {
+			log.Printf("%s: %#v", k, v)
+		}
+		log.Printf("code=%d", httpResponse.StatusCode)
+		return fmt.Errorf("expected staus 2xx, got %s", httpResponse.Status)
 	}
 	e = json.Unmarshal(b, rsp)
 	if e != nil {

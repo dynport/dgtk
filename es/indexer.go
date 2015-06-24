@@ -72,6 +72,7 @@ func (indexer *Indexer) Start() chan *Doc {
 	indexer.timer = time.NewTimer(indexer.IndexEvery)
 	indexer.docsChannel = make(chan *Doc, indexer.BatchSize)
 	indexer.resetBatch()
+	indexer.Stats = &IndexerStats{}
 	go func(indexer *Indexer) {
 		for {
 			select {
