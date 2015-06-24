@@ -1,10 +1,10 @@
 package es
 
 type Doc struct {
-	Index  string
-	Type   string
-	Id     string
-	Source interface{}
+	Index  string      `json:"_index,omitempty"`
+	Type   string      `json:"_type,omitempty"`
+	Id     string      `json:"_id,omitempty"`
+	Source interface{} `json:"-"`
 }
 
 func (doc *Doc) IndexAttributes() map[string]string {
