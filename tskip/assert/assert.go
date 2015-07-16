@@ -88,7 +88,7 @@ func castInt64(i interface{}) (int64, bool) {
 }
 
 func diffMessage(m string, a, b interface{}) string {
-	return m + fmt.Sprintf("\nexpected (%T)\n   %#v\nactual   (%T)\n   %#v", a, a, b, b)
+	return m + fmt.Sprintf("\nexpected (%T)\n   %#v\nactual   (%T)\n   %#v", b, b, a, a)
 }
 
 // "not equal"
