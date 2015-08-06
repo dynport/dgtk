@@ -26,7 +26,7 @@ type backup struct {
 	User         string `cli:"opt -u --user desc='user used for connection (database name by default)'"`
 	Password     string `cli:"opt -p --pwd desc='password used for connection'"`
 	TargetDir    string `cli:"opt -d --dir default=. desc='path to save dumps to'"`
-	InstanceType string `cli:"opt -t --instance-type default=db.t2.medium desc='db instance type'"`
+	InstanceType string `cli:"opt -t --instance-type default=db.m3.medium desc='db instance type'"`
 	Uncompressed bool   `cli:"opt --uncompressed desc='run dump uncompressed'"`
 
 	NoEncryption bool `cli:"opt --no-encryption desc='do not encrypt the dump file'"`
