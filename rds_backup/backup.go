@@ -68,7 +68,7 @@ func (act *backup) Run() (e error) {
 	if e != nil {
 		return e
 	}
-	logger.Printf("last snapshot %q from %s", snapshot.DBSnapshotIdentifier, snapshot.SnapshotCreateTime)
+	logger.Printf("last snapshot %q from %s", p2s(snapshot.DBSnapshotIdentifier), snapshot.SnapshotCreateTime)
 
 	if snapshot.SnapshotCreateTime.Before(time.Now().Add(-24 * time.Hour)) {
 		return fmt.Errorf("latest snapshot older than 24 hours!")
@@ -215,22 +215,22 @@ func (act *backup) restoreDBInstance(snapshot *rds.DBSnapshot) (instance *rds.DB
 		DBSnapshotIdentifier: snapshot.DBSnapshotIdentifier,
 		DBInstanceClass:      &act.InstanceType,
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[restore instance] %s", err)
 	}
 
 	if _, err := act.waitForDBInstance(instanceAvailable); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[waiting] %s", err)
 	}
 
 	if _, err := client.ModifyDBInstance(&rds.ModifyDBInstanceInput{
 		DBInstanceIdentifier: s2p(act.dbInstanceId()),
 		DBSecurityGroups:     []*string{s2p(act.dbSGName())},
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[modify] %s", err)
 	}
 
 	if instance, err = act.waitForDBInstance(instancePortAvailable); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[waiting 2] %s", err)
 	}
 
 	logger.Printf("Created instance: %q in status %q reachable via %s", p2s(instance.DBInstanceIdentifier), p2s(instance.DBInstanceStatus), p2s(instance.Endpoint.Address))
