@@ -2,6 +2,8 @@ package main
 
 import (
 	"compress/gzip"
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +18,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds"
 )
 
+const encryptionKey = "gaN5joJ0Niv3peed0asT0Yoim1yAd2bO"
+
 type backup struct {
 	Base
 
@@ -24,6 +28,8 @@ type backup struct {
 	TargetDir    string `cli:"opt -d --dir default=. desc='path to save dumps to'"`
 	InstanceType string `cli:"opt -t --instance-type default=db.t1.micro desc='db instance type'"`
 	Uncompressed bool   `cli:"opt --uncompressed desc='run dump uncompressed'"`
+
+	NoEncryption bool `cli:"opt --no-encryption desc='do not encrypt the dump file'"`
 
 	Database string   `cli:"arg required desc='the database to backup'"`
 	Tables   []string `cli:"arg desc='list of tables to dump (all if not specified)'"`
@@ -162,10 +168,27 @@ func (act *backup) dumpDatabase(engine, address string, port int64, filename str
 	}
 	defer deferredClose(fh, &e)
 
-	if compressed || act.Uncompressed {
-		cmd.Stdout = fh
+	var encWriter io.Writer
+	if act.NoEncryption {
+		encWriter = fh
 	} else {
-		gzw := gzip.NewWriter(fh)
+		block, err := aes.NewCipher([]byte(encryptionKey))
+		if err != nil {
+			return err
+		}
+
+		// If the key is unique for each ciphertext, then it's ok to use a zero
+		// IV.
+		var iv [aes.BlockSize]byte
+		stream := cipher.NewOFB(block, iv[:])
+
+		encWriter = &cipher.StreamWriter{S: stream, W: fh}
+	}
+
+	if compressed || act.Uncompressed {
+		cmd.Stdout = encWriter
+	} else {
+		gzw := gzip.NewWriter(encWriter)
 		defer deferredClose(gzw, &e)
 		cmd.Stdout = gzw
 	}
