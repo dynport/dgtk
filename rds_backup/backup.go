@@ -329,13 +329,7 @@ func (act *backup) selectLatestSnapshot() (*rds.DBSnapshot, error) {
 }
 
 func instanceAvailable(instances []*rds.DBInstance) bool {
-	if len(instances) < 1 {
-		return false
-	}
-	if status := instances[0].DBInstanceStatus; *status != "available" {
-		return true
-	}
-	return false
+	return len(instances) == 1 && p2s(instances[0].DBInstanceStatus) == "available"
 }
 
 func instancePortAvailable(instances []*rds.DBInstance) bool {
