@@ -112,7 +112,7 @@ func (act *backup) createTargetPath(snapshot *rds.DBSnapshot) (path string, e er
 		return "", e
 	}
 
-	suffix := ".sql"
+	suffix := "sql"
 	if !act.Uncompressed {
 		suffix += ".gz"
 	}
