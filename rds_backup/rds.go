@@ -13,7 +13,9 @@ func newClient() *rds.RDS {
 	if region == "" {
 		region = "eu-west-1"
 	}
-	return rds.New(&aws.Config{Credentials: credentials.NewEnvCredentials(), Region: region})
+	creds := credentials.NewEnvCredentials()
+	cfg := aws.NewConfig().WithCredentials(creds).WithRegion(region)
+	return rds.New(cfg)
 }
 
 type Base struct {
