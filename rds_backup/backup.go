@@ -158,7 +158,7 @@ func (act *backup) dumpDatabase(engine, address string, port int64, filename str
 	}
 
 	tmpName := filename + ".tmp"
-	fh, e := os.OpenFile(tmpName, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0644)
+	fh, e := os.OpenFile(tmpName, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0600)
 	if e != nil {
 		return fmt.Errorf("ERROR opening file %q: %s", tmpName, e)
 	}
