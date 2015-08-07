@@ -2,8 +2,6 @@ package main
 
 import (
 	"compress/gzip"
-	"crypto/aes"
-	"crypto/cipher"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,8 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds"
 )
 
-const encryptionKey = "gaN5joJ0Niv3peed0asT0Yoim1yAd2bO"
-
 type backup struct {
 	Base
 
@@ -29,7 +25,7 @@ type backup struct {
 	InstanceType string `cli:"opt -t --instance-type default=db.m3.medium desc='db instance type'"`
 	Uncompressed bool   `cli:"opt --uncompressed desc='run dump uncompressed'"`
 
-	NoEncryption bool `cli:"opt --no-encryption desc='do not encrypt the dump file'"`
+	PasswordFile string `cli:"opt -k desc='Password for dump file (no protection if none given)'"`
 
 	Database string   `cli:"arg required desc='the database to backup'"`
 	Tables   []string `cli:"arg desc='list of tables to dump (all if not specified)'"`
@@ -166,29 +162,13 @@ func (act *backup) dumpDatabase(engine, address string, port int64, filename str
 	if e != nil {
 		return fmt.Errorf("ERROR opening file %q: %s", tmpName, e)
 	}
+	defer func() { _ = os.Remove(tmpName) }() // make sure tempfile is deleted on exit
 	defer deferredClose(fh, &e)
 
-	var encWriter io.Writer
-	if act.NoEncryption {
-		encWriter = fh
-	} else {
-		block, err := aes.NewCipher([]byte(encryptionKey))
-		if err != nil {
-			return err
-		}
-
-		// If the key is unique for each ciphertext, then it's ok to use a zero
-		// IV.
-		var iv [aes.BlockSize]byte
-		stream := cipher.NewOFB(block, iv[:])
-
-		encWriter = &cipher.StreamWriter{S: stream, W: fh}
-	}
-
 	if compressed || act.Uncompressed {
-		cmd.Stdout = encWriter
+		cmd.Stdout = fh
 	} else {
-		gzw := gzip.NewWriter(encWriter)
+		gzw := gzip.NewWriter(fh)
 		defer deferredClose(gzw, &e)
 		cmd.Stdout = gzw
 	}
@@ -196,14 +176,19 @@ func (act *backup) dumpDatabase(engine, address string, port int64, filename str
 	cmd.Stderr = os.Stdout
 	e = cmd.Run()
 	if e != nil {
-		_ = os.Remove(tmpName)
 		return e
 	}
-	e = os.Rename(tmpName, filename)
-	if e != nil {
-		return fmt.Errorf("ERROR renaming file %q to %q: %s", tmpName, filename, e)
+
+	if act.PasswordFile != "" {
+		encName := tmpName + ".enc"
+		defer func() { _ = os.Remove(encName) }() // remove encoded tempfile...
+		encCmd := exec.Command("openssl", "enc", "-aes-256-cfb", "-in", tmpName, "-out", encName, "-pass", "file:"+act.PasswordFile)
+		if err := encCmd.Run(); err != nil {
+			return err
+		}
+		return os.Rename(encName, filename)
 	}
-	return nil
+	return os.Rename(tmpName, filename)
 }
 
 func (act *backup) restoreDBInstance(snapshot *rds.DBSnapshot) (instance *rds.DBInstance, err error) {
