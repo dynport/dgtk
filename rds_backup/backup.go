@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/rds"
@@ -230,7 +231,9 @@ func (act *backup) waitForDBInstance(f func([]*rds.DBInstance) bool) (instance *
 
 		instanceResp, err := client.DescribeDBInstances(&rds.DescribeDBInstancesInput{DBInstanceIdentifier: s2p(act.dbInstanceId())})
 		if err != nil {
-			return nil, err
+			if !strings.HasPrefix(err.Error(), "DBInstanceNotFound") {
+				return nil, err
+			}
 		} else {
 			instances = instanceResp.DBInstances
 		}
