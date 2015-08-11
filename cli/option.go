@@ -15,11 +15,12 @@ type option struct {
 	long     string
 	required bool
 	value    string
+	given    bool
 }
 
 // Reflect the gathered information into the concrete action instance.
 func (o *option) reflectTo(value reflect.Value) (e error) {
-	if o.value == "" {
+	if !o.given && o.value == "" {
 		if o.required {
 			return fmt.Errorf("option %q is required but not set", o.field)
 		}

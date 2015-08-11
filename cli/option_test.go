@@ -71,3 +71,49 @@ func TestSliceOption(t *testing.T) {
 		t.Errorf("expected first option's second element to be %d, got %d", 6, cmd.Opt2[2])
 	}
 }
+
+type OptionWPtrTestCommand struct {
+	Opt *string `cli:"opt -o --one"`
+}
+
+func (cmd *OptionWPtrTestCommand) Run() error {
+	return nil
+}
+
+func TestPtrOption(t *testing.T) {
+	cmd := new(OptionWPtrTestCommand)
+	a := testCreateAction("test", cmd)
+
+	err := a.reflect()
+	if err != nil {
+		t.Errorf("expected err to be empty, got %s", err)
+	}
+
+	err = a.parseArgs([]string{})
+	if err != nil {
+		t.Fatalf("expected err to be empty, got %q", err)
+	}
+	if cmd.Opt != nil {
+		t.Fatalf("expected option to be nil, got %q", *cmd.Opt)
+	}
+
+	err = a.parseArgs([]string{"-o", ""})
+	if err != nil {
+		t.Fatalf("expected err to be empty, got %q", err)
+	}
+	if cmd.Opt == nil {
+		t.Fatalf("expected option not to be nil, but was")
+	} else if *cmd.Opt != "" {
+		t.Fatalf("expected option to be %q, got %q", "", *cmd.Opt)
+	}
+
+	err = a.parseArgs([]string{"-o", "a"})
+	if err != nil {
+		t.Fatalf("expected err to be empty, got %q", err)
+	}
+	if cmd.Opt == nil {
+		t.Fatalf("expected option not to be nil, but was")
+	} else if *cmd.Opt != "a" {
+		t.Fatalf("expected option to be %q, got %q", "a", *cmd.Opt)
+	}
+}

@@ -180,11 +180,13 @@ func (a *action) handleArgs(value string, index int) (int, error) {
 
 func (a *action) handleParams(paramName string, short bool, args []string, idx int) (int, error) {
 	var value string
+	readNextArg := true
 	if !short {
 		parts := strings.SplitN(paramName, "=", 2)
 		if len(parts) == 2 {
 			paramName = parts[0]
 			value = parts[1]
+			readNextArg = false
 		}
 	}
 
@@ -198,13 +200,14 @@ func (a *action) handleParams(paramName string, short bool, args []string, idx i
 	if !found {
 		return -1, fmt.Errorf("unknown parameter found: %q", paramName)
 	}
+	option.given = true
 
 	if option.isFlag {
 		if option.value == "" || option.value == "false" {
 			option.value = "true"
 		}
 	} else {
-		if value == "" {
+		if readNextArg {
 			if idx+1 >= len(args) {
 				return -1, fmt.Errorf("missing value for option %q!", option.field)
 			}
