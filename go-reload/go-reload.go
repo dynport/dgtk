@@ -73,5 +73,6 @@ func run() error {
 		if err := c.Process.Kill(); err != nil {
 			return errors.New(err)
 		}
+		c.Wait()
 	}
 }
