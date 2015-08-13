@@ -43,6 +43,11 @@ func newWithTotal(total int) *Progress {
 	return p
 }
 
+func (p *Progress) Write(b []byte) (int, error) {
+	p.inc <- len(b)
+	return len(b), nil
+}
+
 func Start(l Logger, funcs ...func(*Progress)) *Progress {
 	p := newProgress()
 	p.logger = l
