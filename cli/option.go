@@ -38,11 +38,11 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 	case reflect.String:
 		field.SetString(o.value)
 	case reflect.Int, reflect.Int64:
-		i, e := strconv.Atoi(o.value)
+		i, e := strconv.ParseInt(o.value, 10, 64)
 		if e != nil {
 			return e
 		}
-		field.SetInt(int64(i))
+		field.SetInt(i)
 	case reflect.Bool:
 		field.SetBool(o.value == "true")
 	case reflect.Slice:
@@ -54,11 +54,15 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 			case reflect.String:
 				sl.Index(i).SetString(parts[i])
 			case reflect.Int, reflect.Int64:
-				val, e := strconv.Atoi(parts[i])
+				val, e := strconv.ParseInt(parts[i], 10, 64)
 				if e != nil {
 					return e
 				}
-				sl.Index(i).SetInt(int64(val))
+
+				if e != nil {
+					return e
+				}
+				sl.Index(i).SetInt(val)
 			default:
 				return fmt.Errorf("invalid type %q for slice", st.String())
 			}
