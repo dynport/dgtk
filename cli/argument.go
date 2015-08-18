@@ -70,7 +70,7 @@ func setSlice(target reflect.Value, source []string) (e error) {
 	switch target.Type().Elem().Kind() {
 	case reflect.String:
 		target.Set(reflect.ValueOf(source))
-	case reflect.Int:
+	case reflect.Int, reflect.Int64:
 		result := make([]int, 0, len(source))
 		for _, i := range source {
 			j, e := strconv.Atoi(i)

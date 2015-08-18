@@ -37,7 +37,7 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 	switch field.Kind() {
 	case reflect.String:
 		field.SetString(o.value)
-	case reflect.Int:
+	case reflect.Int, reflect.Int64:
 		i, e := strconv.Atoi(o.value)
 		if e != nil {
 			return e
@@ -53,7 +53,7 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 			switch st.Kind() {
 			case reflect.String:
 				sl.Index(i).SetString(parts[i])
-			case reflect.Int:
+			case reflect.Int, reflect.Int64:
 				val, e := strconv.Atoi(parts[i])
 				if e != nil {
 					return e
