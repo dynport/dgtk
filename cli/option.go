@@ -29,7 +29,6 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 	}
 
 	field := value.FieldByName(o.field)
-	fmt.Errorf("%v", field.Kind())
 	if field.Kind() == reflect.Ptr {
 		n := reflect.New(field.Type().Elem())
 		field.Set(n)
