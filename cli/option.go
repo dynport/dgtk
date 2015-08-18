@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type option struct {
@@ -28,10 +29,16 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 	}
 
 	field := value.FieldByName(o.field)
+	fmt.Errorf("%v", field.Kind())
 	if field.Kind() == reflect.Ptr {
 		n := reflect.New(field.Type().Elem())
 		field.Set(n)
 		field = field.Elem()
+		fmt.Printf("%v\n", field.Kind())
+		fmt.Printf("%q\n", field)
+		fmt.Printf("YES A reflect.Ptr %v %q", field, field)
+	} else {
+		fmt.Printf("NOT A reflect.Ptr %v %q", field, field)
 	}
 
 	switch field.Kind() {
@@ -66,7 +73,17 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 			field.Set(sl)
 		}
 	default:
-		return fmt.Errorf("invalid type %q", field.Type().String())
+		if field.Type().String() == "*time.Time" {
+			t := &time.Time{}
+			err := t.UnmarshalText([]byte(o.value))
+			if err != nil {
+				return fmt.Errorf("Expected time in RFC3339 format, e.g. 2016-10-14T01:23:00Z01:00, got: %s", err.Error())
+			}
+			field.Set(reflect.ValueOf(t))
+			return nil
+		}
+
+		return fmt.Errorf("%s, invalid type %q", field.Kind(), field.Type().String())
 	}
 	return nil
 }
