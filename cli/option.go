@@ -34,11 +34,6 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 		n := reflect.New(field.Type().Elem())
 		field.Set(n)
 		field = field.Elem()
-		fmt.Printf("%v\n", field.Kind())
-		fmt.Printf("%q\n", field)
-		fmt.Printf("YES A reflect.Ptr %v %q", field, field)
-	} else {
-		fmt.Printf("NOT A reflect.Ptr %v %q", field, field)
 	}
 
 	switch field.Kind() {
