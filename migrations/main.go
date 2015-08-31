@@ -50,6 +50,7 @@ func (list Migrations) Execute(db *sql.DB) error {
 }
 
 func (list Migrations) ExecuteTx(tx *sql.Tx) error {
+	started := time.Now()
 	if _, err := list.setup(tx); err != nil {
 		return err
 	}
@@ -62,6 +63,9 @@ func (list Migrations) ExecuteTx(tx *sql.Tx) error {
 		if err := m.Execute(tx); err != nil {
 			return err
 		}
+	}
+	if list.Logger != nil {
+		list.Logger.Printf("migrated in %.06f", time.Since(started).Seconds())
 	}
 	return nil
 }
@@ -118,14 +122,18 @@ func (list Migrations) setup(tx *sql.Tx) (sql.Result, error) {
 	return nil, nil
 }
 
-func (m *Migration) log(t string) {
+func (m *Migration) log(t string, dur time.Duration) {
 	if m.Logger != nil {
 		out := []string{}
 		lines := strings.Split(strings.TrimSpace(m.Statement), "\n")
 		for _, l := range lines {
 			out = append(out, strings.TrimSpace(l))
 		}
-		m.Logger.Printf(t+": migration %d %q %q", m.Idx, m.checksum(), strings.Join(strings.Fields(strings.Join(out, " ")), " "))
+		msg := fmt.Sprintf("%s: migration %d %q %q", t, m.Idx, m.checksum(), strings.Join(strings.Fields(strings.Join(out, " ")), " "))
+		if dur != 0 {
+			msg += fmt.Sprintf(" [%.06f]", dur.Seconds())
+		}
+		m.Logger.Printf(msg)
 	}
 }
 
@@ -146,13 +154,13 @@ func (m *Migration) Execute(tx *sql.Tx) error {
 		}
 		cs = strings.Replace(cs, "-", "", -1)
 		if statement == m.Statement {
-			m.log("SKIP")
+			m.log("SKIP", 0)
 			return nil
 		} else {
 			return fmt.Errorf("MIGRATION MISMATCH:\n<<<<<<< code migration %d\n%q\n=======\n%q\n>>>>>>> db migration\n", m.Idx, m.Statement, statement)
 		}
 	}
-	m.log("EXEC")
+	started := time.Now()
 	if m.Func != nil {
 		if err := m.Func(tx); err != nil {
 			return err
@@ -163,6 +171,10 @@ func (m *Migration) Execute(tx *sql.Tx) error {
 		}
 	}
 	_, err = tx.Exec("INSERT INTO migrations (idx, md5, statement, created_at) VALUES ($1, $2, $3, $4)", m.Idx, m.checksum(), m.Statement, time.Now().UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return err
+	}
+	m.log("EXEC", time.Since(started))
 	return err
 }
 
