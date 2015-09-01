@@ -117,3 +117,101 @@ func TestPtrOption(t *testing.T) {
 		t.Fatalf("expected option to be %q, got %q", "a", *cmd.Opt)
 	}
 }
+
+type OptionMapTestCommand struct {
+	First  map[string]string `cli:"opt -f --first"`
+	Second map[string]int64  `cli:"opt -s --second"`
+}
+
+func (cmd *OptionMapTestCommand) Run() error {
+	return nil
+}
+
+func TestMapOption(t *testing.T) {
+	cmd := new(OptionMapTestCommand)
+	a := testCreateAction("test", cmd)
+
+	err := a.reflect()
+	if err != nil {
+		t.Fatalf("expected err to be empty, got %s", err)
+	}
+
+	err = a.parseArgs([]string{})
+	if err != nil {
+		t.Errorf("expected err to be empty, got %s", err)
+	}
+	if cmd.First != nil {
+		t.Errorf("expected first option to be nil, got %s", cmd.First)
+	}
+	if cmd.Second != nil {
+		t.Errorf("expected second option to be nil, got %d", cmd.Second)
+	}
+
+	err = a.parseArgs([]string{"-f.a", "a", "-f.b", "b"})
+	if err != nil {
+		t.Errorf("expected err to be empty, got %s", err)
+	}
+	if v, found := cmd.First["a"]; !found || v != "a" {
+		t.Errorf("expected value for %q to be %q, got %q", "a", "a", v)
+	}
+	if v, found := cmd.First["b"]; !found || v != "b" {
+		t.Errorf("expected value for %q to be %q, got %q", "b", "b", v)
+	}
+
+	err = a.parseArgs([]string{"-s.c", "1", "-s.d", "2"})
+	if err != nil {
+		t.Errorf("expected err to de empty, got %s", err)
+	}
+	if v, found := cmd.Second["c"]; !found || v != 1 {
+		t.Errorf("expected value for %d to be %d, got %d", 1, 1, v)
+	}
+	if v, found := cmd.Second["d"]; !found || v != 2 {
+		t.Errorf("expected value for %d to be %d, got %d", 2, 2, v)
+	}
+}
+
+type OptionFailBoolMapCommand struct {
+	First map[string]bool `cli:"opt -m"`
+}
+
+func (cmd *OptionFailBoolMapCommand) Run() error {
+	return nil
+}
+
+type OptionFailIntMapCommand struct {
+	First map[string]int `cli:"opt -m"`
+}
+
+func (cmd *OptionFailIntMapCommand) Run() error {
+	return nil
+}
+
+func TestFailMapOption(t *testing.T) {
+	{
+		cmd := new(OptionFailBoolMapCommand)
+		a := testCreateAction("test", cmd)
+
+		expErr := "OptionFailBoolMapCommand: Options with Map type must have string or int64 values, got bool"
+		err := a.reflect()
+		switch {
+		case err == nil:
+			t.Errorf("expected error, got none")
+		case err.Error() != expErr:
+			t.Errorf("expected error to be %q, got %q", expErr, err)
+		}
+	}
+
+	{
+		cmd := new(OptionFailIntMapCommand)
+		a := testCreateAction("test", cmd)
+
+		expErr := "OptionFailIntMapCommand: Options with Map type must have string or int64 values, got int"
+		err := a.reflect()
+		switch {
+		case err == nil:
+			t.Errorf("expected error, got none")
+		case err.Error() != expErr:
+			t.Errorf("expected error to be %q, got %q", expErr, err)
+		}
+	}
+}

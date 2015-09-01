@@ -17,6 +17,8 @@ type option struct {
 	required bool
 	value    string
 	given    bool
+	isMap    bool
+	mapValue map[string]string
 }
 
 // Reflect the gathered information into the concrete action instance.
@@ -66,6 +68,29 @@ func (o *option) reflectTo(value reflect.Value) (e error) {
 			}
 			field.Set(sl)
 		}
+	case reflect.Map:
+		ml := reflect.MakeMap(field.Type())
+
+		valueType := field.Type().Elem()
+
+		for k, v := range o.mapValue {
+			var val interface{}
+			switch valueType.Kind() {
+			case reflect.String:
+				val = v
+			case reflect.Int64:
+				ival, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return fmt.Errorf("option value is not a valid integer: %s", err)
+				}
+				val = ival
+			default:
+				return fmt.Errorf("invalid type %q for slice", valueType.Kind())
+			}
+			ml.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(val))
+		}
+
+		field.Set(ml)
 	default:
 		if field.Type().String() == "*time.Time" {
 			t := &time.Time{}
@@ -119,8 +144,23 @@ func (a *action) createOption(field reflect.StructField, value reflect.Value, ta
 	}
 	opt := &option{field: field.Name}
 
-	if field.Type.Kind() == reflect.Bool {
+	switch field.Type.Kind() {
+	case reflect.Bool:
 		opt.isFlag = true
+	case reflect.Map:
+		keyType := field.Type.Key().Kind()
+		if keyType != reflect.String {
+			return fmt.Errorf("Options with Map type must have string keys, got %T.", keyType)
+		}
+
+		valueType := field.Type.Elem().Kind()
+		switch valueType {
+		case reflect.String, reflect.Int64:
+			opt.isMap = true
+			opt.mapValue = map[string]string{}
+		default:
+			return fmt.Errorf("Options with Map type must have string or int64 values, got %s", valueType)
+		}
 	}
 
 	opt.short, e = handleShortIdentifier(tagMap)

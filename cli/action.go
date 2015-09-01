@@ -179,24 +179,13 @@ func (a *action) handleArgs(value string, index int) (int, error) {
 }
 
 func (a *action) handleParams(paramName string, short bool, args []string, idx int) (int, error) {
-	var value string
-	readNextArg := true
-	if !short {
-		parts := strings.SplitN(paramName, "=", 2)
-		if len(parts) == 2 {
-			paramName = parts[0]
-			value = parts[1]
-			readNextArg = false
-		}
-	}
-
 	// Keep that on top, as this is some special sort of handling. Required to make help appear in usage description,
 	// but not be injected to deep.
 	if paramName == "h" || paramName == "help" {
 		return -1, ErrorHelpRequested
 	}
 
-	option, found := a.params[paramName]
+	option, paramSubName, found := a.findParam(paramName) // subname required for map values
 	if !found {
 		return -1, fmt.Errorf("unknown parameter found: %q", paramName)
 	}
@@ -206,17 +195,52 @@ func (a *action) handleParams(paramName string, short bool, args []string, idx i
 		if option.value == "" || option.value == "false" {
 			option.value = "true"
 		}
-	} else {
-		if readNextArg {
-			if idx+1 >= len(args) {
-				return -1, fmt.Errorf("missing value for option %q!", option.field)
-			}
-			value = args[idx+1]
-			idx += 1
-		}
-		option.value = value
+		return idx, nil
 	}
+
+	var value *string
+	if !short {
+		parts := strings.SplitN(paramName, "=", 2)
+		if len(parts) == 2 {
+			paramName = parts[0]
+			value = &parts[1]
+		}
+	}
+
+	if value == nil {
+		if idx+1 >= len(args) {
+			return -1, fmt.Errorf("missing value for option %q!", option.field)
+		}
+		value = &args[idx+1]
+		idx += 1
+	}
+
+	if option.isMap {
+		option.mapValue[paramSubName] = *value
+	} else {
+		option.value = *value
+	}
+
 	return idx, nil
+}
+
+func (a *action) findParam(name string) (*option, string, bool) {
+	if o, found := a.params[name]; found {
+		return o, "", true
+	}
+
+	parts := strings.SplitN(name, ".", 2)
+	if len(parts) != 2 {
+		return nil, "", false
+	}
+
+	switch o, found := a.params[parts[0]]; {
+	case !found, !o.isMap:
+		return nil, "", false
+	default:
+		o.mapValue[parts[1]] = ""
+		return o, parts[1], true
+	}
 }
 
 // Use reflection to set values of the runner, if the action was called with a matching route.
