@@ -141,10 +141,10 @@ func TestMapOption(t *testing.T) {
 		t.Errorf("expected err to be empty, got %s", err)
 	}
 	if cmd.First != nil {
-		t.Errorf("expected first option to be nil, got %s", cmd.First)
+		t.Errorf("expected first option to be nil, got %#v", cmd.First)
 	}
 	if cmd.Second != nil {
-		t.Errorf("expected second option to be nil, got %d", cmd.Second)
+		t.Errorf("expected second option to be nil, got %#v", cmd.Second)
 	}
 
 	err = a.parseArgs([]string{"-f.a", "a", "-f.b", "b"})
