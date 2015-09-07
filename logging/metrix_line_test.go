@@ -15,7 +15,7 @@ func TestMetricLine(t *testing.T) {
 
 		So(m.Host, ShouldEqual, "krusty-he-284430")
 		So(m.Metric, ShouldEqual, "processes.Vsize")
-		So(m.Timestamp.Format("2006-01-02T15:04"), ShouldEqual, "2014-06-03T10:03")
+		So(m.Timestamp.UTC().Format("2006-01-02T15:04"), ShouldEqual, "2014-06-03T08:03")
 		So(m.Value, ShouldEqual, 10)
 
 		So(len(m.Tags), ShouldEqual, 6)
