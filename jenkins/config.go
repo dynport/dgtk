@@ -3,6 +3,7 @@ package jenkins
 import "encoding/xml"
 
 type Config struct {
+	RAW                              string        `xml:"-"`
 	XMLName                          xml.Name      `xml:"project"`
 	KeepDependencies                 bool          `xml:"keepDependencies"`
 	Properties                       []interface{} `xml:"properties>ignored"`
@@ -12,11 +13,17 @@ type Config struct {
 	BlockBuildWhenDownstreamBuilding bool          `xml:"blockBuildWhenDownstreamBuilding"` // false</blockBuildWhenDownstreamBuilding>
 	BlockBuildWhenUpstreamBuilding   bool          `xml:"blockBuildWhenUpstreamBuilding"`   // false</blockBuildWhenUpstreamBuilding>
 	ConcurrentBuild                  bool          `xml:"concurrentBuild"`
-	Triggers                         []interface{} `xml:"triggers>trigger"`
-	Builders                         []interface{} `xml:"builders>builder"`
-	AssignedToNode                   string        `xml:"assignedNode,omitempty"`
-	Publishers                       []interface{} `xml:"publishers>ignored"`
-	LogRotator                       *LogRotator   `xml:"logRotator,omitempty"`
+	//Triggers                         []interface{} `xml:"triggers>trigger"`
+	// Builders                         []interface{}   `xml:"builders>builder"`
+	SCMTrigger     []*SCMTrigger   `xml:"triggers>hudson.triggers.SCMTrigger"`
+	ShellBuilders  []*ShellBuilder `xml:"builders>hudson.tasks.Shell"`
+	AssignedToNode string          `xml:"assignedNode,omitempty"`
+	Publishers     []interface{}   `xml:"publishers>ignored"`
+	LogRotator     *LogRotator     `xml:"logRotator,omitempty"`
+}
+
+type ShellBuilder struct {
+	Command string `xml:"command"`
 }
 
 type LogRotator struct {

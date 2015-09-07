@@ -3,6 +3,7 @@ package jenkins
 import (
 	"encoding/xml"
 	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -23,8 +24,8 @@ func TestSerializeConfig(t *testing.T) {
 
 		Convey("Serialize Config", func() {
 			config := &Config{}
-			config.Builders = []interface{}{
-				ShellTask{Command: "whoami"},
+			config.ShellBuilders = []*ShellBuilder{
+				{Command: "whoami"},
 			}
 			b, e := xml.MarshalIndent(config, "", "  ")
 			So(e, ShouldBeNil)
