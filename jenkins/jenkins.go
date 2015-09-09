@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -18,10 +17,10 @@ type Client struct {
 	Client *http.Client
 }
 
+// maybe also add add delay=0sec
 func (j *Client) TriggerBuildWithParams(name string, values url.Values) (string, error) {
 	//curl -u "dynport:horse battery staple" -d 'SPECS=spec&BRANCH=2.2.3&' https://phrasebuild.wunderscale.com/job/phrase-experimental/buildWithParameters -i
 	u := j.Address + "/job/" + name + "/buildWithParameters"
-	log.Printf("sending url=%s", u)
 	rsp, err := j.client().PostForm(u, values)
 	if err != nil {
 		return "", err
