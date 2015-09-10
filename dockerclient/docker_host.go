@@ -11,7 +11,6 @@ type DockerHostInfo struct {
 	MemTotal           int
 	Name               string
 	ID                 string
-	Debug              int
 	NFd                int
 	NGoroutines        int
 	NEventsListener    int
