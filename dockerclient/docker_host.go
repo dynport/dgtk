@@ -20,7 +20,6 @@ type DockerHostInfo struct {
 	IndexServerAddress string
 	MemoryLimit        int
 	SwapLimit          int
-	IPv4Forwarding     int
 	Labels             []string
 	DockerRootDir      string
 	OperatingSystem    string
