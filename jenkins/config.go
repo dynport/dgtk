@@ -17,6 +17,7 @@ type Config struct {
 	// Builders                         []interface{}   `xml:"builders>builder"`
 	SCMTrigger     []*SCMTrigger   `xml:"triggers>hudson.triggers.SCMTrigger"`
 	ShellBuilders  []*ShellBuilder `xml:"builders>hudson.tasks.Shell"`
+	TimerTriggers  []*TimerTrigger `xml:"triggers>hudson.triggers.TimerTrigger"`
 	AssignedToNode string          `xml:"assignedNode,omitempty"`
 	Publishers     []interface{}   `xml:"publishers>ignored"`
 	LogRotator     *LogRotator     `xml:"logRotator,omitempty"`
