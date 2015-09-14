@@ -162,25 +162,48 @@ func addFileToArchive(name string, content []byte, modTime time.Time, w *tar.Wri
 	return e
 }
 
+// write tar.gz archive to writer
+func (repo *Repository) Archive(revision string, w io.Writer, files ...string) (int64, error) {
+	if err := repo.Init(); err != nil {
+		return 0, err
+	}
+	args := append([]string{"archive", "--format=tar.gz", revision}, files...)
+	cmd := repo.createGitCommand(args...)
+	stderr := &bytes.Buffer{}
+	cmd.Stderr = stderr
+	cnt := &counter{}
+	cmd.Stdout = io.MultiWriter(w, cnt)
+	if err := cmd.Run(); err != nil {
+		return 0, fmt.Errorf("%s: %s", err, stderr.String())
+	}
+	return cnt.cnt, nil
+}
+
+type counter struct {
+	cnt int64
+}
+
+func (c *counter) Write(b []byte) (int, error) {
+	c.cnt += int64(len(b))
+	return len(b), nil
+
+}
+
 func (repo *Repository) addArchiveToTar(revision string, mtime time.Time, w *tar.Writer) (e error) {
 	filename := repo.Name() + ".tar.gz"
 
-	buf := bytes.NewBuffer(nil)
+	buf := &bytes.Buffer{}
 
-	cmd := repo.createGitCommand("archive", "--format=tar.gz", revision)
-	cmd.Stdout = buf
-
-	if e = cmd.Run(); e != nil {
-		return e
+	if _, err := repo.Archive(revision, buf); err != nil {
+		return err
 	}
 
 	e = w.WriteHeader(&tar.Header{Name: filename, Size: int64(buf.Len()), ModTime: mtime, Mode: 0644})
 	if e != nil {
 		return e
 	}
-
-	_, e = io.Copy(w, buf)
-	return e
+	_, err := io.Copy(w, buf)
+	return err
 }
 
 func (repo *Repository) Name() string {
