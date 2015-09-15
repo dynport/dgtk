@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +14,21 @@ import (
 	"time"
 )
 
-var logger = log.New(os.Stderr, "", 0)
-
 type Repository struct {
 	Origin    string
 	LocalPath string
+
+	Logger Logger
+}
+
+func (r *Repository) Printf(m string, args ...interface{}) {
+	if r.Logger != nil {
+		r.Logger.Printf(m, args...)
+	}
+}
+
+type Logger interface {
+	Printf(string, ...interface{})
 }
 
 func (repo *Repository) cacheDir() string {
@@ -27,7 +36,7 @@ func (repo *Repository) cacheDir() string {
 }
 
 func (repo *Repository) Fetch() error {
-	logger.Println("fetching origin")
+	repo.Printf("fetching origin")
 	// -f is required to make sure force pushes will properly update.
 	_, e := repo.executeGitCommand("fetch", "-f")
 	return e
@@ -36,15 +45,15 @@ func (repo *Repository) Fetch() error {
 const githubPrefix = "git@github.com:"
 
 func (repo *Repository) clone() error {
-	logger.Printf("cloning %s into %s", repo.Origin, repo.localPath())
+	repo.Printf("cloning %s into %s", repo.Origin, repo.localPath())
 	cmd := exec.Command("git", "clone", "--bare", repo.Origin, repo.localPath())
 	if b, e := cmd.CombinedOutput(); e != nil {
-		logger.Printf("ERROR: %s", strings.TrimSpace(string(b)))
+		repo.Printf("ERROR: %s", strings.TrimSpace(string(b)))
 		return e
 	}
 	cmd = exec.Command("git", "--git-dir="+repo.localPath(), "config", "remote.origin.fetch", "refs/heads/*:refs/heads/*")
 	if b, e := cmd.CombinedOutput(); e != nil {
-		logger.Printf("ERROR: %s", strings.TrimSpace(string(b)))
+		repo.Printf("ERROR: %s", strings.TrimSpace(string(b)))
 		return e
 	}
 	return nil
@@ -61,7 +70,7 @@ func (repo *Repository) Init() error {
 			return e
 		}
 	} else {
-		logger.Printf("already cloned %s to %s", repo.Origin, repo.localPath())
+		repo.Printf("already cloned %s to %s", repo.Origin, repo.localPath())
 	}
 	return nil
 }
@@ -74,7 +83,7 @@ func (repo *Repository) executeGitCommand(gitCommand ...string) (b []byte, e err
 	cmd := repo.createGitCommand(gitCommand...)
 	b, e = cmd.CombinedOutput()
 	if e != nil {
-		logger.Printf("ERROR: %s (%v)", strings.TrimSpace(string(b)), cmd)
+		repo.Printf("ERROR: %s (%v)", strings.TrimSpace(string(b)), cmd)
 		return b, e
 	}
 	return b, nil
@@ -258,7 +267,7 @@ func (repo *Repository) Commits(options *CommitOptions) (commits []*Commit, e er
 			if t, e := strconv.ParseInt(parts[1], 10, 64); e == nil {
 				commits = append(commits, &Commit{Checksum: parts[0], AuthorDate: time.Unix(t, 0), Message: parts[2]})
 			} else {
-				logger.Printf("ERROR: %s", e.Error())
+				repo.Printf("ERROR: %s", e.Error())
 			}
 		}
 	}
