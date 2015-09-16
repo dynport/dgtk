@@ -79,12 +79,13 @@ func (repo *Repository) createGitCommand(gitCommand ...string) *exec.Cmd {
 	return exec.Command("git", append([]string{"--git-dir=" + repo.localPath()}, gitCommand...)...)
 }
 
-func (repo *Repository) executeGitCommand(gitCommand ...string) (b []byte, e error) {
+func (repo *Repository) executeGitCommand(gitCommand ...string) (b []byte, err error) {
+	repo.Printf("executing git %s", strings.Join(gitCommand, " "))
 	cmd := repo.createGitCommand(gitCommand...)
-	b, e = cmd.CombinedOutput()
-	if e != nil {
+	b, err = cmd.CombinedOutput()
+	if err != nil {
 		repo.Printf("ERROR: %s (%v)", strings.TrimSpace(string(b)), cmd)
-		return b, e
+		return nil, fmt.Errorf("%s: %s", err, string(b))
 	}
 	return b, nil
 }
