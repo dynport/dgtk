@@ -4,10 +4,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/dynport/dgtk/goassets/goassets"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func cleanup(t *testing.T) {
@@ -17,83 +16,49 @@ func cleanup(t *testing.T) {
 
 var modulePath = "./fixtures/assets.go"
 
-func TestAssets(t *testing.T) {
-	assets := &goassets.Assets{Paths: []string{"./fixtures"}, CustomPackagePath: modulePath}
-	Convey("Assets", t, func() {
-		Convey("AssetsPaths", func() {
-			So(assets, ShouldNotBeNil)
-			paths, e := assets.AssetPaths()
-			So(e, ShouldBeNil)
-			So(len(paths), ShouldEqual, 2)
-			So(paths[0].Path, ShouldEqual, "fixtures/a.html")
-			So(paths[0].Key, ShouldEqual, "a.html")
-			So(paths[1].Path, ShouldEqual, "fixtures/vendor/jquery.js")
-			So(paths[1].Key, ShouldEqual, "vendor/jquery.js")
-		})
-		Convey("Build", func() {
-			Convey("raise an error when file exists", func() {
-				e := ioutil.WriteFile(modulePath, []byte("//just some comment"), 0644)
-				if e != nil {
-					t.Fatal(e.Error())
-				}
-				e = assets.Build()
-				So(e, ShouldNotBeNil)
-				So(e.Error(), ShouldContainSubstring, "already exists")
-			})
+func TestIntegration(t *testing.T) {
+	cleanup(t)
+	os.MkdirAll("./tmp", 0755)
+	b, err := ioutil.ReadFile("goassets-test/main.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile("./tmp/main.go", b, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if fileExists("./tmp/assets.go") {
+		t.Fatal("expected file to not exist")
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("go", "run", filepath.Join(wd, "goassets.go"), filepath.Join(wd, "fixtures"))
+	cmd.Dir = "tmp"
+	b, err = cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s: %s", string(b), err)
+	}
 
-			Convey("with assets.go not exising", func() {
-				cleanup(t)
-				e := assets.Build()
-				So(e, ShouldBeNil)
-			})
-		})
-	})
+	cmd = exec.Command("go", "run", "main.go", "assets.go")
+	cmd.Dir = "tmp"
+	b, err = cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s: %s", err, string(b))
+	}
+	out := string(b)
+	if !fileExists("./tmp/assets.go") {
+		t.Error("expected file to exist")
+	}
+
+	for _, i := range []string{"a.html: 21", "vendor/jquery.js: 15"} {
+		if !strings.Contains(out, i) {
+			t.Errorf("expected %q to contain %q", out, i)
+		}
+	}
 }
 
 func fileExists(p string) bool {
-	_, e := os.Stat(p)
-	if e != nil {
-		return false
-	}
-	return true
+	_, err := os.Stat(p)
+	return err == nil
 }
-
-func TestIntegration(t *testing.T) {
-	Convey("Integration test", t, func() {
-		cleanup(t)
-		os.MkdirAll("./tmp", 0755)
-		e := ioutil.WriteFile("./tmp/main.go", []byte(testFile), 0755)
-		if e != nil {
-			t.Fatal(e.Error())
-		}
-		So(fileExists("./tmp/assets.go"), ShouldBeFalse)
-		cmd := exec.Command("bash", "-c", "cd tmp && goassets ../fixtures && go run *.go")
-		b, e := cmd.CombinedOutput()
-		So(e, ShouldBeNil)
-		out := string(b)
-		So(fileExists("./tmp/assets.go"), ShouldBeTrue)
-		So(out, ShouldContainSubstring, "a.html: 21")
-		So(out, ShouldContainSubstring, "vendor/jquery.js: 15")
-	})
-}
-
-const testFile = `
-package main
-
-import (
-	"fmt"
-	"os"
-)
-
-func main() {
-	fmt.Println("running")
-	for _, name := range assetNames() {
-		b, e := readAsset(name)
-		if e != nil {
-			fmt.Println("ERROR: " + e.Error())
-			os.Exit(1)
-		}
-		fmt.Printf("%v: %d\n", name, len(b))
-	}
-}
-`

@@ -1,16 +1,24 @@
-build:
-	go get ./...
+TPL := $(shell find tpl/goassets-tpl -type f) 
+GOASSETS_TPL := $(shell find tpl/goassets-script-tpl -type f)
 
-test:
-	go test -v
+.PHONY: goassets.go
 
-vet:
+default: goassets.go test vet lint cleanup_tmp
+
+vet: goassets.go
 	go vet .
 
-lint:
+lint: goassets.go
 	golint .
 
-testold: build
-	echo "running tests"
-	go test -v
-	cd goassets-test && rm -f assets.go; goassets -pkg main ../fixtures && go run *.go
+goassets.go: $(TPL) $(GOASSETS_TPL) generate.sh
+	bash generate.sh > goassets.go
+
+test: goassets.go
+	go test
+
+cleanup_tmp:
+	rm -Rf tmp
+
+clean: cleanup_tmp
+	rm -f goassets.go

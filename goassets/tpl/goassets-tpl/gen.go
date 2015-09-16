@@ -67,34 +67,6 @@ type AssetFileSystem interface {
 	AssetNames() []string
 }
 
-func assetNames() (names []string) {
-	return assets.AssetNames()
-}
-
-func readAsset(key string) ([]byte, error) {
-	r, e := assets.Open(key)
-	if e != nil {
-		return nil, e
-	}
-	defer func() {
-		_ = r.Close()
-	}()
-
-	p, e := ioutil.ReadAll(r)
-	if e != nil {
-		return nil, e
-	}
-	return p, nil
-}
-
-func mustReadAsset(key string) []byte {
-	p, e := readAsset(key)
-	if e != nil {
-		panic("could not read asset with key " + key + ": " + e.Error())
-	}
-	return p
-}
-
 type assetOsFS struct{ root string }
 
 func (aFS assetOsFS) Open(name string) (http.File, error) {
