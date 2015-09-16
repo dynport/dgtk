@@ -40,6 +40,7 @@ func (r *esIndexes) Run() error {
 	t := gocli.NewTable()
 	if len(names) < 1 {
 		logger.Printf("no indexes found")
+		return nil
 	}
 	t.Add("name", "docs", "size")
 	sort.Strings(names)
