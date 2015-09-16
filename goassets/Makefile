@@ -3,7 +3,10 @@ GOASSETS_TPL := $(shell find tpl/goassets-script-tpl -type f)
 
 .PHONY: goassets.go
 
-default: goassets.go test vet lint cleanup_tmp
+default: goassets.go build test vet lint cleanup_tmp
+
+build:
+	go get ./...
 
 vet: goassets.go
 	go vet .
