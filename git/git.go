@@ -246,6 +246,16 @@ func (repo *Repository) localPath() string {
 	return repo.LocalPath
 }
 
+func (repo *Repository) Show(rev string) (*Commit, error) {
+	list, err := repo.Commits(&CommitOptions{Limit: 1, Pattern: rev})
+	if err != nil {
+		return nil, err
+	} else if len(list) != 1 {
+		return nil, fmt.Errorf("expected to find 1 commit, found %d", len(list))
+	}
+	return list[0], nil
+}
+
 func (repo *Repository) Commits(options *CommitOptions) (commits []*Commit, e error) {
 	if options == nil {
 		options = &CommitOptions{Limit: 10}
