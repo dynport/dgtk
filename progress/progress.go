@@ -89,12 +89,16 @@ func (p *Progress) Start() {
 	p.inc = make(chan int)
 	go func() {
 		defer close(p.closed)
+		printedMax := false
 		for {
 			select {
 			case i := <-p.inc:
 				p.current += i
 			case <-t:
-				l.Printf("%s", p)
+				if !printedMax {
+					l.Printf("%s", p)
+				}
+				printedMax = p.current >= p.total
 			case <-p.closer:
 				l.Printf("%s", p)
 				return
