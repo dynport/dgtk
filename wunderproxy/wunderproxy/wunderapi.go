@@ -86,24 +86,11 @@ func (a *wunderAPI) switchContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 	}
 }
-func (a *wunderAPI) maintenanceUp(w http.ResponseWriter, r *http.Request) {
-	if e := a.proxy.MaintenanceUp(); e != nil {
-		http.Error(w, e.Error(), 500)
-	}
-}
-
-func (a *wunderAPI) maintenanceDown(w http.ResponseWriter, r *http.Request) {
-	if e := a.proxy.MaintenanceDown(); e != nil {
-		http.Error(w, e.Error(), 500)
-	}
-}
 
 func (a *wunderAPI) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/status", a.status)
 	mux.HandleFunc("/launch", a.launchContainer)
 	mux.HandleFunc("/switch", a.switchContainer)
-	mux.HandleFunc("/maintenance/up", a.maintenanceUp)
-	mux.HandleFunc("/maintenance/down", a.maintenanceDown)
 	return mux
 }

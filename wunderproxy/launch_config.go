@@ -20,7 +20,6 @@ type LaunchConfig struct {
 	ContainerConfig *docker.ContainerConfig
 	HostConfig      *docker.HostConfig
 	HealthCheckPath string
-	MaintenancePath string
 	Revision        string
 	ForceReload     bool
 

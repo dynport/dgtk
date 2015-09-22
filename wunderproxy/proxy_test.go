@@ -28,22 +28,20 @@ func TestWunderproxyBase(t *testing.T) {
 		t.Fatalf("expected 404 status code, as no address set yet")
 	}
 
-	proxyHandler.Update(s1Address, "")
+	proxyHandler.Update(s1Address)
 	testRequest(t, proxy, "GET", "GET server 1")
 	testRequest(t, proxy, "PUT", "PUT server 1")
 	testRequest(t, proxy, "POST", "POST server 1")
 	testRequest(t, proxy, "DELETE", "DELETE server 1")
 
-	proxyHandler.Update(s2Address, "")
+	proxyHandler.Update(s2Address)
 	testRequest(t, proxy, "GET", "GET server 2")
 	testRequest(t, proxy, "PUT", "PUT server 2")
 	testRequest(t, proxy, "POST", "POST server 2")
 	testRequest(t, proxy, "DELETE", "DELETE server 2")
 
-	proxyHandler.Update(s1Address, "")
+	proxyHandler.Update(s1Address)
 	testRequest(t, proxy, "GET", "GET server 1")
-
-	t.Logf("yeah did it")
 }
 
 func testRequest(t *testing.T, proxy *httptest.Server, method, expectation string) {

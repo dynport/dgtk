@@ -2,7 +2,6 @@ package wunderproxy
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -21,10 +20,6 @@ type Proxy struct {
 	Address     string
 	stateEvents chan *connStateEvent
 	stats       chan *requestStat
-
-	maintenanceMode  bool
-	maintenancePath  string
-	maintenanceCache []byte
 
 	proxy *httputil.ReverseProxy
 }
@@ -67,19 +62,15 @@ func NewProxy() *Proxy {
 	return p
 }
 
-func (p *Proxy) Update(addr, maintenancePath string) {
+func (p *Proxy) Update(addr string) {
 	p.Mutex.Lock()
 	defer p.Mutex.Unlock()
 
 	p.Address = addr
-	p.maintenancePath = maintenancePath
 
 	// Reset statistics
 	p.RequestStats.Total = 0
 	p.RequestStats.TotalTime = 0
-
-	// Cache maintenance page
-	p.cacheMaintenancePage()
 }
 
 func (p *Proxy) connState(con net.Conn, state http.ConnState) {
@@ -95,15 +86,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	myW := &responseWriter{ResponseWriter: w}
-
-	switch {
-	case p.maintenanceMode:
-		w.Header().Add("Content-Type", "text/html")
-		w.WriteHeader(500)
-		_, _ = w.Write(p.maintenanceCache)
-	default:
-		p.proxy.ServeHTTP(myW, r)
-	}
+	p.proxy.ServeHTTP(myW, r)
 
 	totalTime := time.Since(started)
 	p.stats <- &requestStat{TotalTime: totalTime}
@@ -134,40 +117,6 @@ func (p *Proxy) Director(req *http.Request) {
 	req.URL.Host = p.Address
 }
 
-func (p *Proxy) cacheMaintenancePage() {
-	err := func() error {
-		if p.Address == "" {
-			return fmt.Errorf("no address set")
-		}
-
-		resp, err := http.Get("http://" + p.Address + "/" + p.maintenancePath)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		p.maintenanceCache, err = ioutil.ReadAll(resp.Body)
-		return err
-	}()
-	if err != nil {
-		logger.Printf("failed to cache maintenance page: %s", err)
-		p.maintenanceCache = []byte("Page down, we're working on it.")
-	}
-}
-
-func (p *Proxy) MaintenanceUp() error {
-	if p.maintenanceCache == nil {
-		p.cacheMaintenancePage()
-	}
-	p.maintenanceMode = true
-	return nil
-}
-
-func (p *Proxy) MaintenanceDown() error {
-	p.maintenanceMode = false
-	return nil
-}
-
 func (p *Proxy) Stats(stats map[string]interface{}) error {
 	memstat := &runtime.MemStats{}
 	runtime.ReadMemStats(memstat)
@@ -175,7 +124,6 @@ func (p *Proxy) Stats(stats map[string]interface{}) error {
 	stats["HeapSize"] = memstat.HeapInuse
 	stats["TotalTime"] = p.RequestStats.TotalTime.Seconds()
 	stats["Requests"] = p.RequestStats.Total
-	stats["MaintenanceMode"] = p.maintenanceMode
 
 	states := map[string]int{}
 	for _, v := range p.ConnStates {

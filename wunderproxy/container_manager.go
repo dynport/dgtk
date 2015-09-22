@@ -106,7 +106,7 @@ func (cm *ContainerManager) runLatest() error {
 	}
 
 	cm.containers[cfg.Revision] = port
-	cm.Proxy.Update(fmt.Sprintf("localhost:%d", port), cfg.MaintenancePath)
+	cm.Proxy.Update(fmt.Sprintf("localhost:%d", port))
 	return cm.StopOldContainers()
 }
 
@@ -137,12 +137,7 @@ func (cm *ContainerManager) SwitchContainer(hash string) (string, int, error) {
 		return "", -1, fmt.Errorf("don't know about a container with revision %q", hash)
 	}
 
-	cfg, e := LoadLaunchConfig(cm.s3client, cm.S3Bucket, cm.S3Prefix, hash)
-	if e != nil {
-		return "", -1, e
-	}
-
-	cm.Proxy.Update(fmt.Sprintf("localhost:%d", port), cfg.MaintenancePath)
+	cm.Proxy.Update(fmt.Sprintf("localhost:%d", port))
 
 	// Stop old containers. Ignore errors ... they'll get visible soon enough.
 	go func() {
