@@ -70,3 +70,6 @@ The manager's status action could be improved to contain:
 Currently the wunderproxy just does the default buffering provided by the Go http library (we measured that to be about 1MB). For unicorn deployments this isn't sufficient to handle `slow clients` (see [unicorn philosophy](http://unicorn.bogomips.org/PHILOSOPHY.html)). We decided to simply use a nginx instance in front of wunderproxy, what of course adds another layer but is sufficient for our case. The nginx layer could be made disposable with an improved request handling in wunderproxy.
 
 
+### Improved Container Switch
+
+The old container should be kept around until all open connections are handled (or a timeout occurs).s
