@@ -1,0 +1,45 @@
+{
+	"ImportPath": "github.com/dynport/dgtk/wunderproxy/wunderproxy",
+	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/dynport/dgtk/cli",
+			"Rev": "9486f13e53a187de531ae8b7aa2c5a15c9814994"
+		},
+		{
+			"ImportPath": "github.com/dynport/dgtk/dockerclient",
+			"Rev": "9486f13e53a187de531ae8b7aa2c5a15c9814994"
+		},
+		{
+			"ImportPath": "github.com/dynport/dgtk/tagparse",
+			"Rev": "9486f13e53a187de531ae8b7aa2c5a15c9814994"
+		},
+		{
+			"ImportPath": "github.com/dynport/dgtk/version",
+			"Rev": "9486f13e53a187de531ae8b7aa2c5a15c9814994"
+		},
+		{
+			"ImportPath": "github.com/dynport/dgtk/wunderproxy",
+			"Rev": "9486f13e53a187de531ae8b7aa2c5a15c9814994"
+		},
+		{
+			"ImportPath": "github.com/dynport/gocloud/aws",
+			"Rev": "e104627ca1f264e346fe93a3ef4fe9389dd8f660"
+		},
+		{
+			"ImportPath": "github.com/dynport/gossh",
+			"Rev": "8f7aa0571fe5e3bbc9c6a7df2c39baf4377f9de6"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh",
+			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
+		}
+	]
+}

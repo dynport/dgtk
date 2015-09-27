@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/dgtk/dockerclient/docker"
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/gocloud/aws/s3"
+	"github.com/dynport/dgtk/dockerclient/docker"
+	"github.com/dynport/gocloud/aws/s3"
 )
 
 var ErrorLaunchConfigNotFound = fmt.Errorf("launch configuration not found")

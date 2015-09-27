@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/dgtk/cli"
+	"github.com/dynport/dgtk/cli"
 )
 
 var logger = log.New(os.Stderr, "", 0)

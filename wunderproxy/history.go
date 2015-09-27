@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/gocloud/aws/iam"
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/gocloud/aws/s3"
+	"github.com/dynport/gocloud/aws/iam"
+	"github.com/dynport/gocloud/aws/s3"
 )
 
 var ErrorEmptyHistory = errors.New("container history is empty")

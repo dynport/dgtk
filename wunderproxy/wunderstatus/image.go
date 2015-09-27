@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dynport/dgtk/wunderproxy"
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/gocloud/aws/s3"
+	"github.com/dynport/gocloud/aws/s3"
 )
 
 type currentImage struct {

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/dgtk/cli"
+import "github.com/dynport/dgtk/cli"
 
 func router() *cli.Router {
 	router := cli.NewRouter()

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/dgtk/dockerclient"
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/dgtk/dockerclient/docker"
-	"github.com/dynport/dgtk/wunderproxy/Godeps/_workspace/src/github.com/dynport/gocloud/aws/s3"
+	"github.com/dynport/dgtk/dockerclient"
+	"github.com/dynport/dgtk/dockerclient/docker"
+	"github.com/dynport/gocloud/aws/s3"
 )
 
 type ContainerManager struct {
