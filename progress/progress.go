@@ -1,9 +1,7 @@
 package progress
 
 import (
-	"fmt"
 	"log"
-	"math"
 	"os"
 	"runtime"
 	"time"
@@ -15,9 +13,17 @@ type Logger interface {
 	Printf(string, ...interface{})
 }
 
-func WithTotal(total int) func(*Progress) {
+type StartFunc func(*Progress)
+
+func WithTotal(total int) StartFunc {
 	return func(p *Progress) {
 		p.total = total
+	}
+}
+
+func WithPrinter(printer Printer) StartFunc {
+	return func(p *Progress) {
+		p.printer = printer
 	}
 }
 
@@ -25,7 +31,7 @@ type Progress struct {
 	total   int
 	current int
 	started time.Time
-	logger  Logger
+	printer Printer
 
 	inc      chan int
 	closer   chan struct{}
@@ -48,9 +54,17 @@ func (p *Progress) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
+type LogPrinter struct {
+	Logger Logger
+}
+
+func (p *LogPrinter) Print(s *Status) {
+	p.Logger.Printf(s.String())
+}
+
 func Start(l Logger, funcs ...func(*Progress)) *Progress {
 	p := newProgress()
-	p.logger = l
+	p.printer = &LogPrinter{l}
 	for _, f := range funcs {
 		f(p)
 	}
@@ -79,9 +93,9 @@ func (p *Progress) Diff() time.Duration {
 
 func (p *Progress) Start() {
 	dur := 1 * time.Second
-	l := p.logger
-	if l == nil {
-		l = DefaultLogger
+	printer := p.printer
+	if printer == nil {
+		printer = &LogPrinter{Logger: DefaultLogger}
 	}
 	t := time.Tick(dur)
 	p.closer = make(chan struct{})
@@ -96,11 +110,11 @@ func (p *Progress) Start() {
 				p.current += i
 			case <-t:
 				if !printedMax {
-					l.Printf("%s", p)
+					printer.Print(p.Status())
 				}
 				printedMax = p.total > 0 && p.current >= p.total
 			case <-p.closer:
-				l.Printf("%s", p)
+				printer.Print(p.Status())
 				return
 			}
 		}
@@ -118,27 +132,15 @@ func (p *Progress) Close() error {
 	return nil
 }
 
-func IntLen(i int) int {
-	if i == 0 {
-		return 1
-	} else if i < 0 {
-		return IntLen(int(math.Abs(float64(i)))) + 1
+func (p *Progress) Status() *Status {
+	s := &Status{
+		Current: p.current,
+		Started: p.started,
+		Now:     time.Now(),
 	}
-	return int(math.Ceil(math.Log10(float64(i + 1))))
-}
-
-func (p *Progress) String() string {
-	memStats := runtime.MemStats{}
-	runtime.ReadMemStats(&memStats)
-	diff := p.Diff().Seconds()
-	perSecond := float64(p.current) / diff
-	s := fmt.Sprintf("total_time=%.06f per_second=%.01f", diff, perSecond)
+	runtime.ReadMemStats(&s.MemStats)
 	if p.total > 0 {
-		l := IntLen(p.total)
-		eta := float64(p.total-p.current) / perSecond
-		s = fmt.Sprintf("cnt=%0*d/%0*d ", l, p.current, l, p.total) + s + fmt.Sprintf(" eta=%.01f", eta)
-	} else {
-		s = fmt.Sprintf("cnt=%d ", p.current) + s
+		s.Total = &p.total
 	}
-	return s + fmt.Sprintf(" mem_alloc=%s", SizePretty(float64(memStats.Alloc)))
+	return s
 }
