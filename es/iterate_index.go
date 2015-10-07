@@ -21,6 +21,7 @@ type openIndexOpt struct {
 	Fields []string
 }
 
+// timespan how long each request is valid (e.g. 1m)
 func OpenIndexScroll(scroll string) func(*openIndexOpt) {
 	return func(o *openIndexOpt) {
 		o.Scroll = scroll
