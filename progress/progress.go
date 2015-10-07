@@ -98,7 +98,7 @@ func (p *Progress) Start() {
 				if !printedMax {
 					l.Printf("%s", p)
 				}
-				printedMax = p.current >= p.total
+				printedMax = p.total > 0 && p.current >= p.total
 			case <-p.closer:
 				l.Printf("%s", p)
 				return
