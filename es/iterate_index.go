@@ -19,6 +19,7 @@ type openIndexOpt struct {
 	Size   int
 	Scroll string
 	Fields []string
+	Query  *Query
 }
 
 // timespan how long each request is valid (e.g. 1m)
@@ -31,6 +32,12 @@ func OpenIndexScroll(scroll string) func(*openIndexOpt) {
 func OpenIndexFields(fields []string) func(*openIndexOpt) {
 	return func(o *openIndexOpt) {
 		o.Fields = fields
+	}
+}
+
+func OpenIndexQuery(query *Query) func(*openIndexOpt) {
+	return func(o *openIndexOpt) {
+		o.Query = query
 	}
 }
 
@@ -62,6 +69,7 @@ func IterateIndex(addr, name string, funcs ...func(*openIndexOpt)) (chan json.Ra
 type openIndexDoc struct {
 	Size   int      `json:"size"`
 	Fields []string `json:"fields,omitempty"`
+	Query  *Query   `json:"query,omitempty"`
 }
 
 func openIndex(addr, name string, funcs ...func(*openIndexOpt)) (scrollID string, err error) {
@@ -72,6 +80,7 @@ func openIndex(addr, name string, funcs ...func(*openIndexOpt)) (scrollID string
 	doc := &openIndexDoc{
 		Size:   o.Size,
 		Fields: o.Fields,
+		Query:  o.Query,
 	}
 	b, err := json.Marshal(doc)
 	if err != nil {
