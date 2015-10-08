@@ -88,8 +88,10 @@ type Not struct {
 }
 
 type Range struct {
-	From interface{}
-	To   interface{}
+	GreaterThan        string `json:"gt,omitempty"`
+	GreaterOrEqualThan string `json:"gte,omitempty"`
+	LessThan           string `json:"lt,omitempty"`
+	LessOrEqualThan    string `json:"lte,omitempty"`
 }
 
 type Filtered struct {
@@ -125,7 +127,7 @@ var query = Query{
 					},
 					Range: map[string]*Range{
 						"Time": {
-							From: "",
+							LessThan: "",
 						},
 					},
 				},
