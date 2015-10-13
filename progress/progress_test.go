@@ -13,7 +13,7 @@ func TestProgressString(t *testing.T) {
 	defer p.Close()
 	p.IncBy(10)
 
-	s := p.String()
+	s := p.Status().String()
 
 	for _, b := range []string{"010/100"} {
 		if !strings.Contains(s, b) {
@@ -24,7 +24,7 @@ func TestProgressString(t *testing.T) {
 	p = Start(l, WithTotal(99))
 	defer p.Close()
 	p.IncBy(10)
-	s = p.String()
+	s = p.Status().String()
 	for _, b := range []string{"10/99"} {
 		if !strings.Contains(s, b) {
 			t.Errorf("expected string %q to contain %q", s, b)
