@@ -17,6 +17,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds"
 )
 
+type Base struct {
+	InstanceId string `cli:"arg required desc='RDS instance ID to fetch snapshots for'"`
+}
+
 type backup struct {
 	Base
 
