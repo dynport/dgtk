@@ -24,11 +24,12 @@ type Base struct {
 type backup struct {
 	Base
 
-	User         string `cli:"opt -u --user desc='user used for connection (database name by default)'"`
-	Password     string `cli:"opt -p --pwd desc='password used for connection'"`
-	TargetDir    string `cli:"opt -d --dir default=. desc='path to save dumps to'"`
-	InstanceType string `cli:"opt -t --instance-type default=db.m3.medium desc='db instance type'"`
-	Uncompressed bool   `cli:"opt --uncompressed desc='run dump uncompressed'"`
+	User           string `cli:"opt -u --user desc='user used for connection (database name by default)'"`
+	Password       string `cli:"opt -p --pwd desc='password used for connection'"`
+	TargetDir      string `cli:"opt -d --dir default=. desc='path to save dumps to'"`
+	InstanceType   string `cli:"opt -t --instance-type default=db.m3.medium desc='db instance type'"`
+	Uncompressed   bool   `cli:"opt --uncompressed desc='run dump uncompressed'"`
+	WithCloudWatch string `cli:"opt -c --with-cloudwatch desc='send information on successful backup to given cloudwatch namespace'"`
 
 	PasswordFile string `cli:"opt -k desc='Password for dump file (no protection if none given)'"`
 
@@ -98,9 +99,12 @@ func (act *backup) Run() (e error) {
 		// Determine target path and stop if dump already available (prior to creating the instance).
 		logger.Printf("dumping database, try %d", i+1)
 		e = act.dumpDatabase(*instance.Engine, *instance.Endpoint.Address, *instance.Endpoint.Port, filename)
-		if e != nil {
+		switch {
+		case e != nil:
 			logger.Printf("ERROR dumping database: step=%d %s", i+1, e)
-		} else {
+		case act.WithCloudWatch != "":
+			return notifyCloudWatch(act.WithCloudWatch, filename)
+		default:
 			return nil
 		}
 	}
