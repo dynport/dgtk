@@ -76,6 +76,11 @@ func (act *backup) Run() (e error) {
 		return fmt.Errorf("latest snapshot older than 24 hours!")
 	}
 
+	var filename string
+	if filename, e = act.createTargetPath(snapshot); e != nil {
+		return e
+	}
+
 	// Restore snapshot into new instance.
 	var instance *rds.DBInstance
 	if instance, e = act.restoreDBInstance(snapshot); e != nil {
@@ -89,11 +94,6 @@ func (act *backup) Run() (e error) {
 			e = err
 		}
 	}()
-
-	var filename string
-	if filename, e = act.createTargetPath(snapshot); e != nil {
-		return e
-	}
 
 	for i := 0; i < 3; i++ {
 		// Determine target path and stop if dump already available (prior to creating the instance).
