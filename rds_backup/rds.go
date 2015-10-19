@@ -9,13 +9,17 @@ import (
 )
 
 func newClient() *rds.RDS {
+	cfg := loadConfig()
+	return rds.New(cfg)
+}
+
+func loadConfig() *aws.Config {
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
 		region = "eu-west-1"
 	}
 	creds := credentials.NewEnvCredentials()
-	cfg := aws.NewConfig().WithCredentials(creds).WithRegion(region)
-	return rds.New(cfg)
+	return aws.NewConfig().WithCredentials(creds).WithRegion(region)
 }
 
 type Base struct {
