@@ -8,6 +8,10 @@ import (
 	"net/http"
 )
 
+func New(url string) *Client {
+	return &Client{WebhookURL: url}
+}
+
 type Client struct {
 	WebhookURL      string `json:"webhook_url,omitempty"`
 	DefaultChannel  string `json:"channel,omitempty"`
