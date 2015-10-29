@@ -12,6 +12,18 @@ import (
 	"github.com/dynport/dgtk/cli"
 )
 
+func main() {
+	log.SetFlags(0)
+	r := router()
+	e := r.RunWithArgs()
+	switch e {
+	case nil, cli.ErrorHelpRequested, cli.ErrorNoRoute:
+		// ignore
+	default:
+		log.Fatal(e.Error())
+	}
+}
+
 type Commits struct {
 }
 
@@ -116,16 +128,4 @@ func (g *GithubPulls) Run() error {
 		return e
 	}
 	return openUrl(u + "/pulls")
-}
-
-func main() {
-	log.SetFlags(0)
-	r := router()
-	e := r.RunWithArgs()
-	switch e {
-	case nil, cli.ErrorHelpRequested, cli.ErrorNoRoute:
-		// ignore
-	default:
-		log.Fatal(e.Error())
-	}
 }
