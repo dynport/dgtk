@@ -13,7 +13,7 @@ TEST_PKGS   := $(filter-out $(IGN_TEST_PKGS),$(PACKAGES))
 
 default: build vet test
 
-build:
+build: ego
 	@go install $(PACKAGES)
 
 check:
@@ -35,3 +35,8 @@ test_deps:
 	go get -t ./...
 
 jenkins: test_deps vet test
+
+ego: confirm/ego.go
+
+confirm/ego.go: $(shell ls confirm/*.ego)
+	cd confirm && ego -package=confirm

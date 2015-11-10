@@ -1,0 +1,28 @@
+<%! func ActionsDiff(w io.Writer, ctx *ActionsDiffCtx) error %>
+<html>
+<body>
+    <h2>Actions Diff</h2>
+    <% if len(ctx.Actions) > 0 { %>
+    <% for _, a := range ctx.Actions { %>
+    <div>
+    <%== ctx.ActionString(a) %>
+    <% if len(a.Diff) > 0 { %>
+    <br />
+    <div style="border:2px solid black"><code style="margin:0px;padding:0px"><pre><%== ctx.ColorizeDiff(a.Diff) %></pre></code>
+    </div>
+    <% } %>
+    <hr />
+    <% } %>
+    <% } else { %>
+        <div><em>All Fine</em></div>
+    <% } %>
+    <form action="/_close" method="post" accept-charset="utf-8">
+        <p><input type="submit" name="submit" value="Close"></p>
+        <% if len(ctx.Actions) > 0 { %>
+            <strong>Please Type "confirm" to apply changes</strong>
+            <input type="text" value="" name="confirm" id="confirm"/>
+            <p><input type="submit" name="submit" value="Confirm"></p>
+        <% } %>
+    </form>
+</body>
+</html>
