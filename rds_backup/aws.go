@@ -5,17 +5,18 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/rds"
 )
 
 func newClient() *rds.RDS {
 	cfg := loadConfig()
-	return rds.New(cfg)
+	return rds.New(session.New(cfg))
 }
 
 func newCloudWatchClient() *cloudwatch.CloudWatch {
-	return cloudwatch.New(loadConfig())
+	return cloudwatch.New(session.New(loadConfig()))
 }
 
 func loadConfig() *aws.Config {
