@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"github.com/dynport/wunderscale/open"
+	"github.com/dynport/dgtk/open"
 )
 
 func WebDiff(actions []*Action) (chan bool, error) {
