@@ -67,7 +67,6 @@ func ConfirmHTML(actions ...*Action) error {
 	doContinue := <-closer
 	if doContinue {
 		for _, a := range actions {
-			l.Printf("about to run: %s", a.String())
 			if err := a.Call(); err != nil {
 				return err
 			}
