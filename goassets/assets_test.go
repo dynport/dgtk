@@ -11,22 +11,22 @@ import (
 
 func cleanup(t *testing.T) {
 	os.Remove(modulePath)
-	os.RemoveAll("./tmp")
+	os.RemoveAll("tmp")
 }
 
-var modulePath = "./fixtures/assets.go"
+var modulePath = "fixtures/assets.go"
 
 func TestIntegration(t *testing.T) {
 	cleanup(t)
-	os.MkdirAll("./tmp", 0755)
+	os.MkdirAll("tmp", 0755)
 	b, err := ioutil.ReadFile("goassets-test/main.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile("./tmp/main.go", b, 0755); err != nil {
+	if err := ioutil.WriteFile("tmp/main.go", b, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if fileExists("./tmp/assets.go") {
+	if fileExists("tmp/assets.go") {
 		t.Fatal("expected file to not exist")
 	}
 	wd, err := os.Getwd()
@@ -44,10 +44,10 @@ func TestIntegration(t *testing.T) {
 	cmd.Dir = "tmp"
 	b, err = cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("%s: %s", err, string(b))
+		t.Fatalf("error running %s with %#v: %s\n%s", cmd.Path, cmd.Args, err, string(b))
 	}
 	out := string(b)
-	if !fileExists("./tmp/assets.go") {
+	if !fileExists("tmp/assets.go") {
 		t.Error("expected file to exist")
 	}
 
