@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -e
 
 export GOROOT=${GOROOT:-/usr/local/go1.4.3}
 if [[ -n $WORKSPACE ]]; then
@@ -20,14 +20,20 @@ d=$(mktemp -d /tmp/build-XXXX)
 
 info=$(bash ./build_info.sh)
 
+if [[ -z $info ]]; then
+  echo "info must not be blank"
+  exit 1
+fi
+
 for os in darwin linux; do
   for name in wunderproxy/wunderproxy wunderproxy/wunderstatus; do
-    n=$(basename $name)
-    echo "building $n with os $os"
-    GOOS=$os go build -ldflags "-X main.BUILD_INFO $info" -o $d/${os}_amd64/$n github.com/dynport/dgtk/$name
+    echo "building $name with os $os"
+    GOOS=$os go build -ldflags "-X main.BUILD_INFO $info" -o $d/${os}_amd64/$(basename $name) github.com/dynport/dgtk/$name
   done
 done
 
 if [[ -n $GIT_COMMIT && -n $JOB_NAME && -n $BUILDS_BUCKET ]]; then
   aws s3 sync --delete $d/ s3://${BUILDS_BUCKET}/builds/${JOB_NAME}/$GIT_COMMIT/
+  echo $info > $d/current.json
+  aws s3 cp $d/current.json s3://${BUILDS_BUCKET}/builds/${JOB_NAME}/current.json
 fi
