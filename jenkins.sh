@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e
 
 export GOROOT=${GOROOT:-/usr/local/go1.4.3}
 if [[ -n $WORKSPACE ]]; then
@@ -13,7 +14,7 @@ pushd $DYNPORT_GO_PATH/dgtk
 
 go get -d ./...
 make ego
-go test -v ./...
+go test ./...
 go vet ./...
 
 d=$(mktemp -d /tmp/build-XXXX)
