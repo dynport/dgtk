@@ -25,7 +25,7 @@ build=$(cat <<EOF
 {
   "built_at":    "$BUILT_AT",
   "git_history": $GIT_HISTORY,
-  "git_sha":     "$(echo $GIT_COMMIT | cut -b 1-12)",
+  "git_sha":     "$GIT_COMMIT",
   "changes":     $(if git status --porcelain > /dev/null 2>&1; then echo true; else false; fi),
   "hostname":    "$(hostname)",
   "user":        "$(whoami)"
