@@ -2,13 +2,20 @@ package gosql
 
 import (
 	"database/sql"
+	"os"
 	"sort"
 	"testing"
 
 	_ "github.com/lib/pq"
 )
 
+var runIntegrationTests = os.Getenv("RUN_INTEGRATION_TESTS") == "true"
+
 func connect(t *testing.T) (db *sql.DB) {
+	if !runIntegrationTests {
+		t.SkipNow()
+		return nil
+	}
 	err := func() error {
 		var err error
 		db, err = sql.Open("postgres", "postgres://localhost/gosql_test?sslmode=disable")

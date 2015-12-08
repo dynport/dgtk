@@ -1,11 +1,15 @@
 package es
 
 import (
+	"os"
 	"testing"
 	"time"
 )
 
 func TestIndexer(t *testing.T) {
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.SkipNow()
+	}
 	index.DeleteIndex()
 	if _, err := index.CreateIndex(KeywordIndex()); err != nil {
 		t.Fatal(err)

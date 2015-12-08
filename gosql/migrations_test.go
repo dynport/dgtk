@@ -13,6 +13,10 @@ import (
 const dbUrl = "postgres://tobias@localhost/gosql_test?sslmode=disable"
 
 func testDb(t *testing.T) (db *sql.DB) {
+	if !runIntegrationTests {
+		t.SkipNow()
+		return nil
+	}
 	var e error
 	e = func() error {
 		db, e = sql.Open("postgres", dbUrl)
