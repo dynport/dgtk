@@ -112,7 +112,7 @@ type ContainerConfig struct {
 	Dns             []string
 	Image           string // Name of the image as it was passed by the operator (eg. could be symbolic)
 	Volumes         map[string]struct{}
-	VolumesFrom     string
+	VolumesFrom     interface{} `json:"VolumesFrom,omitempty"`
 	WorkingDir      string
 	Entrypoint      []string
 	NetworkDisabled bool
