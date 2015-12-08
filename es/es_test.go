@@ -46,6 +46,9 @@ func setupIndex() error {
 }
 
 func TestDeleteFromImage(t *testing.T) {
+	if !runIntegrationTests {
+		t.SkipNow()
+	}
 	validateEsRunning(t)
 	failIfError(t, setupIndex())
 	failIfError(t, index.Refresh())

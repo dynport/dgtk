@@ -6,8 +6,10 @@ import (
 	"time"
 )
 
+var runIntegrationTests = os.Getenv("RUN_INTEGRATION_TESTS") == "true"
+
 func TestIndexer(t *testing.T) {
-	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+	if !runIntegrationTests {
 		t.SkipNow()
 	}
 	index.DeleteIndex()

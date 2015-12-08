@@ -5,6 +5,9 @@ import (
 )
 
 func TestCreateIndex(t *testing.T) {
+	if !runIntegrationTests {
+		t.SkipNow()
+	}
 	_ = index.DeleteIndex()
 	_, err := index.CreateIndex(KeywordIndex())
 	failIfError(t, err)
