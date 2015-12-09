@@ -14,6 +14,7 @@ import (
 
 	"github.com/dynport/dgtk/dockerclient"
 	"github.com/dynport/dgtk/git"
+	"github.com/dynport/gossh"
 )
 
 type Build struct {
@@ -40,7 +41,7 @@ type Build struct {
 
 	msgList []message
 
-	client *dockerclient.DockerHost
+	client *dockerclient.Client
 }
 
 type message struct {
@@ -82,11 +83,22 @@ func (b *Build) connectToDockerHost() (e error) {
 		if port == 0 {
 			port = 4243
 		}
-		b.client, e = dockerclient.New(b.DockerHost, port)
-		return e
+		b.client = dockerclient.New(fmt.Sprintf("http://%s:%d", b.DockerHost, port))
+		return nil
 	}
-	b.client, e = dockerclient.NewViaTunnel(b.DockerHost, b.DockerHostUser, b.DockerHostPassword)
-	return e
+	c := gossh.New(b.DockerHost, b.DockerHostUser)
+	c.SetPassword(b.DockerHostPassword)
+	con, err := c.Connection()
+	if err != nil {
+		return err
+	}
+	t := &http.Transport{}
+	t.Dial = con.Dial
+	cl := &http.Client{Transport: t}
+	dc := dockerclient.New("http://" + b.DockerHost + ":4243")
+	dc.Client = cl
+	b.client = dc
+	return nil
 }
 
 func (b *Build) BuildAndPush() (string, error) {

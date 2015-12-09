@@ -43,12 +43,12 @@ func (opts *ListContainersOptions) Encode() string {
 }
 
 // Get a list of all ontainers available on the host.
-func (dh *DockerHost) Containers() (containers []*docker.Container, e error) {
+func (dh *Client) Containers() (containers []*docker.Container, e error) {
 	return dh.ListContainers(nil)
 }
 
-func (dh *DockerHost) ListContainers(opts *ListContainersOptions) (containers []*docker.Container, e error) {
-	u := dh.url() + "/containers/json"
+func (dh *Client) ListContainers(opts *ListContainersOptions) (containers []*docker.Container, e error) {
+	u := dh.Address + "/containers/json"
 	if opts != nil {
 		if params := opts.Encode(); params != "" {
 			u += "?" + params
@@ -59,15 +59,15 @@ func (dh *DockerHost) ListContainers(opts *ListContainersOptions) (containers []
 }
 
 // Get the information for the container with the given id.
-func (dh *DockerHost) Container(containerId string) (containerInfo *docker.ContainerInfo, e error) {
+func (dh *Client) Container(containerId string) (containerInfo *docker.ContainerInfo, e error) {
 	containerInfo = &docker.ContainerInfo{}
-	e = dh.getJSON(dh.url()+"/containers/"+containerId+"/json", containerInfo)
+	e = dh.getJSON(dh.Address+"/containers/"+containerId+"/json", containerInfo)
 	return containerInfo, e
 }
 
 // For the given image name and the given container configuration, create a container. If the image name deosn't contain
 // a tag "latest" is used by default.
-func (dh *DockerHost) CreateContainer(options *docker.ContainerConfig, name string) (containerId string, e error) {
+func (dh *Client) CreateContainer(options *docker.ContainerConfig, name string) (containerId string, e error) {
 	imageId := options.Image
 
 	// Verify image available on host.
@@ -85,7 +85,7 @@ func (dh *DockerHost) CreateContainer(options *docker.ContainerConfig, name stri
 	options.Env = append(options.Env, "DOCKER_IMAGE="+imgDetails.Id)
 
 	container := &docker.Container{}
-	u := dh.url() + "/containers/create"
+	u := dh.Address + "/containers/create"
 
 	if name != "" {
 		u += "?name=" + name
@@ -98,20 +98,20 @@ func (dh *DockerHost) CreateContainer(options *docker.ContainerConfig, name stri
 }
 
 // Start the container with the given identifier. The hostConfig can safely be set to nil to use the defaults.
-func (dh *DockerHost) StartContainer(containerId string, hostConfig *docker.HostConfig) (e error) {
+func (dh *Client) StartContainer(containerId string, hostConfig *docker.HostConfig) (e error) {
 	if hostConfig == nil {
 		hostConfig = &docker.HostConfig{}
 	}
-	_, e = dh.postJSON(dh.url()+"/containers/"+containerId+"/start", hostConfig, nil)
+	_, e = dh.postJSON(dh.Address+"/containers/"+containerId+"/start", hostConfig, nil)
 	return e
 }
 
-func (dh *DockerHost) RemoveContainer(containerId string) error {
-	req, e := http.NewRequest("DELETE", dh.url()+"/containers/"+containerId, nil)
+func (dh *Client) RemoveContainer(containerId string) error {
+	req, e := http.NewRequest("DELETE", dh.Address+"/containers/"+containerId, nil)
 	if e != nil {
 		return e
 	}
-	rsp, e := dh.httpClient.Do(req)
+	rsp, e := dh.Client.Do(req)
 	if e != nil {
 		return e
 	}
@@ -122,8 +122,8 @@ func (dh *DockerHost) RemoveContainer(containerId string) error {
 }
 
 // Kill the container with the given identifier.
-func (dh *DockerHost) StopContainer(containerId string) (e error) {
-	rsp, e := dh.post(dh.url() + "/containers/" + containerId + "/kill")
+func (dh *Client) StopContainer(containerId string) (e error) {
+	rsp, e := dh.post(dh.Address + "/containers/" + containerId + "/kill")
 	defer rsp.Body.Close()
 	return e
 }
@@ -215,11 +215,11 @@ func handleMessages(r io.Reader, stdout io.Writer, stderr io.Writer) error {
 }
 
 // Attach to the given container with the given writer.
-func (dh *DockerHost) AttachContainer(containerId string, opts *AttachOptions) (e error) {
+func (dh *Client) AttachContainer(containerId string, opts *AttachOptions) (e error) {
 	if opts == nil {
 		opts = &AttachOptions{}
 	}
-	rsp, e := dh.post(dh.url() + "/containers/" + containerId + "/attach" + opts.Encode())
+	rsp, e := dh.post(dh.Address + "/containers/" + containerId + "/attach" + opts.Encode())
 	if e != nil {
 		return e
 	}

@@ -24,8 +24,8 @@ type DockerHostInfo struct {
 	OperatingSystem    string
 }
 
-func (dh *DockerHost) HostInfo() (*DockerHostInfo, error) {
-	u := dh.url() + "/info"
+func (dh *Client) HostInfo() (*DockerHostInfo, error) {
+	u := dh.Address + "/info"
 
 	dhi := &DockerHostInfo{}
 	return dhi, dh.getJSON(u, &dhi)

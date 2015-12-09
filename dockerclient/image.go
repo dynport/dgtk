@@ -20,21 +20,21 @@ var (
 )
 
 // Get the list of all images available on the this host.
-func (dh *DockerHost) Images() (images []*docker.Image, e error) {
-	e = dh.getJSON(dh.url()+"/images/json", &images)
+func (dh *Client) Images() (images []*docker.Image, e error) {
+	e = dh.getJSON(dh.Address+"/images/json", &images)
 	return images, e
 }
 
 // Get the details for image with the given id (either hash or name).
-func (dh *DockerHost) ImageDetails(id string) (imageDetails *docker.ImageDetails, e error) {
+func (dh *Client) ImageDetails(id string) (imageDetails *docker.ImageDetails, e error) {
 	imageDetails = &docker.ImageDetails{}
-	return imageDetails, dh.getJSON(dh.url()+"/images/"+id+"/json", imageDetails)
+	return imageDetails, dh.getJSON(dh.Address+"/images/"+id+"/json", imageDetails)
 }
 
 // Get the given image's history.
-func (dh *DockerHost) ImageHistory(id string) (imageHistory *docker.ImageHistory, e error) {
+func (dh *Client) ImageHistory(id string) (imageHistory *docker.ImageHistory, e error) {
 	imageHistory = &docker.ImageHistory{}
-	e = dh.getJSON(dh.url()+"/images/"+id+"/history", imageHistory)
+	e = dh.getJSON(dh.Address+"/images/"+id+"/history", imageHistory)
 	return imageHistory, e
 }
 
@@ -64,7 +64,7 @@ func (opts *BuildImageOptions) encode() string {
 
 // Create a new image from the given dockerfile. If name is non empty the new image is named accordingly. If a writer is
 // given it is used to send the docker output to.
-func (dh *DockerHost) BuildDockerfile(dockerfile string, opts *BuildImageOptions) (imageId string, e error) {
+func (dh *Client) BuildDockerfile(dockerfile string, opts *BuildImageOptions) (imageId string, e error) {
 	r, e := dh.createDockerfileArchive(dockerfile)
 	if e != nil {
 		return "", e
@@ -74,8 +74,8 @@ func (dh *DockerHost) BuildDockerfile(dockerfile string, opts *BuildImageOptions
 }
 
 // Build a container image from a tar or tar.gz Reader
-func (dh *DockerHost) Build(r io.Reader, opts *BuildImageOptions) (imageId string, e error) {
-	u := dh.url() + "/build"
+func (dh *Client) Build(r io.Reader, opts *BuildImageOptions) (imageId string, e error) {
+	u := dh.Address + "/build"
 	if opts == nil {
 		opts = &BuildImageOptions{}
 	}
@@ -93,11 +93,11 @@ func (dh *DockerHost) Build(r io.Reader, opts *BuildImageOptions) (imageId strin
 }
 
 // Tag the image with the given repository and tag. The tag is optional.
-func (dh *DockerHost) TagImage(imageId, repository, tag string) (e error) {
+func (dh *Client) TagImage(imageId, repository, tag string) (e error) {
 	if repository == "" {
 		return fmt.Errorf("empty repository given")
 	}
-	url := dh.url() + "/images/" + imageId + "/tag?repo=" + repository
+	url := dh.Address + "/images/" + imageId + "/tag?repo=" + repository
 
 	if tag != "" {
 		url += "&tag=" + tag
@@ -109,15 +109,26 @@ func (dh *DockerHost) TagImage(imageId, repository, tag string) (e error) {
 	return rsp.Body.Close()
 }
 
+func (dh *Client) PullFromImage(image string) error {
+	v := url.Values{"fromImage": {image}}
+	rsp, e := dh.post(dh.Address + "/images/create?" + v.Encode())
+	if e != nil {
+		return e
+	}
+	defer rsp.Body.Close()
+
+	return handleJSONStream(rsp.Body, handlePullImageMessage)
+}
+
 // Pull the given image from the registry (part of the image name).
-func (dh *DockerHost) PullImage(name string) error {
+func (dh *Client) PullImage(name string) error {
 	if name == "" {
 		return fmt.Errorf("no image name given")
 	}
 
 	registry, repository, tag := splitImageName(name)
 
-	reqUrl := dh.url() + "/images/create"
+	reqURL := dh.Address + "/images/create"
 	values := &url.Values{}
 	values.Add("fromImage", registry+"/"+repository)
 	values.Add("repo", repository)
@@ -128,7 +139,7 @@ func (dh *DockerHost) PullImage(name string) error {
 		values.Add("tag", tag)
 	}
 
-	rsp, e := dh.post(reqUrl + "?" + values.Encode())
+	rsp, e := dh.post(reqURL + "?" + values.Encode())
 	if e != nil {
 		return e
 	}
@@ -152,7 +163,7 @@ type PushImageOptions struct {
 }
 
 // Push the given image to the registry. The name should be <registry>/<repository>.
-func (dh *DockerHost) PushImage(name string, opts *PushImageOptions) error {
+func (dh *Client) PushImage(name string, opts *PushImageOptions) error {
 	if name == "" {
 		return fmt.Errorf("no image name given")
 	}
@@ -168,7 +179,7 @@ func (dh *DockerHost) PushImage(name string, opts *PushImageOptions) error {
 
 	buf := &bytes.Buffer{}
 	buf.WriteString(FAKE_AUTH)
-	url := dh.url() + "/images/" + registry + "/" + image + "/push?tag=" + tag
+	url := dh.Address + "/images/" + registry + "/" + image + "/push?tag=" + tag
 
 	rsp, e := dh.postWithReader(url, buf)
 	if e != nil {
@@ -179,24 +190,18 @@ func (dh *DockerHost) PushImage(name string, opts *PushImageOptions) error {
 	return handleJSONStream(rsp.Body, opts.Callback)
 }
 
-func handlePushImageMessage(msg *JSONMessage) {
-	if e := msg.Err(); e != nil {
-		log.Printf("error pushing image: %s", e)
-	}
-}
-
 // Delete the given image from the docker host.
-func (dh *DockerHost) DeleteImage(name string) error {
+func (dh *Client) DeleteImage(name string) error {
 	if name == "" {
 		return fmt.Errorf("no image name given")
 	}
 
-	req, e := http.NewRequest("DELETE", dh.url()+"/images/"+name, nil)
+	req, e := http.NewRequest("DELETE", dh.Address+"/images/"+name, nil)
 	if e != nil {
 		return e
 	}
 
-	resp, e := dh.httpClient.Do(req)
+	resp, e := dh.Client.Do(req)
 	if e != nil {
 		return e
 	}
@@ -208,7 +213,7 @@ func (dh *DockerHost) DeleteImage(name string) error {
 	return nil
 }
 
-func (self *DockerHost) createDockerfileArchive(dockerfile string) (buf *bytes.Buffer, e error) {
+func (self *Client) createDockerfileArchive(dockerfile string) (buf *bytes.Buffer, e error) {
 	body := []byte(dockerfile)
 	buf = new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -225,7 +230,7 @@ func (self *DockerHost) createDockerfileArchive(dockerfile string) (buf *bytes.B
 	return buf, nil
 }
 
-func (dh *DockerHost) waitForTag(repository, tag string, timeout int) error {
+func (dh *Client) waitForTag(repository, tag string, timeout int) error {
 	for {
 		_, e := dh.ImageDetails(repository + ":" + tag)
 		if e != nil {
