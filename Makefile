@@ -40,3 +40,6 @@ ego: confirm/ego.go
 
 confirm/ego.go: $(shell ls confirm/*.ego)
 	cd confirm && ego -package=confirm
+
+dc:
+	bash ./deadcode.sh
