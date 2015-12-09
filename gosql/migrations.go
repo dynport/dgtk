@@ -115,8 +115,6 @@ type Migration struct {
 	Executed  bool
 }
 
-const errorMigrationsDoesNotExist = `pq: relation "migrations" does not exist`
-
 func setupMigrations(tx Dbi) (sql.Result, error) {
 	row := tx.QueryRow("SELECT COUNT(1) FROM pg_tables WHERE schemaname = $1 AND tablename = $2", "public", "migrations")
 	var cnt int

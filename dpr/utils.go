@@ -17,14 +17,3 @@ func writeTags(tags map[string]string, w http.ResponseWriter) {
 		log.Println("ERROR: " + e.Error())
 	}
 }
-
-func loadImage(p string) (*Image, error) {
-	f, e := os.Open(p)
-	if e != nil {
-		return nil, e
-	}
-	defer f.Close()
-	i := &Image{}
-	e = json.NewDecoder(f).Decode(i)
-	return i, e
-}

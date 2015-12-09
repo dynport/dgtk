@@ -106,8 +106,6 @@ type Migration struct {
 	Logger    logger
 }
 
-const errorMigrationsDoesNotExist = `pq: relation "migrations" does not exist`
-
 func (list Migrations) setup(tx *sql.Tx) (sql.Result, error) {
 	row := tx.QueryRow("SELECT COUNT(1) FROM pg_tables WHERE schemaname = $1 AND tablename = $2", "public", "migrations")
 	var cnt int
@@ -176,12 +174,4 @@ func (m *Migration) Execute(tx *sql.Tx) error {
 	}
 	m.log("EXEC", time.Since(started))
 	return err
-}
-
-func sameStatement(a, b string) bool {
-	if a == b {
-		return true
-	}
-	// TODO: think of actually implementing a match
-	return false
 }

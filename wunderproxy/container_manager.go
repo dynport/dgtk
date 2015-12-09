@@ -22,7 +22,7 @@ type ContainerManager struct {
 
 	AppName string
 
-	dockerHost *dockerclient.DockerHost
+	dockerHost *dockerclient.Client
 	s3client   *s3.Client
 
 	containerEnv     map[string]string
@@ -49,12 +49,7 @@ func NewContainerManager(s3Bucket, s3Prefix, appname string, proxy *Proxy, cfgFi
 		}
 	}
 
-	var e error
-	cm.dockerHost, e = dockerclient.New("127.0.0.1", 4243)
-	if e != nil {
-		return nil, e
-	}
-
+	cm.dockerHost = dockerclient.New("http://127.0.0.1:4243")
 	return cm, func() error {
 		err := cm.runLatest()
 		switch err {

@@ -141,24 +141,6 @@ func diffInt(a int, b interface{}) *DiffResult {
 	return &DiffResult{Diff: fmt.Sprintf("%v != %v", a, b)}
 }
 
-func diffStringSlice(a []string, b interface{}) *DiffResult {
-	if tb, ok := b.([]string); ok {
-		if len(a) == len(tb) {
-			diff := []string{}
-			for i, v := range a {
-				if v != tb[i] {
-					diff = append(diff, fmt.Sprintf("%d: %v != %v", i, v, tb[i]))
-				}
-			}
-			if len(diff) == 0 {
-				return nil
-			}
-			return &DiffResult{Diff: strings.Join(diff, "\n")}
-		}
-	}
-	return &DiffResult{Diff: fmt.Sprintf("%v != %v", a, b)}
-}
-
 func diffString(a string, b interface{}) *DiffResult {
 	if tb, ok := b.(string); ok {
 		if a == tb {

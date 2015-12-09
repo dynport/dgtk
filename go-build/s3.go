@@ -29,12 +29,10 @@ var (
 
 const (
 	minPartSize                = 5 * 1024 * 1024
-	defaultEndpointHost        = "s3.amazonaws.com"
 	headerContentMd5           = "Content-Md5"
 	headerContentType          = "Content-Type"
 	headerDate                 = "Date"
 	headerAuthorization        = "Authorization"
-	amzAclPublic               = "public-read"
 	defaultContentType         = "application/octet-stream"
 	headerAmzAcl               = "x-amz-acl"
 	headerServerSideEncruption = "x-amz-server-side-encryption"

@@ -22,20 +22,6 @@ func handleRequired(tagMap map[string]string) (required bool, e error) {
 	return false, nil
 }
 
-func handleVariadic(tagMap map[string]string) (required bool, e error) {
-	if value, found := tagMap["variadic"]; found {
-		switch value {
-		case "true":
-			return true, nil
-		case "false":
-			// ignore; default value is false anyway.
-		default:
-			return false, fmt.Errorf(`wrong value for "variadic" tag: %q`, value)
-		}
-	}
-	return false, nil
-}
-
 func handlePresetValue(field reflect.StructField, value reflect.Value) string {
 	switch field.Type.Kind() {
 	case reflect.String:

@@ -11,8 +11,6 @@ type Request struct {
 	*Sort        `json:"sort,omitempty"`
 }
 
-type hash map[string]interface{}
-
 func (request *Request) AddFacet(key string, facet *Facet) {
 	if request.Facets == nil {
 		request.Facets = Facets{}

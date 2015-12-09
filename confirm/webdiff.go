@@ -19,12 +19,6 @@ func WebDiff(actions []*Action) (chan bool, error) {
 	return c, open.URL(s.URL)
 }
 
-var actionColors = map[Type]string{
-	TypeCreate: "lightgreen",
-	TypeUpdate: "orange",
-	TypeDelete: "pink",
-}
-
 func webDiffHandler(actions []*Action) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		buf := &bytes.Buffer{}

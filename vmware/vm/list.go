@@ -31,7 +31,3 @@ func (list *ListAction) Run() error {
 	logger.Println(table)
 	return nil
 }
-
-func runningVMs() ([]string, error) {
-	return nil, nil
-}

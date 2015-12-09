@@ -5,10 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 
 	"github.com/codegangsta/martini"
-	"github.com/dynport/dgtk/log"
 )
 
 func main() {
@@ -17,23 +15,6 @@ func main() {
 		case "server":
 			server()
 		}
-	}
-}
-
-func runCommandFromArgs() {
-	if len(os.Args) > 2 {
-		c := os.Args[2]
-		args := []string{}
-		if len(os.Args) > 3 {
-			args = os.Args[3:]
-		}
-		log.Info("starting %s with %v", c, args)
-		go func() {
-			cmd := exec.Command(c, args...)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			cmd.Start()
-		}()
 	}
 }
 

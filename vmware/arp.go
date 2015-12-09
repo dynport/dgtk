@@ -15,12 +15,10 @@ type NetworkInterface struct {
 }
 
 const (
-	fieldName = iota
-	fieldIP
-	fieldAt
-	fieldMac
-	fieldOn
-	fieldInterface
+	fieldName      = 0
+	fieldIP        = 1
+	fieldMac       = 3
+	fieldInterface = 5
 )
 
 func LoadArpInterfaces() ([]*NetworkInterface, error) {

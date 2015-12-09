@@ -34,10 +34,6 @@ func debugStream() io.Writer {
 	return ioutil.Discard
 }
 
-func extractName(p string) string {
-	return strings.TrimSuffix(path.Base(p), ".json")
-}
-
 type config struct {
 	AWSAccessKeyId     string `json:"aws_access_key_id,omitempty"`
 	AWSSecretAccessKey string `json:"aws_secret_access_key,omitempty"`

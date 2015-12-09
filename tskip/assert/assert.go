@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/dynport/dgtk/tskip/tskip"
 )
@@ -101,20 +100,4 @@ func messageString(defaultMessage string, messages []interface{}) string {
 		o = append(o, fmt.Sprint(s))
 	}
 	return strings.Join(o, " ")
-}
-
-func waitFor(checkEvery time.Duration, maxWait time.Duration, check func() bool) bool {
-	checkTimer := time.NewTimer(checkEvery)
-	maxWaitTimer := time.NewTimer(maxWait)
-	for {
-		select {
-		case <-maxWaitTimer.C:
-			return false
-		case <-checkTimer.C:
-			if check() {
-				return true
-			}
-			checkTimer.Reset(checkEvery)
-		}
-	}
 }

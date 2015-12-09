@@ -27,7 +27,6 @@ func debugStream() io.Writer {
 }
 
 var dbg = log.New(debugStream(), "[DEBUG] ", log.Lshortfile)
-var logger = log.New(os.Stderr, "", 0)
 
 func main() {
 	if e := run(); e != nil {
@@ -57,14 +56,6 @@ func run() error {
 		}
 	}
 	return e
-}
-
-func splitBucket(bucketWithPrefix string) (string, string) {
-	parts := strings.SplitN(bucketWithPrefix, "/", 2)
-	if len(parts) == 2 {
-		return parts[0], parts[1]
-	}
-	return bucketWithPrefix, ""
 }
 
 func build(dir string) (string, error) {

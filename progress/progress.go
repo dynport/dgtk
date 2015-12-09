@@ -43,12 +43,6 @@ func newProgress() *Progress {
 	return &Progress{started: time.Now().UTC()}
 }
 
-func newWithTotal(total int) *Progress {
-	p := newProgress()
-	p.total = total
-	return p
-}
-
 func (p *Progress) Write(b []byte) (int, error) {
 	p.inc <- len(b)
 	return len(b), nil
