@@ -89,6 +89,10 @@ type ContainerInfo struct {
 	ContainerConfig ContainerConfig `json:"Config"`
 	NetworkConfig   NetworkSettings `json:"NetworkSettings"`
 	HostConfig      HostConfig      `json:"HostConfig"`
+	State           struct {
+		Status   string
+		ExitCode int
+	}
 }
 
 // https://github.com/dotcloud/docker/blob/master/container.go#L60-81
