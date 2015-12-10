@@ -10,7 +10,7 @@ type Client struct {
 
 // Create a new connection to a docker host reachable at the given host and port.
 func New(addr string) *Client {
-	return &Client{Address: addr}
+	return &Client{Address: addr, Client: &http.Client{}}
 }
 
 const FAKE_AUTH = `
