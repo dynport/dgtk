@@ -66,6 +66,7 @@ type Container struct {
 	SizeRw     int
 	SizeRootFs int
 	Names      []string
+	Labels     map[string]string
 }
 
 func (self *Container) CreatedAt() time.Time {
