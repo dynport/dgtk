@@ -36,6 +36,9 @@ type JSONProgress struct {
 }
 
 func handleJSONStream(r io.Reader, f func(msg *JSONMessage)) error {
+	if f == nil {
+		f = HandlePullImageMessage
+	}
 	dec := json.NewDecoder(r)
 
 	for {

@@ -109,7 +109,7 @@ func (dh *Client) TagImage(imageId, repository, tag string) (e error) {
 	return rsp.Body.Close()
 }
 
-func (dh *Client) PullFromImage(image string) error {
+func (dh *Client) PullFromImage(image string, handler func(*JSONMessage)) error {
 	v := url.Values{"fromImage": {image}}
 	rsp, e := dh.post(dh.Address + "/images/create?" + v.Encode())
 	if e != nil {
@@ -119,7 +119,7 @@ func (dh *Client) PullFromImage(image string) error {
 	if rsp.Status[0] != '2' {
 		return fmt.Errorf("expected status 2xx, was %d", rsp.StatusCode)
 	}
-	return handleJSONStream(rsp.Body, handlePullImageMessage)
+	return handleJSONStream(rsp.Body, handler)
 }
 
 // Pull the given image from the registry (part of the image name).
@@ -149,10 +149,10 @@ func (dh *Client) PullImage(name string) error {
 	if rsp.Status[0] != '2' {
 		return fmt.Errorf("expected status 2xx, was %d", rsp.StatusCode)
 	}
-	return handleJSONStream(rsp.Body, handlePullImageMessage)
+	return handleJSONStream(rsp.Body, HandlePullImageMessage)
 }
 
-func handlePullImageMessage(msg *JSONMessage) {
+func HandlePullImageMessage(msg *JSONMessage) {
 	if e := msg.Err(); e != nil {
 		log.Printf("error creating image: %s", e)
 	}
@@ -173,7 +173,7 @@ func (dh *Client) PushImage(name string, opts *PushImageOptions) error {
 	}
 
 	if opts == nil {
-		opts = &PushImageOptions{Callback: handlePullImageMessage}
+		opts = &PushImageOptions{Callback: HandlePullImageMessage}
 	}
 
 	registry, image, tag := splitImageName(name)
