@@ -92,6 +92,9 @@ type ContainerInfo struct {
 	HostConfig      HostConfig      `json:"HostConfig"`
 	State           struct {
 		Status   string
+		Running  bool
+		Paused   bool
+		Dead     bool
 		ExitCode int
 	}
 }
