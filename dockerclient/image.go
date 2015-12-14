@@ -116,7 +116,9 @@ func (dh *Client) PullFromImage(image string) error {
 		return e
 	}
 	defer rsp.Body.Close()
-
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("expected status 2xx, was %d", rsp.StatusCode)
+	}
 	return handleJSONStream(rsp.Body, handlePullImageMessage)
 }
 
@@ -144,7 +146,9 @@ func (dh *Client) PullImage(name string) error {
 		return e
 	}
 	defer rsp.Body.Close()
-
+	if rsp.Status[0] != '2' {
+		return fmt.Errorf("expected status 2xx, was %d", rsp.StatusCode)
+	}
 	return handleJSONStream(rsp.Body, handlePullImageMessage)
 }
 
