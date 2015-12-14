@@ -121,4 +121,5 @@ type ContainerConfig struct {
 	WorkingDir      string
 	Entrypoint      []string
 	NetworkDisabled bool
+	HostConfig      HostConfig
 }
