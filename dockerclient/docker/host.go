@@ -7,7 +7,7 @@ type HostConfig struct {
 	NetworkMode     string
 	Binds           []string
 	PortBindings    map[Port][]PortBinding
-	LxcConf         map[string]string
+	LxcConf         interface{}
 }
 
 type PortBinding struct {
