@@ -96,6 +96,7 @@ type ContainerInfo struct {
 		Paused   bool
 		Dead     bool
 		ExitCode int
+		Pid      int
 	}
 }
 
