@@ -16,6 +16,7 @@ func NewBatchIndexer(addr string) *BatchIndexer {
 		Address:       addr,
 		buf:           &bytes.Buffer{},
 		doClose:       make(chan struct{}),
+		doFlush:       make(chan chan struct{}),
 		closed:        make(chan struct{}),
 		docs:          make(chan *Doc),
 		flushCount:    1000,
@@ -32,6 +33,7 @@ type BatchIndexer struct {
 	docs          chan *Doc
 	closed        chan struct{}
 	doClose       chan struct{}
+	doFlush       chan chan struct{}
 	lastFlush     time.Time
 	flushDuration time.Duration
 	flushCount    int
@@ -72,6 +74,9 @@ func (i *BatchIndexer) start() {
 		case <-t.C:
 			// index
 			i.checkFlush()
+		case c := <-i.doFlush:
+			i.flush()
+			c <- struct{}{}
 		case <-i.doClose:
 			// should stop indexing
 			i.flush()
@@ -90,6 +95,12 @@ func (i *BatchIndexer) checkFlush() bool {
 	}
 	i.flush()
 	return true
+}
+
+func (i *BatchIndexer) Flush() {
+	c := make(chan struct{})
+	i.doFlush <- c
+	<-c
 }
 
 func (i *BatchIndexer) flush() {
