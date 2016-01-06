@@ -4,37 +4,48 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func setup(t *testing.T) {
-	os.RemoveAll("tmp")
-	e := func() error {
-		if err := os.MkdirAll("tmp", 0755); err != nil {
+func setup() (string, error) {
+	root, err := ioutil.TempDir("/tmp", "goassets-")
+	if err != nil {
+		return "", err
+	}
+	d := filepath.Join(root, "tmp")
+	err = func() error {
+		if err := os.MkdirAll(d, 0755); err != nil {
 			return err
 		}
-		f, e := os.Create("tmp/a.txt")
+		f, e := os.Create(filepath.Join(d, "a.txt"))
 		if e != nil {
 			return e
 		}
 		defer f.Close()
-		_, e = f.Write([]byte("just a test"))
-		return e
+		_, err := f.Write([]byte("just a test"))
+		return err
 	}()
-	if e != nil {
-		t.Fatal(e)
+	if err != nil {
+		os.RemoveAll(root)
+		return "", err
 	}
+	return root, nil
 }
 
 func TestDefaults(t *testing.T) {
-	setup(t)
-	c := exec.Command("go", "run", "goassets.go", "--file", "tmp/assets.go", "tmp")
+	d, err := setup()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(d)
+	c := exec.Command("go", "run", "goassets.go", "--file", filepath.Join(d, "tmp", "assets.go"), d)
 	b, err := c.CombinedOutput()
 	if err != nil {
 		t.Fatalf("%s: %s", err, string(b))
 	}
-	b, err = ioutil.ReadFile("tmp/assets.go")
+	b, err = ioutil.ReadFile(filepath.Join(d, "tmp", "assets.go"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,13 +56,17 @@ func TestDefaults(t *testing.T) {
 }
 
 func TestGoassets(t *testing.T) {
-	setup(t)
-	c := exec.Command("go", "run", "goassets.go", "--file", "tmp/assets.go", "--pkg", "main", "tmp")
+	d, err := setup()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(d)
+	c := exec.Command("go", "run", "goassets.go", "--file", filepath.Join(d, "tmp", "assets.go"), "--pkg", "main", filepath.Join(d, "tmp"))
 	b, err := c.CombinedOutput()
 	if err != nil {
 		t.Fatalf("%s: %s", err, string(b))
 	}
-	b, err = ioutil.ReadFile("tmp/assets.go")
+	b, err = ioutil.ReadFile(filepath.Join(d, "tmp", "assets.go"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,12 +74,12 @@ func TestGoassets(t *testing.T) {
 		t.Errorf("expected %q to start with %q", v, ex)
 	}
 
-	if err := ioutil.WriteFile("tmp/main.go", []byte(testProgram), 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(d, "tmp", "main.go"), []byte(testProgram), 0644); err != nil {
 		t.Fatal(err)
 	}
 
 	c = exec.Command("go", "run", "main.go", "assets.go")
-	c.Dir = "tmp"
+	c.Dir = filepath.Join(d, "tmp")
 	b, err = c.CombinedOutput()
 	s := string(b)
 	if err != nil {
