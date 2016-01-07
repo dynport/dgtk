@@ -1,6 +1,7 @@
 package progress
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -21,6 +22,10 @@ func WithTotal(total int) StartFunc {
 	}
 }
 
+func HumanReadable(p *Progress) {
+	p.humanReadable = true
+}
+
 func WithPrinter(printer Printer) StartFunc {
 	return func(p *Progress) {
 		p.printer = printer
@@ -28,10 +33,11 @@ func WithPrinter(printer Printer) StartFunc {
 }
 
 type Progress struct {
-	total   int
-	current int
-	started time.Time
-	printer Printer
+	total         int
+	humanReadable bool
+	current       int
+	started       time.Time
+	printer       Printer
 
 	inc      chan int
 	closer   chan struct{}
@@ -49,19 +55,47 @@ func (p *Progress) Write(b []byte) (int, error) {
 }
 
 type LogPrinter struct {
-	Logger Logger
+	HumanReadable bool
+	Logger        Logger
 }
 
 func (p *LogPrinter) Print(s *Status) {
-	p.Logger.Printf(s.String())
+	p.Logger.Printf(statusToString(s, p.HumanReadable))
+}
+
+func statusToString(status *Status, humanReadable bool) string {
+	perSecond := func() string {
+		if humanReadable {
+			return SizePretty(status.PerSecond())
+		} else {
+			return fmt.Sprintf("%.01f", status.PerSecond())
+		}
+	}()
+	s := fmt.Sprintf("total_time=%.06f per_second=%s", status.RunningSince().Seconds(), perSecond)
+	if status.Total != nil {
+		l := IntLen(*status.Total)
+		prefix := func() string {
+			if humanReadable {
+				return SizePretty(float64(status.Current)) + "/" + SizePretty(float64(*status.Total))
+			}
+			return fmt.Sprintf("cnt=%0*d/%0*d", l, status.Current, l, *status.Total)
+		}()
+		s = prefix + " " + s + fmt.Sprintf(" eta=%.01f", status.ETA().Seconds())
+	} else {
+		s = fmt.Sprintf("cnt=%d ", status.Current) + s
+	}
+	if status.MemStats.Alloc > 0 {
+		s += fmt.Sprintf(" mem_alloc=%s", SizePretty(float64(status.MemStats.Alloc)))
+	}
+	return s
 }
 
 func Start(l Logger, funcs ...func(*Progress)) *Progress {
 	p := newProgress()
-	p.printer = &LogPrinter{l}
 	for _, f := range funcs {
 		f(p)
 	}
+	p.printer = &LogPrinter{Logger: l, HumanReadable: p.humanReadable}
 	p.Start()
 	return p
 }
