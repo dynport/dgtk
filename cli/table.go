@@ -32,7 +32,10 @@ func (t *table) String() string {
 		line := ""
 		for colIdx := range t.rows[rowIdx] {
 			col := t.rows[rowIdx][colIdx]
-			line += fmt.Sprintf("%s%-*s", col, t.colWidth[colIdx]+1-len(col), " ")
+			line += col
+			if colIdx < len(t.rows[rowIdx])-1 {
+				line += fmt.Sprintf("%-*s", t.colWidth[colIdx] + 1 - len(col), " ")
+			}
 		}
 		lines[rowIdx] = line
 	}
