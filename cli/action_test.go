@@ -1015,3 +1015,67 @@ func TestActionWithEmbeddedInterface(t *testing.T) {
 		})
 	})
 }
+
+
+type ActionWithMapArgument struct {
+	Map map[string]string `cli:"opt --map"`
+}
+
+func (a *ActionWithMapArgument) Run() error {
+	return nil
+}
+
+func TestActionWithMapArgument(t *testing.T) {
+	Convey("Given an action with an map argument", t, func() {
+		Convey("When the map is not set", func() {
+			action := &ActionWithMapArgument{}
+			Convey("When the reflect method is called on it", func() {
+				a := testCreateAction("some/path", action)
+				e := a.reflect()
+
+				Convey("Then there is no error", func() {
+					So(e, ShouldBeNil)
+				})
+
+				Convey("Then the map is not set", func() {
+					So(action.Map, ShouldBeNil)
+				})
+			})
+
+			Convey("When the value is not given for parsing", func() {
+				_, e := parseParamsTest(action, []string{})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the map is still not set", func() {
+					So(action.Map, ShouldBeNil)
+				})
+			})
+
+			Convey("When the value is given once for parsing", func() {
+				_, e := parseParamsTest(action, []string{"--map.foo", "bar"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the map contains the given key-value pair", func() {
+					So(action.Map, ShouldContainKey, "foo")
+					So(action.Map["foo"], ShouldEqual, "bar")
+				})
+			})
+
+			Convey("When the value is given twice for parsing", func() {
+				_, e := parseParamsTest(action, []string{"--map.foo", "bar", "--map.fuu", "buz"})
+				Convey("Then no error is returned", func() {
+					So(e, ShouldBeNil)
+				})
+				Convey("Then the map contains the given key-value pairs", func() {
+					So(action.Map, ShouldHaveLength, 2)
+					So(action.Map, ShouldContainKey, "foo")
+					So(action.Map["foo"], ShouldEqual, "bar")
+					So(action.Map, ShouldContainKey, "fuu")
+					So(action.Map["fuu"], ShouldEqual, "buz")
+				})
+			})
+		})
+	})
+}
