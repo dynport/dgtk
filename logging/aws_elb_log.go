@@ -19,6 +19,9 @@ const (
 	elbLogReceivedBytes
 	elbLogSentBytes
 	elbLogRequest
+	elbLogUserAgent
+	elbLogSSLCipher
+	elbLogSSLProtocol
 )
 
 type ElasticLoadBalancerLog struct {
@@ -36,6 +39,9 @@ type ElasticLoadBalancerLog struct {
 	Method                 string
 	Url                    string
 	Action                 string
+	UserAgent              string
+	SSLCipher              string
+	SSLProtocol            string
 }
 
 func (l *ElasticLoadBalancerLog) Load(raw string) error {
@@ -98,6 +104,16 @@ func (l *ElasticLoadBalancerLog) Load(raw string) error {
 				if len(parts) > 0 {
 					l.Action = parts[len(parts)-1]
 				}
+			}
+		case elbLogUserAgent:
+			l.UserAgent = f
+		case elbLogSSLCipher:
+			if f != "-" {
+				l.SSLCipher = f
+			}
+		case elbLogSSLProtocol:
+			if f != "-" {
+				l.SSLProtocol = f
 			}
 		}
 	}
