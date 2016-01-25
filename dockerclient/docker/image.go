@@ -7,12 +7,14 @@ import (
 
 // Basic image information as returned by docker.
 type Image struct {
-	Repository  string   `json:"Repository"`
-	Tags        []string `json:"RepoTags"`
-	Id          string   `json:"Id"`
-	Created     int
-	Size        int
-	VirtualSize int
+	Created     int               `json:"Created"`
+	Id          string            `json:"Id"`
+	Labels      map[string]string `json:"Labels"`
+	RepoDigests []string          `json:"RepoDigests"`
+	Repository  string            `json:"Repository"`
+	Size        int               `json:"Size"`
+	Tags        []string          `json:"RepoTags"`
+	VirtualSize int               `json:"VirtualSize"`
 }
 
 // Image details as returned by docker.
