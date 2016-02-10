@@ -118,6 +118,22 @@ func TestPtrOption(t *testing.T) {
 	}
 }
 
+func TestPtrOptionWithPreset(t *testing.T) {
+	s := "test1234"
+	cmd := new(OptionWPtrTestCommand)
+	cmd.Opt = &s
+	a := testCreateAction("test", cmd)
+
+	err := a.reflect()
+	if err != nil {
+		t.Errorf("expected err to be empty, got %s", err)
+	}
+
+	if a.opts[0].value != "test1234" {
+		t.Errorf("expected option default value to be %q, got %q", s, a.opts[0].value)
+	}
+}
+
 type OptionMapTestCommand struct {
 	First  map[string]string `cli:"opt -f --first"`
 	Second map[string]int64  `cli:"opt -s --second"`
