@@ -23,7 +23,17 @@ func handleRequired(tagMap map[string]string) (required bool, e error) {
 }
 
 func handlePresetValue(field reflect.StructField, value reflect.Value) string {
-	switch field.Type.Kind() {
+	k := field.Type.Kind()
+
+	if k == reflect.Ptr {
+		if value.IsNil() {
+			return ""
+		}
+		k = field.Type.Elem().Kind()
+		value = value.Elem()
+	}
+
+	switch k {
 	case reflect.String:
 		if v := value.String(); v != "" {
 			return v
