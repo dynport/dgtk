@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dynport/dgtk/tagparse"
+	"os"
 )
 
 type action struct {
@@ -275,27 +276,27 @@ func (a *action) reflectArguments() (e error) {
 func (a *action) showHelp() {
 	a.showShortHelp()
 	if a.description != "" {
-		logger.Print("  ", a.description)
+		fmt.Fprintln(os.Stderr, "  ", a.description)
 	}
 
 	optsAvailable := false
 	if len(a.opts) > 0 {
 		optsAvailable = true
-		logger.Print("  OPTIONS")
+		fmt.Fprintln(os.Stderr, "  OPTIONS")
 		for _, opt := range a.opts {
-			logger.Print(opt.description())
+			fmt.Fprintln(os.Stderr, opt.description())
 		}
 	}
 	if len(a.args) > 0 {
 		if optsAvailable {
-			logger.Println()
+			fmt.Fprintln(os.Stderr)
 		}
-		logger.Print("  ARGUMENTS")
+		fmt.Fprintln(os.Stderr, "  ARGUMENTS")
 		for _, arg := range a.args {
-			logger.Print(arg.description())
+			fmt.Fprintln(os.Stderr, arg.description())
 		}
 	}
-	logger.Println()
+	fmt.Fprintln(os.Stderr)
 }
 
 func (a *action) showShortHelp() {
@@ -307,7 +308,7 @@ func (a *action) showShortHelp() {
 		line += arg.shortDescription()
 		line += " "
 	}
-	logger.Print(line)
+	fmt.Fprintln(os.Stderr, line)
 }
 
 func (a *action) showTabularHelp(t *table) {
