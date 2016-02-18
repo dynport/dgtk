@@ -36,7 +36,8 @@ func NewRouter() *Router {
 // action.
 func (r *Router) Run(args ...string) (e error) {
 	if r.initFailed {
-		logger.Fatal("errors found during initialization")
+		fmt.Fprintln(os.Stderr, "errors found during initialization")
+		os.Exit(1)
 	}
 	// Find action and parse args.
 	node, args := r.findNode(args, true)
@@ -79,7 +80,7 @@ func (r *Router) RegisterFunc(path string, f func() error, desc string) {
 func (r *Router) Register(path string, runner Runner, desc string) {
 	a, e := newAction(path, runner, desc)
 	if e != nil {
-		logger.Printf("%s", e)
+		fmt.Fprintln(os.Stderr, e)
 		r.initFailed = true
 		return
 	}
@@ -88,11 +89,11 @@ func (r *Router) Register(path string, runner Runner, desc string) {
 	node, pathSegments := r.findNode(pathSegments, false)
 	if node != nil {
 		if node.action != nil {
-			logger.Printf("failed to register action for path %q: action for path %q already registered", a.path, node.action.path)
+			fmt.Fprintf(os.Stderr, "failed to register action for path %q: action for path %q already registered\n", a.path, node.action.path)
 			r.initFailed = true
 			return
 		} else if len(pathSegments) == 0 && len(node.children) > 0 {
-			logger.Printf("failed to register action for path %q: longer paths with this prefix exist", a.path)
+			fmt.Fprintf(os.Stderr, "failed to register action for path %q: longer paths with this prefix exist\n", a.path)
 			r.initFailed = true
 			return
 		}
@@ -125,7 +126,7 @@ func (rt *routingTreeNode) showHelp() {
 	} else {
 		t := &table{}
 		rt.showTabularHelp(t)
-		fmt.Println(t)
+		fmt.Fprintln(os.Stderr, t)
 	}
 }
 
