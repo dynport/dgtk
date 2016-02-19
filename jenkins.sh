@@ -27,7 +27,7 @@ if [[ -z $info ]]; then
 fi
 
 for os in darwin linux; do
-  for name in wunderproxy/wunderproxy wunderproxy/wunderstatus; do
+  for name in wunderproxy/wunderproxy wunderproxy/wunderstatus dpr/dpr; do
     echo "building $name with os $os"
     GOOS=$os go build -ldflags "-X main.BUILD_INFO $info" -o $d/${os}_amd64/$(basename $name) github.com/dynport/dgtk/$name
   done
