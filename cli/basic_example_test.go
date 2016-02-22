@@ -1,9 +1,6 @@
 package cli
 
-import (
-	"fmt"
-	"os"
-)
+import "fmt"
 
 // Struct used to configure an action.
 type ExampleRunner struct {
@@ -16,7 +13,7 @@ type ExampleRunner struct {
 func (er *ExampleRunner) Run() error {
 	// Called when action matches route.
 	if er.Verbose {
-		fmt.Fprintf(os.Stderr, "Going to execute %q at the following hosts: %v\n", er.Command, er.Hosts)
+		fmt.Fprintf(Stderr, "Going to execute %q at the following hosts: %v\n", er.Command, er.Hosts)
 	}
 	// [..] Executing the SSH command is left to the reader.
 	return nil

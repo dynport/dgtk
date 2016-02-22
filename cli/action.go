@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/dynport/dgtk/tagparse"
-	"os"
 )
 
 type action struct {
@@ -276,27 +275,27 @@ func (a *action) reflectArguments() (e error) {
 func (a *action) showHelp() {
 	a.showShortHelp()
 	if a.description != "" {
-		fmt.Fprintln(os.Stderr, "  ", a.description)
+		fmt.Fprintln(Stderr, "  ", a.description)
 	}
 
 	optsAvailable := false
 	if len(a.opts) > 0 {
 		optsAvailable = true
-		fmt.Fprintln(os.Stderr, "  OPTIONS")
+		fmt.Fprintln(Stderr, "  OPTIONS")
 		for _, opt := range a.opts {
-			fmt.Fprintln(os.Stderr, opt.description())
+			fmt.Fprintln(Stderr, opt.description())
 		}
 	}
 	if len(a.args) > 0 {
 		if optsAvailable {
-			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(Stderr)
 		}
-		fmt.Fprintln(os.Stderr, "  ARGUMENTS")
+		fmt.Fprintln(Stderr, "  ARGUMENTS")
 		for _, arg := range a.args {
-			fmt.Fprintln(os.Stderr, arg.description())
+			fmt.Fprintln(Stderr, arg.description())
 		}
 	}
-	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(Stderr)
 }
 
 func (a *action) showShortHelp() {
@@ -308,7 +307,7 @@ func (a *action) showShortHelp() {
 		line += arg.shortDescription()
 		line += " "
 	}
-	fmt.Fprintln(os.Stderr, line)
+	fmt.Fprintln(Stderr, line)
 }
 
 func (a *action) showTabularHelp(t *table) {
