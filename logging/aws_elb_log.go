@@ -25,26 +25,27 @@ const (
 )
 
 type ElasticLoadBalancerLog struct {
-	Timestamp              time.Time
-	Elb                    string
-	ClientAndPort          string
-	BackendAndPort         string
-	RequestProcessingTime  float64
-	BackendProcessingTime  float64
-	ResponseProcessingTime float64
-	ElbStatusCode          int
-	BackendStatusCode      int
-	ReceivedBytes          int
-	SentBytes              int
-	Method                 string
-	Url                    string
-	Action                 string
-	UserAgent              string
-	SSLCipher              string
-	SSLProtocol            string
+	Timestamp              time.Time `json:"timestamp,omitempty"`
+	Elb                    string    `json:"elb,omitempty"`
+	ClientAndPort          string    `json:"client_and_port,omitempty"`
+	BackendAndPort         string    `json:"backend_and_port,omitempty"`
+	RequestProcessingTime  float64   `json:"request_processing_time,omitempty"`
+	BackendProcessingTime  float64   `json:"backend_processing_time,omitempty"`
+	ResponseProcessingTime float64   `json:"response_processing_time,omitempty"`
+	ElbStatusCode          int       `json:"elb_status_code,omitempty"`
+	BackendStatusCode      int       `json:"backend_status_code,omitempty"`
+	ReceivedBytes          int       `json:"received_bytes,omitempty"`
+	SentBytes              int       `json:"sent_bytes,omitempty"`
+	Method                 string    `json:"method,omitempty"`
+	Url                    string    `json:"url,omitempty"`
+	UserAgent              string    `json:"user_agent,omitempty"`
+	SSLCipher              string    `json:"ssl_cipher,omitempty"`
+	SSLProtocol            string    `json:"ssl_protocol,omitempty"`
+	RAW                    string    `json:"raw,omitempty"`
 }
 
 func (l *ElasticLoadBalancerLog) Load(raw string) error {
+	l.RAW = raw
 	var e error
 	fields := Fields(raw)
 	for i, f := range fields {
@@ -100,10 +101,6 @@ func (l *ElasticLoadBalancerLog) Load(raw string) error {
 			if len(parts) == 3 {
 				l.Method = parts[0]
 				l.Url = parts[1]
-				parts := strings.Split(l.Url, "/")
-				if len(parts) > 0 {
-					l.Action = parts[len(parts)-1]
-				}
 			}
 		case elbLogUserAgent:
 			l.UserAgent = f
