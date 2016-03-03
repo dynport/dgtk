@@ -1,8 +1,28 @@
 package version
 
-import (
-	"testing"
-)
+import "testing"
+
+func TestNewFromString(t *testing.T) {
+	v, err := NewFromString("1.2.3")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		Name     string
+		Expected interface{}
+		Value    interface{}
+	}{
+		{"Major", v.Major, 1},
+		{"Minor", v.Minor, 2},
+		{"Patch", v.Patch, 3},
+	}
+	for i, tst := range tests {
+		if tst.Expected != tst.Value {
+			t.Errorf("test %d (%s): expected %d, was %d", i+1, tst.Name, tst.Expected, tst.Value)
+		}
+	}
+}
 
 func TestParseVersion(t *testing.T) {
 	v := &Version{}

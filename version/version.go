@@ -12,6 +12,11 @@ type Version struct {
 	Patch int
 }
 
+func NewFromString(in string) (*Version, error) {
+	v := &Version{}
+	return v, v.Parse(in)
+}
+
 func New(major, minor, patch int) *Version {
 	return &Version{
 		Major: major,
