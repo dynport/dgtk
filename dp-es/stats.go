@@ -59,7 +59,6 @@ func (r *indexStats) Run() error {
 	}
 	fmt.Printf("status=%s nodes=%d relocating=%d unassigned=%d\n", colorStatus(health.Status), health.NumberOfNodes, health.RelocatingShards, health.UnassignedShards)
 	return nil
-	return nil
 }
 
 type Logger interface {
@@ -134,7 +133,7 @@ func (i *index) aliases() (cfg aliases, err error) {
 func loadJSON(url string, i interface{}) error {
 	rsp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("requesting url %s: %s", err)
+		return fmt.Errorf("requesting url %s: %s", url, err)
 	}
 	defer rsp.Body.Close()
 	if rsp.Status[0] != '2' {
