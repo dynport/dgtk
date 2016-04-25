@@ -88,17 +88,32 @@ func StartServer(tx *sql.Tx, query string) (waitForClose chan struct{}, address 
 }
 
 func loadQuery(tx *sql.Tx, q string, args ...interface{}) (*table, error) {
-	rows, err := tx.Query(q, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	names, err := rows.Columns()
+	values, names, err := LoadQuery(tx, q, args...)
 	if err != nil {
 		return nil, err
 	}
 	t := &table{Header: names}
+	for _, v := range values {
+		r := row{}
+		for _, n := range names {
+			r = append(r, valueToString(v[n]))
+		}
+		t.Rows = append(t.Rows, r)
+	}
+	return t, nil
+}
+
+func LoadQuery(tx *sql.Tx, q string, args ...interface{}) (values []value, names []string, err error) {
+	rows, err := tx.Query(q, args...)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	names, err = rows.Columns()
+	if err != nil {
+		return nil, nil, err
+	}
 	for rows.Next() {
 		ints := []*interface{}{}
 		refs := []interface{}{}
@@ -109,16 +124,23 @@ func loadQuery(tx *sql.Tx, q string, args ...interface{}) (*table, error) {
 		}
 		err = rows.Scan(refs...)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		r := row{}
-		for _, v := range ints {
-			r = append(r, valueToString(*v))
+		v := value{}
+		for i, value := range ints {
+			name := names[i]
+			if *value == nil {
+				v[name] = nil
+			} else {
+				v[name] = valueToString(*value)
+			}
 		}
-		t.Rows = append(t.Rows, r)
+		values = append(values, v)
 	}
-	return t, rows.Err()
+	return values, names, rows.Err()
 }
+
+type value map[string]interface{}
 
 type debugContext struct {
 	Query string
