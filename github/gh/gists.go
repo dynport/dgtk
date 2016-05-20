@@ -25,7 +25,13 @@ func githubToken() (token string, e error) {
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
 		return token, nil
 	}
-	return readGitConfig("github.token")
+	token, err := readGitConfig("github.token")
+	if err != nil {
+		return "", err
+	} else if token == "" {
+		return "", fmt.Errorf("unable to read github token")
+	}
+	return token, nil
 }
 
 func readGitConfig(name string) (string, error) {
@@ -111,18 +117,19 @@ func (g *CreateGist) Run() error {
 	}
 	save := &bytes.Buffer{}
 	tr := io.TeeReader(buf, save)
-	rsp, e := authenticatedRequest("POST", urlRoot+"/gists", tr)
-	if e != nil {
-		return e
+	url := urlRoot + "/gists"
+	rsp, err := authenticatedRequest("POST", url, tr)
+	if err != nil {
+		return err
 	}
-	b, e := ioutil.ReadAll(rsp.Body)
-	if e != nil {
-		return e
+	defer rsp.Body.Close()
+	if rsp.Status[0] != '2' {
+		b, _ := ioutil.ReadAll(rsp.Body)
+		return fmt.Errorf("posting gist to url=%s: got status %s but expected 2x. body=%s", url, rsp.Status, string(b))
 	}
-	rspGist := &Gist{}
-	e = json.Unmarshal(b, &rspGist)
-	if e != nil {
-		return e
+	var rspGist *Gist
+	if err := json.NewDecoder(rsp.Body).Decode(&rspGist); err != nil {
+		return err
 	}
 	log.Printf("created gist %v", rspGist.HtmlUrl)
 	if g.Open {

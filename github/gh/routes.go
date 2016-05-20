@@ -20,5 +20,11 @@ func router() *cli.Router {
 	router.Register("issues/assign", &issueAssign{}, "Assign gitbub issue")
 	router.Register("notifications", &GithubNotifications{}, "Browse github notifications")
 	router.Register("pulls", &GithubPulls{}, "List github pull requests")
+	router.Register("teams/list", &teamsList{}, "Teams List")
+	router.Register("teams/show", &teamsShow{}, "Teams Show")
+	router.Register("teams/authorize", &teamsAuthorize{}, "Teams Authorize")
+	router.Register("repos/list", &reposList{}, "Repos List")
+	router.Register("repos/show", &reposShow{}, "Repos Show")
+	router.Register("repos/create", &reposCreate{}, "Repos Create")
 	return router
 }
