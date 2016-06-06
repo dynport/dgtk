@@ -1,8 +1,16 @@
 package stats
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
 
 type Map map[string]*Value
+
+func (m Map) String() string {
+	return m.ReversedValues().String()
+}
 
 func (m Map) ReversedValues() Values {
 	v := m.Values()
@@ -37,6 +45,14 @@ func (m Map) IncBy(key string, value int) int {
 }
 
 type Values []*Value
+
+func (v Values) String() string {
+	out := []string{}
+	for _, k := range v {
+		out = append(out, fmt.Sprintf("%s: %d", k.Key, k.Value))
+	}
+	return strings.Join(out, ",")
+}
 
 func (list Values) TopN(n int) Values {
 	sort.Sort(sort.Reverse(list))
