@@ -18,10 +18,9 @@ type TestLog struct {
 var sleepFor = 2 * time.Second
 
 var index = &Index{
-	Host:  "127.0.0.1",
-	Port:  9200,
-	Index: "test",
-	Type:  "logs",
+	Address: "http://127.0.0.1:9200",
+	Index:   "test",
+	Type:    "logs",
 }
 
 func validateEsRunning(t *testing.T) {
