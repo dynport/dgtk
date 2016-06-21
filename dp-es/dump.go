@@ -16,7 +16,7 @@ type dump struct {
 }
 
 func (r *dump) Run() error {
-	docs, err := es.IterateIndex(r.Address, r.IndexName, es.OpenIndexSize(r.BatchSize), es.OpenIndexScroll(r.ScrollDuration), es.OpenIndexFields(r.Fields))
+	docs, err := es.IterateIndex(normalizeIndexAddress(r.Address), r.IndexName, es.OpenIndexSize(r.BatchSize), es.OpenIndexScroll(r.ScrollDuration), es.OpenIndexFields(r.Fields))
 	if err != nil {
 		return err
 	}

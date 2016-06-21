@@ -9,7 +9,7 @@ import (
 )
 
 type aliasDelete struct {
-	Host      string `cli:"opt -H default=127.0.0.1"`
+	Host      string `cli:"opt -H default=http://127.0.0.1:9200"`
 	Index     string `cli:"arg required"`
 	AliasName string `cli:"arg required"`
 }
@@ -24,7 +24,7 @@ func (r *aliasDelete) Run() error {
 	if e != nil {
 		return e
 	}
-	req, e := http.NewRequest("POST", "http://"+r.Host+":9200/_aliases", bytes.NewReader(b))
+	req, e := http.NewRequest("POST", normalizeIndexAddress(r.Host)+"/_aliases", bytes.NewReader(b))
 	if e != nil {
 		return e
 	}

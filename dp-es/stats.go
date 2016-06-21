@@ -21,7 +21,7 @@ type indexStats struct {
 
 func (r *indexStats) Run() error {
 	l := log.New(os.Stderr, "", 0)
-	idx := &index{URL: r.Address}
+	idx := &index{URL: normalizeIndexAddress(r.Address)}
 	l.Printf("url=%s", idx.URL)
 
 	stats, err := idx.indexStats()

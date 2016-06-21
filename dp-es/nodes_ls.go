@@ -6,21 +6,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sort"
-	"strings"
 
 	"github.com/dynport/gocli"
 )
 
 type nodesLS struct {
-	Host string `cli:"opt -H default=127.0.0.1:9200"`
+	Host string `cli:"opt -H default=http://127.0.0.1:9200"`
 }
 
 func (a *nodesLS) Run() error {
-	h := a.Host
-	if !strings.HasPrefix(h, "http") {
-		h = "http://" + h
-	}
-	rsp, err := http.Get(h + "/_nodes/stats")
+	rsp, err := http.Get(normalizeIndexAddress(a.Host) + "/_nodes/stats")
 	if err != nil {
 		return err
 	}

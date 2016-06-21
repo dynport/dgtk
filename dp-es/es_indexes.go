@@ -3,32 +3,21 @@ package main
 import (
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/dynport/dgtk/dp-es/Godeps/_workspace/src/github.com/dynport/gocli"
 	"github.com/dynport/dgtk/es"
 )
 
 type esIndexes struct {
-	Host    string `cli:"opt -H default=127.0.0.1"`
+	Host    string `cli:"opt -H default=http://127.0.0.1:9200"`
 	Compact bool   `cli:"opt --compact"`
 }
 
 func (r *esIndexes) Run() error {
-	idx := &es.Index{Host: r.Host}
-	parts := strings.Split(r.Host, ":")
-	idx.Host = parts[0]
-	var err error
-	if len(parts) > 1 {
-		idx.Port, err = strconv.Atoi(parts[1])
-		if err != nil {
-			return err
-		}
-	}
-	stats, e := idx.Stats()
-	if e != nil {
-		return e
+	idx := &es.Index{Address: normalizeIndexAddress(r.Host)}
+	stats, err := idx.Stats()
+	if err != nil {
+		return err
 	}
 	names := stats.IndexNames()
 	if r.Compact {

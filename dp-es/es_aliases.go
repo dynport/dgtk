@@ -11,11 +11,11 @@ import (
 )
 
 type esAliases struct {
-	Host string `cli:"opt -H default=127.0.0.1"`
+	Host string `cli:"opt -H default=http://127.0.0.1:9200"`
 }
 
-func indexAliases(host string) (map[string]*IndexAlias, error) {
-	rsp, e := http.Get("http://" + host + ":9200/_aliases")
+func indexAliases(address string) (map[string]*IndexAlias, error) {
+	rsp, e := http.Get(address + "/_aliases")
 	if e != nil {
 		return nil, e
 	}
@@ -32,7 +32,7 @@ func indexAliases(host string) (map[string]*IndexAlias, error) {
 }
 
 func (r *esAliases) Run() error {
-	m, e := indexAliases(r.Host)
+	m, e := indexAliases(normalizeIndexAddress(r.Host))
 	if e != nil {
 		return e
 	}

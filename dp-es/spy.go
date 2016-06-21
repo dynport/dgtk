@@ -15,7 +15,7 @@ type spy struct {
 
 func (r *spy) Run() error {
 	l := log.New(os.Stderr, "", 0)
-	u, err := url.Parse(r.ESAddress)
+	u, err := url.Parse(normalizeIndexAddress(r.ESAddress))
 	if err != nil {
 		return err
 	}
