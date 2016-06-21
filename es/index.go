@@ -144,8 +144,7 @@ type BulkIndexJob struct {
 }
 
 type Index struct {
-	Host      string
-	Port      int
+	Address   string
 	Index     string
 	Type      string
 	batchDocs []*Doc
@@ -360,10 +359,10 @@ func (index *Index) PutMapping(mapping interface{}) (rsp *HttpResponse, e error)
 }
 
 func (index *Index) BaseUrl() string {
-	if index.Port == 0 {
-		index.Port = 9200
+	if index.Address != "" {
+		return index.Address
 	}
-	return fmt.Sprintf("http://%s:%d", index.Host, index.Port)
+	panic("Address must be set")
 }
 
 func (index *Index) IndexUrl() string {
