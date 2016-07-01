@@ -17,7 +17,7 @@ func (r *reposList) Run() error {
 	if err != nil {
 		return err
 	}
-	var list []github.Repository
+	var list []*github.Repository
 	opts := &github.RepositoryListByOrgOptions{}
 	opts.PerPage = 100
 
@@ -44,13 +44,13 @@ func (r *reposList) Run() error {
 	return nil
 }
 
-type repos []github.Repository
+type repos []*github.Repository
 
 func (list repos) Len() int {
 	return len(list)
 }
 
-func colorizeName(r github.Repository) string {
+func colorizeName(r *github.Repository) string {
 	if r.Private != nil && *r.Private {
 		return gocli.Red(*r.Name)
 	}
