@@ -18,7 +18,9 @@ type StartFunc func(*Progress)
 
 func WithTotal(total int) StartFunc {
 	return func(p *Progress) {
-		p.total = total
+		if total > 0 {
+			p.total = total
+		}
 	}
 }
 
