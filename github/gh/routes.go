@@ -26,5 +26,6 @@ func router() *cli.Router {
 	router.Register("repos/list", &reposList{}, "Repos List")
 	router.Register("repos/show", &reposShow{}, "Repos Show")
 	router.Register("repos/create", &reposCreate{}, "Repos Create")
+	router.Register("status", &Status{}, "Status")
 	return router
 }
