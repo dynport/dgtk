@@ -12,6 +12,14 @@ func (m Map) String() string {
 	return m.ReversedValues().String()
 }
 
+func (m Map) Sum() (sum int) {
+	for _, v := range m {
+		sum += v.Value
+	}
+	return sum
+
+}
+
 func (m Map) ReversedValues() Values {
 	v := m.Values()
 	sort.Sort(sort.Reverse(v))
