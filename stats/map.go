@@ -22,7 +22,7 @@ func (m Map) Sum() (sum int) {
 
 func (m Map) ReversedValues() Values {
 	v := m.Values()
-	sort.Sort(sort.Reverse(v))
+	sort.Sort(v)
 	return v
 }
 
@@ -83,7 +83,15 @@ func (list Values) Swap(a, b int) {
 }
 
 func (list Values) Less(a, b int) bool {
-	return list[a].Value < list[b].Value
+	diff := list[a].Value - list[b].Value
+	switch {
+	case diff < 0:
+		return false
+	case diff > 0:
+		return true
+	default:
+		return list[a].Key < list[b].Key
+	}
 }
 
 type Value struct {
