@@ -16,6 +16,7 @@ func main() {
 	router.Register("aliases/rm", &aliasDelete{}, "Delete alias")
 	router.Register("aliases/swap", &swapIndex{}, "Swap Alias")
 	router.Register("index/dump", &dump{}, "Dump an index")
+	router.Register("index/restore", &restore{}, "Restore")
 	router.Register("index/ls", &esIndexes{}, "List es indexes")
 	router.Register("index/rm", &indexDelete{}, "Delete index")
 	router.Register("index/stats", &indexStats{}, "Index Stats")
