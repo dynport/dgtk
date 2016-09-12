@@ -10,7 +10,7 @@ type indexDelete struct {
 func (r *indexDelete) Run() error {
 	addr := normalizeIndexAddress(r.Host)
 	for _, n := range r.Names {
-		idx := &es.Index{Address: addr}
+		idx := &es.Index{Address: addr, Index: n}
 		logger.Printf("deleting index %q", n)
 		if err := idx.DeleteIndex(); err != nil {
 			return err
