@@ -49,7 +49,13 @@ func (list Migrations) Execute(db *sql.DB) error {
 	return tx.Commit()
 }
 
-func (list Migrations) ExecuteTx(tx *sql.Tx) error {
+type Tx interface {
+	Con
+	Commit() error
+	Rollback() error
+}
+
+func (list Migrations) ExecuteTx(tx Tx) error {
 	started := time.Now()
 	if _, err := list.setup(tx); err != nil {
 		return err
@@ -106,7 +112,7 @@ type Migration struct {
 	Logger    logger
 }
 
-func (list Migrations) setup(tx *sql.Tx) (sql.Result, error) {
+func (list Migrations) setup(tx Tx) (sql.Result, error) {
 	row := tx.QueryRow("SELECT COUNT(1) FROM pg_tables WHERE schemaname = $1 AND tablename = $2", "public", "migrations")
 	var cnt int
 	e := row.Scan(&cnt)
@@ -139,7 +145,7 @@ func (m *Migration) checksum() string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(m.Statement)))
 }
 
-func (m *Migration) Execute(tx *sql.Tx) error {
+func (m *Migration) Execute(tx Tx) error {
 	rows, err := tx.Query("SELECT md5, statement FROM migrations where idx = $1", m.Idx)
 	if err != nil {
 		return err
