@@ -18,7 +18,7 @@ type Status struct {
 
 func (r *Status) Run() error {
 	branches := []string{"master"}
-	if cb, err := currentBranch(); err == nil && cb != "" {
+	if cb, err := currentBranch(); err == nil && cb != "master" {
 		branches = append([]string{cb}, "master")
 	}
 	repo, err := githubRepo()
