@@ -13,6 +13,7 @@ import (
 )
 
 type Status struct {
+	WithURLs bool `cli:"opt --with-urls"`
 }
 
 func (r *Status) Run() error {
@@ -35,11 +36,16 @@ func (r *Status) Run() error {
 		if err != nil {
 			return err
 		}
-		var ago string
+		var ago, url string
 		if len(s.Statuses) > 0 {
 			ago = strings.Split(time.Since(s.Statuses[0].CreatedAt).String(), ".")[0]
+			url = s.Statuses[0].TargetURL
 		}
-		t.Add(b, colorizeStatus(s.State), truncate(s.SHA, 8, false), ago)
+		args := []interface{}{b, colorizeStatus(s.State), truncate(s.SHA, 8, false), ago}
+		if r.WithURLs {
+			args = append(args, url)
+		}
+		t.Add(args...)
 	}
 	fmt.Println(t)
 	return nil
