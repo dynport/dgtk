@@ -27,5 +27,6 @@ func router() *cli.Router {
 	router.Register("repos/show", &reposShow{}, "Repos Show")
 	router.Register("repos/create", &reposCreate{}, "Repos Create")
 	router.Register("status", &Status{}, "Status")
+	router.Register("clone", &cloneAction{}, "Clone Repo")
 	return router
 }
