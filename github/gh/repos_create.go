@@ -1,6 +1,10 @@
 package main
 
-import "github.com/google/go-github/github"
+import (
+	"os"
+
+	"github.com/google/go-github/github"
+)
 
 type reposCreate struct {
 	Name     string `cli:"arg required"`
@@ -8,6 +12,7 @@ type reposCreate struct {
 	Orga     string `cli:"opt --orga"`
 	Teams    []int  `cli:"opt --teams"`
 	ReadOnly bool   `cli:"opt --read-only desc='Add teams with read only'"`
+	Clone    bool   `cli:"opt --clone"`
 }
 
 func (r *reposCreate) Run() error {
@@ -29,6 +34,10 @@ func (r *reposCreate) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+	if r.Clone {
+		repo := "git@github.com:" + r.Orga + "/" + r.Name + ".git"
+		return cloneRepo(repo, os.ExpandEnv("$HOME/src/github.com/"+r.Orga+"/"+repo))
 	}
 	return nil
 }
