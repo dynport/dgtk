@@ -12,6 +12,7 @@ import (
 type issuesCommit struct {
 	ID  int  `cli:"arg required"`
 	Ref bool `cli:"opt --ref"`
+	Fix bool `cli:"opt --fix"`
 }
 
 func (r *issuesCommit) Run() error {
@@ -33,11 +34,13 @@ func (r *issuesCommit) Run() error {
 	if err != nil {
 		return err
 	}
-	verb := "fixes"
+	verb := "closes"
 	if r.Ref {
 		verb = "references"
+	} else if r.Fix {
+		verb = "fixes"
 	}
-	msg := verb + " #" + strconv.Itoa(r.ID)
+	msg := strings.TrimSpace(verb + " #" + strconv.Itoa(r.ID))
 	if is.Title != nil && !r.Ref {
 		msg = *is.Title + ", " + msg
 	}
