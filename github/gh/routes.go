@@ -12,6 +12,7 @@ func router() *cli.Router {
 	router.Register("gists/list", &ListGists{}, "List Gists")
 	router.Register("gists/open", &OpenGist{}, "Open a Gist")
 	router.Register("issues/list", &issuesList{}, "List github issues")
+	router.Register("issues/commit", &issuesCommit{}, "Commit an issue")
 	router.Register("issues/browse", &issuesBrowse{}, "List github issues")
 	router.Register("issues/create", &issuesCreate{}, "List github issues")
 	router.Register("issues/open", &issueOpen{}, "Open github issues")
