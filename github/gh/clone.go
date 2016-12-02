@@ -35,7 +35,12 @@ func (r *cloneAction) Run() error {
 	c := exec.Command("git", "clone", repo, dir)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	return c.Run()
+	err = c.Run()
+	if err != nil {
+		return err
+	}
+	l.Printf("cloned into %s", dir)
+	return nil
 }
 
 func cloneRepo(src, dst string) error {
