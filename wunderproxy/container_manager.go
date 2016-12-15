@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/dynport/dgtk/dockerclient"
 	"github.com/dynport/dgtk/dockerclient/docker"
 	"github.com/dynport/gocloud/aws/s3"
 )
@@ -22,12 +20,33 @@ type ContainerManager struct {
 
 	AppName string
 
-	dockerHost *dockerclient.Client
+	dockerHost *Client
 	s3client   *s3.Client
 
 	containerEnv     map[string]string
 	containers       map[string]int
 	currentContainer string
+}
+
+type HostInfo struct {
+	Driver string
+}
+
+type Container struct {
+	Id            string
+	Status        string
+	Image         string
+	Names         []string
+	NetworkConfig struct {
+		Ports map[docker.Port][]struct {
+			HostPort string
+		}
+	}
+	NetworkSettings struct {
+		Ports map[docker.Port][]struct {
+			HostPort string
+		}
+	}
 }
 
 func NewContainerManager(s3Bucket, s3Prefix, appname string, proxy *Proxy, cfgFile string, rport int) (*ContainerManager, error) {
@@ -49,7 +68,7 @@ func NewContainerManager(s3Bucket, s3Prefix, appname string, proxy *Proxy, cfgFi
 		}
 	}
 
-	cm.dockerHost = dockerclient.New("http://127.0.0.1:4243")
+	//cm.dockerHost = dockerclient.New("http://127.0.0.1:4243")
 	return cm, func() error {
 		err := cm.runLatest()
 		switch err {
@@ -175,7 +194,7 @@ func (cm *ContainerManager) execute(cfg *LaunchConfig) (string, int, error) {
 	return containerId, port, e
 }
 
-func (cm *ContainerManager) containerForImage(imageId string) (*docker.Container, error) {
+func (cm *ContainerManager) containerForImage(imageId string) (*Container, error) {
 	containers, err := cm.availableContainers()
 	if err != nil {
 		return nil, err
@@ -190,23 +209,22 @@ func (cm *ContainerManager) containerForImage(imageId string) (*docker.Container
 	return nil, nil
 }
 
-func (cm *ContainerManager) availableContainers() (containers []*docker.Container, e error) {
+func (cm *ContainerManager) availableContainers() (containers []*Container, e error) {
 	imagePrefix := fmt.Sprintf("localhost:%d/%s:", cm.RegistryPort, cm.AppName)
 
-	availCont, e := cm.dockerHost.ListContainers(&dockerclient.ListContainersOptions{All: true})
+	availCont, e := cm.dockerHost.ListContainers(true)
 	if e != nil {
 		return nil, e
 	}
 
-	for i := range availCont {
-		imageId := availCont[i].Image
+	for _, c := range availCont {
+		imageId := c.Image
 
 		if strings.HasPrefix(imageId, imagePrefix) {
 			revision := "/" + strings.TrimPrefix(imageId, imagePrefix)
-			containerNames := availCont[i].Names
-			for j := range containerNames {
-				if containerNames[j] == revision {
-					containers = append(containers, availCont[i])
+			for _, n := range c.Names {
+				if n == revision {
+					containers = append(containers, c)
 					break
 				}
 			}
@@ -228,7 +246,7 @@ func (cm *ContainerManager) createAndWaitForContainer(cfg *LaunchConfig) (contai
 }
 
 func (cm *ContainerManager) startAndWaitForContainer(containerId string, cfg *LaunchConfig) (_ string, port int, e error) {
-	e = cm.dockerHost.StartContainer(containerId, cfg.HostConfig)
+	e = cm.dockerHost.StartContainer(containerId)
 	if e != nil {
 		return "", 0, e
 	}
@@ -238,7 +256,7 @@ func (cm *ContainerManager) startAndWaitForContainer(containerId string, cfg *La
 }
 
 func (cm *ContainerManager) waitForContainer(containerId, healthCheckPath string) (port int, e error) {
-	port, e = cm.exposedContainerPort(containerId, "9292/tcp")
+	port, e = cm.dockerHost.exposedContainerPort(containerId, "9292/tcp")
 	if e != nil {
 		return 0, e
 	}
@@ -261,20 +279,6 @@ func (cm *ContainerManager) waitForContainer(containerId, healthCheckPath string
 	}
 
 	return port, nil
-}
-
-func (cm *ContainerManager) exposedContainerPort(containerId string, srcPort docker.Port) (int, error) {
-	cinfo, e := cm.dockerHost.Container(containerId)
-	if e != nil {
-		return 0, e
-	}
-
-	destPorts := cinfo.NetworkConfig.Ports[srcPort]
-	if len(destPorts) != 1 {
-		return 0, fmt.Errorf("panic not knowing what to do!") // TODO clean up
-	}
-
-	return strconv.Atoi(destPorts[0].HostPort)
 }
 
 func (cm *ContainerManager) StopOldContainers() error {

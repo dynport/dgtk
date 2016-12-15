@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dynport/dgtk/dockerclient/docker"
 	"github.com/dynport/gocloud/aws/s3"
 )
 
@@ -17,8 +16,8 @@ var ErrorLaunchConfigNotFound = fmt.Errorf("launch configuration not found")
 // container with the required environment, including all the environment
 // variables required (like credentials).
 type LaunchConfig struct {
-	ContainerConfig *docker.ContainerConfig
-	HostConfig      *docker.HostConfig
+	ContainerConfig *ContainerConfig
+	HostConfig      *HostConfig
 	HealthCheckPath string
 	Revision        string
 	ForceReload     bool
