@@ -26,7 +26,7 @@ func (r *cloneAction) Run() error {
 		}
 		return nil
 	}
-	err := os.MkdirAll(filepath.Dir(withoutGit), 0755)
+	err := os.MkdirAll(filepath.Dir(dir), 0755)
 	if err != nil {
 		return err
 	}
