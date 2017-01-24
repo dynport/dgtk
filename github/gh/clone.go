@@ -10,7 +10,7 @@ import (
 
 type cloneAction struct {
 	Repo string `cli:"arg required"`
-	Dst  string `cli:"opt -d --dst default='$HOME/src/github.com'"`
+	Dst  string `cli:"opt -d --dst default='#=$GOPATH/src/github.com'"`
 }
 
 func (r *cloneAction) Run() error {
