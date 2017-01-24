@@ -37,7 +37,7 @@ func (r *reposCreate) Run() error {
 	}
 	if r.Clone {
 		repo := "git@github.com:" + r.Orga + "/" + r.Name + ".git"
-		return cloneRepo(repo, os.ExpandEnv("$HOME/src/github.com/"+r.Orga+"/"+repo))
+		return cloneRepo(repo, os.ExpandEnv("$GOPATH/src/github.com/"+r.Orga+"/"+repo))
 	}
 	return nil
 }
