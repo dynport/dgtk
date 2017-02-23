@@ -16,8 +16,8 @@ func NewBatchIndexer(addr string) *BatchIndexer {
 		Address:       addr,
 		buf:           &bytes.Buffer{},
 		doClose:       make(chan struct{}),
-		doFlush:       make(chan chan struct{}),
-		closed:        make(chan struct{}),
+		doFlush:       make(chan chan error),
+		closed:        make(chan error),
 		docs:          make(chan *Doc),
 		flushCount:    1000,
 		flushDuration: 1 * time.Second,
@@ -31,9 +31,9 @@ type BatchIndexer struct {
 	buf           *bytes.Buffer
 	cnt           int
 	docs          chan *Doc
-	closed        chan struct{}
+	closed        chan error
 	doClose       chan struct{}
-	doFlush       chan chan struct{}
+	doFlush       chan chan error
 	lastFlush     time.Time
 	flushDuration time.Duration
 	flushCount    int
@@ -59,7 +59,8 @@ func (i *BatchIndexer) Close() error {
 	return nil
 }
 
-func (i *BatchIndexer) start() {
+// TODO: use context here
+func (i *BatchIndexer) start() error {
 	defer close(i.closed)
 	t := time.NewTicker(1 * time.Second)
 	for {
@@ -75,12 +76,10 @@ func (i *BatchIndexer) start() {
 			// index
 			i.checkFlush()
 		case c := <-i.doFlush:
-			i.flush()
-			c <- struct{}{}
+			c <- i.flush()
 		case <-i.doClose:
 			// should stop indexing
-			i.flush()
-			return
+			return i.flush()
 		}
 	}
 }
@@ -97,15 +96,15 @@ func (i *BatchIndexer) checkFlush() bool {
 	return true
 }
 
-func (i *BatchIndexer) Flush() {
-	c := make(chan struct{})
+func (i *BatchIndexer) Flush() error {
+	c := make(chan error)
 	i.doFlush <- c
-	<-c
+	return <-c
 }
 
-func (i *BatchIndexer) flush() {
+func (i *BatchIndexer) flush() error {
 	if i.cnt == 0 || i.buf.Len() == 0 {
-		return
+		return nil
 	}
 	defer func() {
 		i.cnt = 0
@@ -134,10 +133,11 @@ func (i *BatchIndexer) flush() {
 		return nil
 	}()
 	if err != nil {
-		log.Printf("err=%q", err)
+		return err
 	}
 
 	i.lastFlush = time.Now()
+	return nil
 }
 
 type indexDoc struct {
