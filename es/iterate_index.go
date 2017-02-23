@@ -87,7 +87,7 @@ func openIndex(addr, name string, funcs ...func(*openIndexOpt)) (scrollID string
 		return "", err
 	}
 
-	rsp, err := http.Post(addr+"/"+name+"/_search?search_type=scan&scroll="+o.Scroll,
+	rsp, err := http.Post(addr+"/"+name+"/_search?&scroll="+o.Scroll,
 		"application/json",
 		bytes.NewReader(b),
 	)
