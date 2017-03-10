@@ -61,7 +61,7 @@ func (list Migrations) ExecuteTx(tx Tx) error {
 		return err
 	}
 
-	migrations, err := list.migrations()
+	migrations, err := list.All(tx)
 	if err != nil {
 		return err
 	}
@@ -76,12 +76,56 @@ func (list Migrations) ExecuteTx(tx Tx) error {
 	return nil
 }
 
-func (list Migrations) migrations() (out []*Migration, err error) {
+func (list Migrations) loadMigrationStatus(tx Tx) (m map[int]*Migration, err error) {
+	m = map[int]*Migration{}
+	q := "SELECT idx, md5, statement FROM migrations ORDER BY idx"
+	rows, err := tx.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		s := &Migration{}
+		var cs string
+		if err := rows.Scan(&s.Idx, &cs, &s.Statement); err != nil {
+			return nil, err
+		}
+		s.MD5 = strings.Replace(cs, "-", "", -1)
+		if _, ok := m[s.Idx]; ok {
+			return nil, fmt.Errorf("there are two migrations with idx=%d", s.Idx)
+		}
+		m[s.Idx] = s
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+type migrationStatus struct {
+	IDX       int
+	Statement string
+	MD5       string
+}
+
+func (list Migrations) All(tx Tx) (out []*Migration, err error) {
+	status, err := list.loadMigrationStatus(tx)
+	if err != nil {
+		return nil, err
+	}
 	for idx, i := range list.steps {
 		if m, err := newMigration(idx+1, i); err != nil {
 			return nil, err
 		} else {
 			m.Logger = list.Logger
+			m.MD5 = strings.Replace(m.Statement, "-", "", -1)
+			executed, ok := status[m.Idx]
+			if ok {
+				if m.Statement != executed.Statement {
+					return nil, fmt.Errorf("MIGRATION MISMATCH:\n<<<<<<< code migration %d\n%q\n=======\n%q\n>>>>>>> db migration\n", m.Idx, m.Statement, executed.Statement)
+				}
+				m.Executed = true
+			}
 			out = append(out, m)
 		}
 	}
@@ -110,6 +154,8 @@ type Migration struct {
 	Statement string
 	Func      func(Con) error
 	Logger    logger
+	MD5       string
+	Executed  bool
 }
 
 func (list Migrations) setup(tx Tx) (sql.Result, error) {

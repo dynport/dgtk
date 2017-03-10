@@ -1,0 +1,6 @@
+database_test:
+  image: postgres:9.6.2
+  ports:
+      - "5432"
+  environment:
+    POSTGRES_DB: dgtk_migrations
