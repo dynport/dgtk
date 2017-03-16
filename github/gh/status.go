@@ -32,16 +32,22 @@ func (r *Status) Run() error {
 
 	t := gocli.NewTable()
 	for _, b := range branches {
-		s, err := loadStatus(cl, repo, b)
-		if err != nil {
-			return err
+		var ago, url, status, sha string
+		if s, err := loadStatus(cl, repo, b); err != nil {
+			if isNotFound(err) {
+				status = "not_found"
+			} else {
+				return err
+			}
+		} else {
+			status = s.State
+			sha = s.SHA
+			if len(s.Statuses) > 0 {
+				ago = strings.Split(time.Since(s.Statuses[0].CreatedAt).String(), ".")[0]
+				url = s.Statuses[0].TargetURL
+			}
 		}
-		var ago, url string
-		if len(s.Statuses) > 0 {
-			ago = strings.Split(time.Since(s.Statuses[0].CreatedAt).String(), ".")[0]
-			url = s.Statuses[0].TargetURL
-		}
-		args := []interface{}{b, colorizeStatus(s.State), truncate(s.SHA, 8, false), ago}
+		args := []interface{}{b, colorizeStatus(status), truncate(sha, 8, false), ago}
 		if r.WithURLs {
 			args = append(args, url)
 		}
@@ -51,12 +57,16 @@ func (r *Status) Run() error {
 	return nil
 }
 
+func isNotFound(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "404 Not Found")
+}
+
 func colorizeStatus(in string) string {
 	color := gocli.Green
 	switch in {
 	case "success":
 		color = gocli.Green
-	case "pending":
+	case "pending", "not_found":
 		color = gocli.Yellow
 	default:
 		color = gocli.Red
