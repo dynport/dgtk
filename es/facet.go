@@ -115,7 +115,7 @@ type DateHistogramFacet struct {
 
 type DateHistogramFacetEntry struct {
 	Time       int64 `json:"time,omitempty"`
-	Count      int64 `json:"time,omitempty"`
+	Count      int64 `json:"count,omitempty"`
 	Min        float64
 	Max        float64
 	Total      int64

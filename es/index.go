@@ -73,7 +73,7 @@ type Filter struct {
 	Not    *Not              `json:"not,omitempty"`
 	And    []*Filter         `json:"and,omitempty"`
 	Term   *Term             `json:"term,omitempty"`
-	Terms  *Terms            `json:"term,omitempty"`
+	Terms  *Terms            `json:"terms,omitempty"`
 	Range  map[string]*Range `json:"range,omitempty"`
 	Script *Script           `json:"script,omitempty"`
 }
