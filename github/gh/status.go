@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -13,13 +14,19 @@ import (
 )
 
 type Status struct {
-	WithURLs bool `cli:"opt --with-urls"`
+	WithURLs bool   `cli:"opt --with-urls"`
+	Branch   string `cli:"opt --branch"`
 }
 
 func (r *Status) Run() error {
-	branches := []string{"master"}
-	if cb, err := currentBranch(); err == nil && cb != "master" {
-		branches = append([]string{cb}, "master")
+	var branches []string
+	if r.Branch != "" {
+		branches = []string{r.Branch}
+	} else {
+		branches = []string{"master"}
+		if cb, err := currentBranch(); err == nil && cb != "master" {
+			branches = append([]string{cb}, "master")
+		}
 	}
 	repo, err := githubRepo()
 	if err != nil {
@@ -109,4 +116,13 @@ type statusResponse struct {
 		UpdatedAt time.Time `json:"updated_at,omitempty"`
 	} `json:"statuses"`
 	SHA string `json:"sha"`
+}
+
+// to be used to colorize
+func dataOn(f *os.File) bool {
+	stat, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return (stat.Mode() & os.ModeCharDevice) == 0
 }
