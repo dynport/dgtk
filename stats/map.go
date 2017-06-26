@@ -63,7 +63,6 @@ func (v Values) String() string {
 }
 
 func (list Values) TopN(n int) Values {
-	sort.Sort(sort.Reverse(list))
 	out := make(Values, 0, n)
 	for _, v := range list {
 		out = append(out, v)
