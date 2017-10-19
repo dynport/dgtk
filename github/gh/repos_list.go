@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -22,7 +23,7 @@ func (r *reposList) Run() error {
 	opts.PerPage = 100
 
 	for {
-		current, headers, err := client.Repositories.ListByOrg(r.Orga, opts)
+		current, headers, err := client.Repositories.ListByOrg(context.TODO(), r.Orga, opts)
 		if err != nil {
 			return err
 		}

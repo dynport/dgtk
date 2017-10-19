@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -30,7 +31,7 @@ func (r *issuesCommit) Run() error {
 		return fmt.Errorf("unable to extract owner and repo from %q", raw)
 	}
 	owner, repo := parts[0], parts[1]
-	is, _, err := cl.Issues.Get(owner, repo, r.ID)
+	is, _, err := cl.Issues.Get(context.TODO(), owner, repo, r.ID)
 	if err != nil {
 		return err
 	}

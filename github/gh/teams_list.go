@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/dynport/gocli"
@@ -16,7 +17,7 @@ func (r *teamsList) Run() error {
 		return err
 	}
 	// TODO: paginate
-	res, _, err := client.Organizations.ListTeams(r.Orga, nil)
+	res, _, err := client.Organizations.ListTeams(context.TODO(), r.Orga, nil)
 	if err != nil {
 		return err
 	}

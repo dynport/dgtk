@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/google/go-github/github"
@@ -22,7 +23,7 @@ func (r *reposCreate) Run() error {
 	}
 	repo := &github.Repository{Name: s2p(r.Name), Private: b2p(!r.Public)}
 
-	if _, _, err := cl.Repositories.Create(r.Orga, repo); err != nil {
+	if _, _, err := cl.Repositories.Create(context.TODO(), r.Orga, repo); err != nil {
 		return err
 	}
 	permission := "push"
@@ -30,7 +31,7 @@ func (r *reposCreate) Run() error {
 		permission = "pull"
 	}
 	for _, t := range r.Teams {
-		_, err = cl.Organizations.AddTeamRepo(t, r.Orga, r.Name, &github.OrganizationAddTeamRepoOptions{Permission: permission})
+		_, err = cl.Organizations.AddTeamRepo(context.TODO(), t, r.Orga, r.Name, &github.OrganizationAddTeamRepoOptions{Permission: permission})
 		if err != nil {
 			return err
 		}

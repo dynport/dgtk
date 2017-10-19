@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -17,12 +18,12 @@ func (r *teamsShow) Run() error {
 	if err != nil {
 		return err
 	}
-	team, _, err := client.Organizations.GetTeam(r.ID)
+	team, _, err := client.Organizations.GetTeam(context.TODO(), r.ID)
 	if err != nil {
 		return err
 	}
 	// TODO: paginate
-	repos, _, err := client.Organizations.ListTeamRepos(r.ID, nil)
+	repos, _, err := client.Organizations.ListTeamRepos(context.TODO(), r.ID, nil)
 	if err != nil {
 		return err
 	}
@@ -32,7 +33,7 @@ func (r *teamsShow) Run() error {
 	fmt.Println(t)
 
 	// TODO paginate
-	members, _, err := client.Organizations.ListTeamMembers(r.ID, nil)
+	members, _, err := client.Organizations.ListTeamMembers(context.TODO(), r.ID, nil)
 	if err != nil {
 		return err
 	}

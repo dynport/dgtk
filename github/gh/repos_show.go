@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/dynport/gocli"
@@ -16,7 +17,7 @@ func (r *reposShow) Run() error {
 	if err != nil {
 		return err
 	}
-	res, _, err := cl.Repositories.Get(r.Owner, r.Name)
+	res, _, err := cl.Repositories.Get(context.TODO(), r.Owner, r.Name)
 	if err != nil {
 		return err
 	}
@@ -24,7 +25,7 @@ func (r *reposShow) Run() error {
 	t.Add("ID", res.ID)
 	t.Add("Name", res.Name)
 	t.Add("Issues", res.OpenIssuesCount)
-	colabs, _, err := cl.Repositories.ListCollaborators(r.Owner, r.Name, nil)
+	colabs, _, err := cl.Repositories.ListCollaborators(context.TODO(), r.Owner, r.Name, nil)
 	if err != nil {
 		return err
 	}

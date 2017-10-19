@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/go-github/github"
@@ -18,7 +19,7 @@ func (r *teamsAuthorize) Run() error {
 	if err != nil {
 		return err
 	}
-	_, err = cl.Organizations.AddTeamRepo(r.ID, r.Owner, r.Repo, &github.OrganizationAddTeamRepoOptions{Permission: r.Permission})
+	_, err = cl.Organizations.AddTeamRepo(context.TODO(), r.ID, r.Owner, r.Repo, &github.OrganizationAddTeamRepoOptions{Permission: r.Permission})
 	if err != nil {
 		return fmt.Errorf("authorizing team %d for repo %s/%s: %s", r.ID, r.Owner, r.Repo, err)
 	}
