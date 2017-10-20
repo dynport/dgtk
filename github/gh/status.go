@@ -62,7 +62,7 @@ func (r *Status) Run() error {
 					return fmt.Errorf("not successful (%s)", s.State)
 				}
 				if !printedURL && len(s.Statuses) > 0 {
-					l.Printf("url=%s", s.Statuses[0].URL)
+					l.Printf("url=%s", s.Statuses[0].TargetURL)
 					printedURL = true
 				}
 			}
