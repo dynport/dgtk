@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,9 +17,13 @@ import (
 type Status struct {
 	WithURLs bool   `cli:"opt --with-urls"`
 	Branch   string `cli:"opt --branch"`
+	Wait     bool   `cli:"opt --wait"`
 }
 
 func (r *Status) Run() error {
+
+	if r.Wait {
+	}
 	var branches []string
 	if r.Branch != "" {
 		branches = []string{r.Branch}
@@ -35,6 +40,35 @@ func (r *Status) Run() error {
 	cl, err := client()
 	if err != nil {
 		return err
+	}
+
+	l := log.New(os.Stderr, "", 0)
+
+	if r.Wait {
+		if r.Branch == "" {
+			return fmt.Errorf("wait requires one specific branch")
+		}
+		var printedURL bool
+		for {
+			s, err := loadStatus(cl, repo, r.Branch)
+			if err != nil {
+				l.Printf("error fetching status: %s", err)
+			} else {
+				if s.State != statePending {
+					fmt.Println(s.State)
+					if s.State == stateSuccess {
+						return nil
+					}
+					return fmt.Errorf("not successful (%s)", s.State)
+				}
+				if !printedURL && len(s.Statuses) > 0 {
+					l.Printf("url=%s", s.Statuses[0].URL)
+					printedURL = true
+				}
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return nil
 	}
 
 	t := gocli.NewTable()
@@ -68,12 +102,18 @@ func isNotFound(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "404 Not Found")
 }
 
+const (
+	stateSuccess  = "success"
+	statePending  = "pending"
+	stateNotFound = "not_found"
+)
+
 func colorizeStatus(in string) string {
 	color := gocli.Green
 	switch in {
-	case "success":
+	case stateSuccess:
 		color = gocli.Green
-	case "pending", "not_found":
+	case statePending, stateNotFound:
 		color = gocli.Yellow
 	default:
 		color = gocli.Red
