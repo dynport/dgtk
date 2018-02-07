@@ -3,10 +3,13 @@ package es
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
-	"strings"
+	"os"
+
+	"github.com/pkg/errors"
 )
 
 func OpenIndexSize(size int) func(*openIndexOpt) {
@@ -53,7 +56,7 @@ func IterateIndex(addr, name string, funcs ...func(*openIndexOpt)) (chan json.Ra
 		for {
 			scrollID, docs, err = loadDocumentsWithScroll(addr, scrollID)
 			if err != nil {
-				logger.Printf("err=%q", err)
+				log.Printf("%+v", err)
 				return
 			} else if len(docs) == 0 {
 				return
@@ -97,7 +100,7 @@ func openIndex(addr, name string, funcs ...func(*openIndexOpt)) (scrollID string
 	defer rsp.Body.Close()
 	if rsp.Status[0] != '2' {
 		b, _ := ioutil.ReadAll(rsp.Body)
-		return "", fmt.Errorf("expected status 2xx, got %s: %s", rsp.Status, string(b))
+		return "", errors.Wrapf(err, "opening index: expected status 2xx, got %s: %s", rsp.Status, string(b))
 	}
 	var s *scrollResponse
 	err = json.NewDecoder(rsp.Body).Decode(&s)
@@ -108,11 +111,17 @@ func openIndex(addr, name string, funcs ...func(*openIndexOpt)) (scrollID string
 }
 
 func loadDocumentsWithScroll(addr string, id string) (string, []json.RawMessage, error) {
-	req, err := http.NewRequest("GET", addr+"/_search/scroll?scroll=1m", strings.NewReader(id))
+	pl := struct {
+		Scroll   string `json:"scroll"`
+		ScrollID string `json:"scroll_id"`
+	}{
+		"1m", id,
+	}
+	b, err := json.Marshal(pl)
 	if err != nil {
 		return "", nil, err
 	}
-	rsp, err := http.DefaultClient.Do(req)
+	rsp, err := http.Post(addr+"/_search/scroll", "application/json", bytes.NewReader(b))
 	if err != nil {
 		return "", nil, err
 	}
@@ -120,14 +129,14 @@ func loadDocumentsWithScroll(addr string, id string) (string, []json.RawMessage,
 	switch rsp.StatusCode {
 	case 200:
 		var rr *scrollResponse
-		err = json.NewDecoder(rsp.Body).Decode(&rr)
+		err = json.NewDecoder(io.TeeReader(rsp.Body, os.Stdout)).Decode(&rr)
 		if err != nil {
 			return "", nil, err
 		}
 		return rr.ScrollID, rr.Hits.Hits, nil
 	default:
 		b, _ := ioutil.ReadAll(rsp.Body)
-		return "", nil, fmt.Errorf("got status %s but expected 2x. body=%s", rsp.Status, string(b))
+		return "", nil, errors.Errorf("load documents with scroll: got status %s but expected 2x. body=%s", rsp.Status, string(b))
 	}
 }
 

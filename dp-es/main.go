@@ -23,11 +23,11 @@ func main() {
 	router.Register("nodes/ls", &nodesLS{}, "Nodes List")
 	router.Register("spy", &spy{}, "Spy on es requests")
 
-	switch e := router.RunWithArgs(); e {
+	switch err := router.RunWithArgs(); err {
 	case nil, cli.ErrorHelpRequested, cli.ErrorNoRoute:
 		// ignore
 		return
 	default:
-		logger.Fatal(e)
+		logger.Fatalf("%+v", err)
 	}
 }
