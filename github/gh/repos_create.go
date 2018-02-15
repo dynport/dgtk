@@ -8,12 +8,12 @@ import (
 )
 
 type reposCreate struct {
-	Name     string `cli:"arg required"`
-	Public   bool   `cli:"opt --public"`
-	Orga     string `cli:"opt --orga"`
-	Teams    []int  `cli:"opt --teams"`
-	ReadOnly bool   `cli:"opt --read-only desc='Add teams with read only'"`
-	Clone    bool   `cli:"opt --clone"`
+	Name     string  `cli:"arg required"`
+	Public   bool    `cli:"opt --public"`
+	Orga     string  `cli:"opt --orga"`
+	Teams    []int64 `cli:"opt --teams"`
+	ReadOnly bool    `cli:"opt --read-only desc='Add teams with read only'"`
+	Clone    bool    `cli:"opt --clone"`
 }
 
 func (r *reposCreate) Run() error {

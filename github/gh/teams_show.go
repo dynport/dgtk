@@ -10,7 +10,7 @@ import (
 )
 
 type teamsShow struct {
-	ID int `cli:"arg required"`
+	ID int64 `cli:"arg required"`
 }
 
 func (r *teamsShow) Run() error {

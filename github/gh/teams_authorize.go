@@ -8,7 +8,7 @@ import (
 )
 
 type teamsAuthorize struct {
-	ID         int    `cli:"arg required"`
+	ID         int64  `cli:"arg required"`
 	Owner      string `cli:"arg required"`
 	Repo       string `cli:"arg required"`
 	Permission string `cli:"arg required"`
