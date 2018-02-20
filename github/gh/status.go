@@ -21,9 +21,6 @@ type Status struct {
 }
 
 func (r *Status) Run() error {
-
-	if r.Wait {
-	}
 	var branches []string
 	if r.Branch != "" {
 		branches = []string{r.Branch}
@@ -45,12 +42,16 @@ func (r *Status) Run() error {
 	l := log.New(os.Stderr, "", 0)
 
 	if r.Wait {
-		if r.Branch == "" {
-			return fmt.Errorf("wait requires one specific branch")
+		branch := r.Branch
+		if branch == "" {
+			branch, err = currentBranch()
+			if err != nil {
+				return err
+			}
 		}
 		var printedURL bool
 		for {
-			s, err := loadStatus(cl, repo, r.Branch)
+			s, err := loadStatus(cl, repo, branch)
 			if err != nil {
 				l.Printf("error fetching status: %s", err)
 			} else {
