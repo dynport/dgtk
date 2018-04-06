@@ -16,6 +16,7 @@ import (
 
 type Status struct {
 	WithURLs bool   `cli:"opt --with-urls"`
+	Open     bool   `cli:"opt --open"`
 	Branch   string `cli:"opt --branch"`
 	Wait     bool   `cli:"opt --wait"`
 }
@@ -72,26 +73,51 @@ func (r *Status) Run() error {
 		return nil
 	}
 
+	type status struct {
+		Time   time.Time
+		Branch string
+		URL    string
+		Status string
+		SHA    string
+	}
+
 	t := gocli.NewTable()
+	all := []*status{}
 	for _, b := range branches {
-		var ago, url, status, sha string
+		st := &status{Branch: b}
+		all = append(all, st)
 		if s, err := loadStatus(cl, repo, b); err != nil {
 			if isNotFound(err) {
-				status = "not_found"
+				st.Status = "not_found"
 			} else {
 				return err
 			}
 		} else {
-			status = s.State
-			sha = s.SHA
+			st.Status = s.State
+			st.SHA = s.SHA
 			if len(s.Statuses) > 0 {
-				ago = strings.Split(time.Since(s.Statuses[0].CreatedAt).String(), ".")[0]
-				url = s.Statuses[0].TargetURL
+				st.Time = s.Statuses[0].CreatedAt
+				st.URL = s.Statuses[0].TargetURL
 			}
 		}
-		args := []interface{}{b, colorizeStatus(status), truncate(sha, 8, false), ago}
+	}
+
+	if r.Open {
+		if len(all) == 0 {
+			return fmt.Errorf("no status found")
+		}
+		s := all[0]
+		if s.URL == "" {
+			return fmt.Errorf("status has no url (yet?)")
+		}
+		return openUrl(s.URL)
+	}
+
+	for _, s := range all {
+		ago := strings.Split(time.Since(s.Time).String(), ".")[0]
+		args := []interface{}{s.Branch, colorizeStatus(s.Status), truncate(s.SHA, 8, false), ago}
 		if r.WithURLs {
-			args = append(args, url)
+			args = append(args, s.URL)
 		}
 		t.Add(args...)
 	}
