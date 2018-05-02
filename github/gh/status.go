@@ -83,6 +83,7 @@ func (r *Status) Run() error {
 
 	t := gocli.NewTable()
 	all := []*status{}
+	agoFunc := func(t time.Time) string { return strings.Split(time.Since(t).String(), ".")[0] }
 	for _, b := range branches {
 		st := &status{Branch: b}
 		all = append(all, st)
@@ -95,9 +96,26 @@ func (r *Status) Run() error {
 		} else {
 			st.Status = s.State
 			st.SHA = s.SHA
+			sm := map[string]int{}
+			for _, s := range s.Statuses {
+				sm[s.State]++
+			}
+			if sm["failed"] > 0 {
+				st.Status = "failed"
+			} else if sm["pending"] > 0 {
+				st.Status = "pending"
+			} else {
+				st.Status = "success"
+			}
+			t.Add(string(b), colorizeStatus(st.Status))
 			if len(s.Statuses) > 0 {
-				st.Time = s.Statuses[0].CreatedAt
-				st.URL = s.Statuses[0].TargetURL
+				for _, ss := range s.Statuses {
+					args := []interface{}{"", colorizeStatus(ss.State), truncate(s.SHA, 8, false), ss.Context, agoFunc(ss.CreatedAt)}
+					if r.WithURLs {
+						args = append(args, ss.TargetURL)
+					}
+					t.Add(args...)
+				}
 			}
 		}
 	}
@@ -113,14 +131,6 @@ func (r *Status) Run() error {
 		return openUrl(s.URL)
 	}
 
-	for _, s := range all {
-		ago := strings.Split(time.Since(s.Time).String(), ".")[0]
-		args := []interface{}{s.Branch, colorizeStatus(s.Status), truncate(s.SHA, 8, false), ago}
-		if r.WithURLs {
-			args = append(args, s.URL)
-		}
-		t.Add(args...)
-	}
 	fmt.Println(t)
 	return nil
 }
@@ -177,7 +187,9 @@ func currentBranch() (string, error) {
 type statusResponse struct {
 	State    string `json:"state"`
 	Statuses []*struct {
+		State     string    `json:"state,omitempty"`
 		URL       string    `json:"url,omitempty"`
+		Context   string    `json:"context"`
 		TargetURL string    `json:"target_url,omitempty"`
 		CreatedAt time.Time `json:"created_at,omitempty"`
 		UpdatedAt time.Time `json:"updated_at,omitempty"`
