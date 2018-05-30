@@ -39,6 +39,14 @@ func removeQuotes(raw string) string {
 }
 
 func Fields(line string) []string {
+	fields, err := FieldsWithErr(line)
+	if err != nil {
+		panic(err.Error())
+	}
+	return fields
+}
+
+func FieldsWithErr(line string) ([]string, error) {
 	fields := strings.Fields(line)
 	inQuotes := false
 	sep := `"`
@@ -52,7 +60,7 @@ func Fields(line string) []string {
 				out = append(out, replaced)
 				continue
 			} else if cnt != 1 {
-				panic("cnt != 1 or 2 not supported (yet)")
+				return nil, fmt.Errorf("parsing line %q: cnt != 1 or 2 nor supported yet", line)
 			}
 			switch inQuotes {
 			case true:
@@ -68,7 +76,7 @@ func Fields(line string) []string {
 			out = append(out, f)
 		}
 	}
-	return out
+	return out, nil
 }
 
 func parseTags(raw string) map[string]interface{} {
