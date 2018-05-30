@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	shellwords "github.com/mattn/go-shellwords"
 )
 
 type SyslogLine struct {
@@ -41,11 +39,36 @@ func removeQuotes(raw string) string {
 }
 
 func Fields(line string) []string {
-	list, err := shellwords.Parse(line)
-	if err != nil {
-		panic(err.Error())
+	fields := strings.Fields(line)
+	inQuotes := false
+	sep := `"`
+	current := ""
+	out := []string{}
+	for _, f := range fields {
+		if strings.Contains(f, sep) {
+			cnt := strings.Count(f, sep)
+			replaced := strings.Replace(f, sep, "", -1)
+			if cnt == 2 {
+				out = append(out, replaced)
+				continue
+			} else if cnt != 1 {
+				panic("cnt != 1 or 2 not supported (yet)")
+			}
+			switch inQuotes {
+			case true:
+				out = append(out, current+" "+replaced)
+				inQuotes = false
+			case false:
+				current = replaced
+				inQuotes = true
+			}
+		} else if inQuotes {
+			current = current + " " + f
+		} else {
+			out = append(out, f)
+		}
 	}
-	return list
+	return out
 }
 
 func parseTags(raw string) map[string]interface{} {
