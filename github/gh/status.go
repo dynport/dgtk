@@ -78,6 +78,7 @@ func (r *Status) Run() error {
 		Time   time.Time
 		Branch string
 		URL    string
+		URLs   []string
 		Status string
 		SHA    string
 	}
@@ -113,6 +114,9 @@ func (r *Status) Run() error {
 			t.Add(string(b), colorizeStatus(st.Status))
 			if len(s.Statuses) > 0 {
 				for _, ss := range s.Statuses {
+					if ss.TargetURL != "" {
+						st.URLs = append(st.URLs, ss.TargetURL)
+					}
 					args := []interface{}{"", colorizeStatus(ss.State), truncate(s.SHA, 8, false), ss.Context, agoFunc(ss.CreatedAt)}
 					if r.WithURLs {
 						args = append(args, ss.TargetURL)
@@ -128,10 +132,18 @@ func (r *Status) Run() error {
 			return fmt.Errorf("no status found")
 		}
 		s := all[0]
-		if s.URL == "" {
-			return fmt.Errorf("status has no url (yet?)")
+		for _, s := range all {
+			l.Printf("url: %s", s.URL)
 		}
-		return openUrl(s.URL)
+		url := ""
+		if s.URL != "" {
+			url = s.URL
+		} else if len(s.URLs) == 1 {
+			url = s.URLs[0]
+		} else {
+			return fmt.Errorf("status has no url (yet?). url=%q urls=%#v", s.URL, s.URLs)
+		}
+		return openUrl(url)
 	}
 	fmt.Println(t)
 	if failures > 0 {
