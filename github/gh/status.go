@@ -12,6 +12,7 @@ import (
 
 	"github.com/dynport/dgtk/github"
 	"github.com/dynport/gocli"
+	"github.com/pkg/errors"
 )
 
 type Status struct {
@@ -83,6 +84,7 @@ func (r *Status) Run() error {
 
 	t := gocli.NewTable()
 	all := []*status{}
+	failures := 0
 	agoFunc := func(t time.Time) string { return strings.Split(time.Since(t).String(), ".")[0] }
 	for _, b := range branches {
 		st := &status{Branch: b}
@@ -100,8 +102,9 @@ func (r *Status) Run() error {
 			for _, s := range s.Statuses {
 				sm[s.State]++
 			}
-			if sm["failed"] > 0 {
-				st.Status = "failed"
+			if sm["failure"] > 0 {
+				st.Status = "failure"
+				failures++
 			} else if sm["pending"] > 0 {
 				st.Status = "pending"
 			} else {
@@ -130,8 +133,10 @@ func (r *Status) Run() error {
 		}
 		return openUrl(s.URL)
 	}
-
 	fmt.Println(t)
+	if failures > 0 {
+		return errors.Errorf("%d failures", failures)
+	}
 	return nil
 }
 
