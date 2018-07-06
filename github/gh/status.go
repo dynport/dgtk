@@ -57,9 +57,9 @@ func (r *Status) Run() error {
 			if err != nil {
 				l.Printf("error fetching status: %s", err)
 			} else {
-				if s.State != statePending {
+				if s.State != statusPending {
 					fmt.Println(s.State)
-					if s.State == stateSuccess {
+					if s.State == statusSuccess {
 						return nil
 					}
 					return fmt.Errorf("not successful (%s)", s.State)
@@ -103,13 +103,13 @@ func (r *Status) Run() error {
 			for _, s := range s.Statuses {
 				sm[s.State]++
 			}
-			if sm["failure"] > 0 {
-				st.Status = "failure"
+			if sm[statusFailure] > 0 {
+				st.Status = statusFailure
 				failures++
-			} else if sm["pending"] > 0 {
-				st.Status = "pending"
+			} else if sm[statusPending] > 0 {
+				st.Status = statusPending
 			} else {
-				st.Status = "success"
+				st.Status = statusSuccess
 			}
 			t.Add(string(b), colorizeStatus(st.Status))
 			if len(s.Statuses) > 0 {
@@ -157,17 +157,18 @@ func isNotFound(err error) bool {
 }
 
 const (
-	stateSuccess  = "success"
-	statePending  = "pending"
-	stateNotFound = "not_found"
+	statusSuccess  = "success"
+	statusPending  = "pending"
+	statusNotFound = "not_found"
+	statusFailure  = "failure"
 )
 
 func colorizeStatus(in string) string {
 	color := gocli.Green
 	switch in {
-	case stateSuccess:
+	case statusSuccess:
 		color = gocli.Green
-	case statePending, stateNotFound:
+	case statusPending, statusNotFound:
 		color = gocli.Yellow
 	default:
 		color = gocli.Red
