@@ -16,10 +16,9 @@ import (
 )
 
 type Status struct {
-	WithURLs bool   `cli:"opt --with-urls"`
-	Open     bool   `cli:"opt --open"`
-	Branch   string `cli:"opt --branch"`
-	Wait     bool   `cli:"opt --wait"`
+	Open   bool   `cli:"opt --open"`
+	Branch string `cli:"opt --branch"`
+	Wait   bool   `cli:"opt --wait"`
 }
 
 func (r *Status) Run() error {
@@ -117,11 +116,7 @@ func (r *Status) Run() error {
 					if ss.TargetURL != "" {
 						st.URLs = append(st.URLs, ss.TargetURL)
 					}
-					args := []interface{}{"", colorizeStatus(ss.State), truncate(s.SHA, 8, false), ss.Context, agoFunc(ss.CreatedAt)}
-					if r.WithURLs {
-						args = append(args, ss.TargetURL)
-					}
-					t.Add(args...)
+					t.Add("", colorizeStatus(ss.State), truncate(s.SHA, 8, false), ss.Context, agoFunc(ss.CreatedAt), ss.TargetURL)
 				}
 			}
 		}
