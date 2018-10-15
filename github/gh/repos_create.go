@@ -31,7 +31,7 @@ func (r *reposCreate) Run() error {
 		permission = "pull"
 	}
 	for _, t := range r.Teams {
-		_, err = cl.Organizations.AddTeamRepo(context.TODO(), t, r.Orga, r.Name, &github.OrganizationAddTeamRepoOptions{Permission: permission})
+		_, err = cl.Teams.AddTeamRepo(context.TODO(), t, r.Orga, r.Name, &github.TeamAddTeamRepoOptions{Permission: permission})
 		if err != nil {
 			return err
 		}

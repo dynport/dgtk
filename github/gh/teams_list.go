@@ -17,7 +17,7 @@ func (r *teamsList) Run() error {
 		return err
 	}
 	// TODO: paginate
-	res, _, err := client.Organizations.ListTeams(context.TODO(), r.Orga, nil)
+	res, _, err := client.Teams.ListTeams(context.TODO(), r.Orga, nil)
 	if err != nil {
 		return err
 	}
