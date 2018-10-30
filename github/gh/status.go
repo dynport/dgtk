@@ -102,13 +102,17 @@ func (r *Status) Run() error {
 			for _, s := range s.Statuses {
 				sm[s.State]++
 			}
-			if sm[statusFailure] > 0 {
-				st.Status = statusFailure
-				failures++
-			} else if sm[statusPending] > 0 {
-				st.Status = statusPending
+			if len(sm) == 0 {
+				st.Status = s.State
 			} else {
-				st.Status = statusSuccess
+				if sm[statusFailure] > 0 {
+					st.Status = statusFailure
+					failures++
+				} else if sm[statusPending] > 0 {
+					st.Status = statusPending
+				} else {
+					st.Status = statusSuccess
+				}
 			}
 			t.Add(string(b), colorizeStatus(st.Status))
 			if len(s.Statuses) > 0 {
