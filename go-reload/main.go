@@ -14,18 +14,21 @@ import (
 
 func main() {
 	l := logrus.New()
+	if os.Getenv("DEBUG") == "true" {
+		l.Level = logrus.DebugLevel
+	}
 	if err := run(l); err != nil {
 		l.Fatalf("%+v", err)
 	}
 }
 
 func run(l logrus.FieldLogger) error {
+	if len(os.Args) < 2 {
+		return errors.New("at least 2 parameters required")
+	}
 	path, err := exec.LookPath(os.Args[1])
 	if err != nil {
 		return errors.WithStack(err)
-	}
-	if len(os.Args) < 2 {
-		return errors.New("at least 2 parameters required")
 	}
 	options := []string{}
 	if len(os.Args) > 2 {
@@ -34,6 +37,8 @@ func run(l logrus.FieldLogger) error {
 
 	for {
 		err := func() error {
+			ctx, cf := context.WithCancel(context.Background())
+			defer cf()
 			w, err := fsnotify.NewWatcher()
 			if err != nil {
 				return errors.WithStack(err)
@@ -44,7 +49,6 @@ func run(l logrus.FieldLogger) error {
 				return errors.WithStack(err)
 			}
 			l.Printf("starting up")
-			ctx, cf := context.WithCancel(context.Background())
 			go func() {
 				_ = <-w.Events
 				cf()
