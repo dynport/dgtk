@@ -66,6 +66,9 @@ func (stats *Stats) Median() float64 {
 }
 
 func Percentile(values []float64, perc float64) float64 {
+	if len(values) == 0 {
+		return math.NaN()
+	}
 	middle := float64(len(values)) * perc / 100.0
 	floor := int(math.Floor(middle))
 	if len(values) <= floor {
