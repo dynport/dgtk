@@ -12,6 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	checkStatusCompleted   = "completed"
+	checkStatusInProgress  = "in_progress"
+	checkConclusionSuccess = "success"
+	checkConclusionFailure = "failure"
+)
+
 type Checks struct {
 	Branch string `cli:"opt --branch"`
 	Wait   bool   `cli:"opt --wait"`
@@ -50,12 +57,6 @@ func (r *Checks) Run() error {
 		} `json:"check_runs"`
 	}
 
-	const (
-		statusCompleted   = "completed"
-		conclusionSuccess = "success"
-		conclusionFailure = "failure"
-	)
-
 	if r.Wait {
 		return errors.Errorf("wait not implement yet")
 
@@ -76,7 +77,7 @@ func (r *Checks) Run() error {
 		for _, r := range r.CheckRuns {
 			status := r.Status
 			conclusion := r.Conclusion
-			if conclusion == conclusionSuccess {
+			if conclusion == checkConclusionSuccess {
 				conclusion = gocli.Green(conclusion)
 			} else {
 				conclusion = gocli.Yellow(conclusion)
