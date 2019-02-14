@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -175,6 +176,29 @@ func colorizeStatus(in string) string {
 	return color(in)
 }
 
+func loadChecks(cl *github.Client, repo, ref string) (res json.RawMessage, err error) {
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/"+repo+"/commits/"+ref+"/check-runs", nil)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	req.Header.Set("Accept", "application/vnd.github.antiope-preview+json")
+
+	rsp, err := cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer rsp.Body.Close()
+	if rsp.Status[0] != '2' {
+		b, _ := ioutil.ReadAll(rsp.Body)
+		return nil, fmt.Errorf("got status %s but expected 2x. body=%s", rsp.Status, string(b))
+	}
+	err = json.NewDecoder(rsp.Body).Decode(&res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func loadStatus(cl *github.Client, repo, ref string) (res *statusResponse, err error) {
 	u := "https://api.github.com/repos/" + repo + "/commits/" + ref + "/status"
 	rsp, err := cl.Get(u)
@@ -202,8 +226,9 @@ func currentBranch() (string, error) {
 }
 
 type statusResponse struct {
-	State    string `json:"state"`
-	Statuses []*struct {
+	TotalCount int    `json:"total_count"`
+	State      string `json:"state"`
+	Statuses   []*struct {
 		State     string    `json:"state,omitempty"`
 		URL       string    `json:"url,omitempty"`
 		Context   string    `json:"context"`
