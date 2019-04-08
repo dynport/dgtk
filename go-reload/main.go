@@ -50,7 +50,8 @@ func run(l logrus.FieldLogger) error {
 			}
 			l.Printf("starting up")
 			go func() {
-				_ = <-w.Events
+				event := <-w.Events
+				l.Debug(event)
 				cf()
 			}()
 			c := exec.CommandContext(ctx, path, options...)
