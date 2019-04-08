@@ -176,7 +176,22 @@ func colorizeStatus(in string) string {
 	return color(in)
 }
 
-func loadChecks(cl *github.Client, repo, ref string) (res json.RawMessage, err error) {
+type checkRun struct {
+	Name        string     `json:"name"`
+	ID          int        `json:"id"`
+	Status      string     `json:"status"`
+	Conclusion  string     `json:"conclusion"`
+	URL         string     `json:"url"`
+	DetailsURL  string     `json:"details_url"`
+	StartedAt   *time.Time `json:"started_at"`
+	CompletedAt *time.Time `json:"completed_at"`
+}
+
+type checksResponse struct {
+	CheckRuns []*checkRun `json:"check_runs"`
+}
+
+func loadChecks(cl *github.Client, repo, ref string) (res *checksResponse, err error) {
 	req, err := http.NewRequest("GET", "https://api.github.com/repos/"+repo+"/commits/"+ref+"/check-runs", nil)
 	if err != nil {
 		return nil, errors.WithStack(err)

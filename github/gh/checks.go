@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/dynport/gocli"
 	"github.com/olekukonko/tablewriter"
+	"github.com/phrase/x/wait"
 	"github.com/pkg/errors"
 )
 
@@ -44,51 +44,61 @@ func (r *Checks) Run() error {
 		return err
 	}
 
-	type checksResponse struct {
-		CheckRuns []struct {
-			Name        string     `json:"name"`
-			ID          int        `json:"id"`
-			Status      string     `json:"status"`
-			Conclusion  string     `json:"conclusion"`
-			URL         string     `json:"url"`
-			DetailsURL  string     `json:"details_url"`
-			StartedAt   *time.Time `json:"started_at"`
-			CompletedAt *time.Time `json:"completed_at"`
-		} `json:"check_runs"`
+	printCheckRuns := func(runs []*checkRun) {
+		return
 	}
 
 	if r.Wait {
-		return errors.Errorf("wait not implement yet")
+		branch := r.Branch
+		if branch == "" {
+			branch, err = currentBranch()
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
 
+		return wait.For(1*time.Second, 1*time.Hour, func() (bool, error) {
+			res, err := loadChecks(cl, repo, branch)
+			if err != nil {
+				return false, errors.WithStack(err)
+			}
+			allCompleted := func() bool {
+				for _, c := range res.CheckRuns {
+					if c.Status == checkStatusCompleted {
+						return true
+					}
+				}
+				return false
+			}()
+			return allCompleted, nil
+
+		})
 	}
 
-	t := tablewriter.NewWriter(os.Stdout)
 	added := 0
+	runs := []*checkRun{}
 	for _, branch := range branches {
 		res, err := loadChecks(cl, repo, branch)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		var r *checksResponse
-		err = json.Unmarshal(res, &r)
-		if err != nil {
-			return errors.WithStack(err)
+		runs = append(runs, res.CheckRuns...)
+	}
+	t := tablewriter.NewWriter(os.Stdout)
+	for _, r := range runs {
+		status := r.Status
+		conclusion := r.Conclusion
+		if conclusion == checkConclusionSuccess {
+			conclusion = gocli.Green(conclusion)
+		} else {
+			conclusion = gocli.Yellow(conclusion)
 		}
-		for _, r := range r.CheckRuns {
-			status := r.Status
-			conclusion := r.Conclusion
-			if conclusion == checkConclusionSuccess {
-				conclusion = gocli.Green(conclusion)
-			} else {
-				conclusion = gocli.Yellow(conclusion)
-			}
-			var completed string
-			if r.CompletedAt != nil {
-				completed = strings.Split(time.Since(*r.CompletedAt).String(), ".")[0]
-			}
-			added++
-			t.Append([]string{branch, r.Name, status, conclusion, completed, "https://github.com/phrase/x/runs/" + strconv.Itoa(r.ID)})
+		var completed string
+		if r.CompletedAt != nil {
+			completed = strings.Split(time.Since(*r.CompletedAt).String(), ".")[0]
 		}
+		added++
+		t.Append([]string{branch, r.Name, status, conclusion, completed, "https://github.com/phrase/x/runs/" + strconv.Itoa(r.ID)})
 	}
 	if added > 0 {
 		t.Render()
