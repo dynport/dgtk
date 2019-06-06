@@ -6,18 +6,27 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type cloneAction struct {
 	Repo string `cli:"arg required"`
-	Dst  string `cli:"opt -d --dst default='$GOPATH/src/github.com'"`
 }
 
 func (r *cloneAction) Run() error {
 	l := log.New(os.Stderr, "", 0)
 	withoutGit := strings.TrimSuffix(r.Repo, ".git")
 	withGit := withoutGit + ".git"
-	dir := os.ExpandEnv(r.Dst + "/" + withoutGit)
+	dst := os.Getenv("GOPATH")
+	if dst == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		dst = filepath.Join(home, "go")
+	}
+	dir := filepath.Join(dst, "src", "github.com", withoutGit)
 	if stat, err := os.Stat(dir); err == nil {
 		if stat.IsDir() {
 			l.Printf("repo already cloned to %s", dir)
