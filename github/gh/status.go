@@ -178,6 +178,7 @@ func colorizeStatus(in string) string {
 
 type checkRun struct {
 	Name        string     `json:"name"`
+	Branch      string     `json:"branch"`
 	ID          int        `json:"id"`
 	Status      string     `json:"status"`
 	Conclusion  string     `json:"conclusion"`
@@ -210,6 +211,9 @@ func loadChecks(cl *github.Client, repo, ref string) (res *checksResponse, err e
 	err = json.NewDecoder(rsp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
+	}
+	for _, r := range res.CheckRuns {
+		r.Branch = ref
 	}
 	return res, nil
 }
