@@ -44,10 +44,6 @@ func (r *Checks) Run() error {
 		return err
 	}
 
-	printCheckRuns := func(runs []*checkRun) {
-		return
-	}
-
 	if r.Wait {
 		branch := r.Branch
 		if branch == "" {
