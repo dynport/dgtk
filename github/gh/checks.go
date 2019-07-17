@@ -98,7 +98,7 @@ func (r *Checks) Run() error {
 			completed = strings.Split(time.Since(*r.CompletedAt).String(), ".")[0]
 		}
 		added++
-		t.Append([]string{branch, r.Name, status, conclusion, completed, "https://github.com/phrase/x/runs/" + strconv.Itoa(r.ID)})
+		t.Append([]string{r.Branch, r.Name, status, conclusion, completed, "https://github.com/" + repo + "/runs/" + strconv.Itoa(r.ID)})
 	}
 	if added > 0 {
 		t.Render()
