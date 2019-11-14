@@ -2,19 +2,19 @@ package main
 
 import (
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dynport/gocli"
 	"github.com/olekukonko/tablewriter"
-	"github.com/phrase/x/wait"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	checkStatusCompleted   = "completed"
 	checkStatusInProgress  = "in_progress"
+	checkStatusQueued      = "queued"
 	checkConclusionSuccess = "success"
 	checkConclusionFailure = "failure"
 )
@@ -25,6 +25,7 @@ type Checks struct {
 }
 
 func (r *Checks) Run() error {
+	l := logrus.New()
 	var branches []string
 	if r.Branch != "" {
 		branches = []string{r.Branch}
@@ -53,19 +54,23 @@ func (r *Checks) Run() error {
 			}
 		}
 
-		return wait.For(1*time.Second, 1*time.Hour, func() (bool, error) {
+		completed := map[string]struct{}{}
+		return waitFor(1*time.Second, 1*time.Hour, func() (bool, error) {
 			res, err := loadChecks(cl, repo, branch)
 			if err != nil {
 				return false, errors.WithStack(err)
 			}
-			allCompleted := func() bool {
-				for _, c := range res.CheckRuns {
-					if c.Status == checkStatusCompleted {
-						return true
-					}
+			allCompleted := true
+			for _, c := range res.CheckRuns {
+				key := c.Name + c.Status
+				if _, ok := completed[key]; !ok {
+					l.Printf("%s %s %s %s", c.Name, c.Status, colorizeColclusion(c.Conclusion), c.DetailsURL)
+					completed[key] = struct{}{}
 				}
-				return false
-			}()
+				if c.Status == checkStatusInProgress || c.Status == checkStatusQueued {
+					allCompleted = false
+				}
+			}
 			return allCompleted, nil
 
 		})
@@ -83,21 +88,50 @@ func (r *Checks) Run() error {
 	t := tablewriter.NewWriter(os.Stdout)
 	for _, r := range runs {
 		status := r.Status
-		conclusion := r.Conclusion
-		if conclusion == checkConclusionSuccess {
-			conclusion = gocli.Green(conclusion)
-		} else {
-			conclusion = gocli.Yellow(conclusion)
-		}
+		conclusion := colorizeColclusion(r.Conclusion)
 		var completed string
 		if r.CompletedAt != nil {
 			completed = strings.Split(time.Since(*r.CompletedAt).String(), ".")[0]
 		}
 		added++
-		t.Append([]string{r.Branch, r.Name, status, conclusion, completed, "https://github.com/" + repo + "/runs/" + strconv.Itoa(r.ID)})
+		t.Append([]string{r.Branch, r.Name, status, conclusion, completed, r.DetailsURL})
 	}
 	if added > 0 {
 		t.Render()
 	}
 	return nil
+}
+
+func colorizeColclusion(conclusion string) string {
+	if conclusion == checkConclusionSuccess {
+		return gocli.Green(conclusion)
+	} else {
+		return gocli.Yellow(conclusion)
+	}
+	return ""
+}
+
+var ErrTimeout = errors.New("Timeout")
+
+func waitFor(tick, max time.Duration, f func() (bool, error)) (err error) {
+	t := time.NewTicker(tick)
+	defer t.Stop()
+
+	start := time.Now()
+	var ok bool
+	for _ = range t.C {
+		ok, err = f()
+		if ok {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		if time.Since(start) > max {
+			break
+		}
+	}
+	if err != nil {
+		return err
+	}
+	return ErrTimeout
 }
